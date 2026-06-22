@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — MBO (Market-By-Order DOM)</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --blu:#2d78dc; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  h3{font-size:18px;color:#fff;margin-top:26px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  .st{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
+  .st.ok{color:var(--grn);border-color:#1f6f64;background:#10211e}
+  .st.td{color:var(--sub);border-color:var(--bd);background:var(--panel2)}
+  /* mini MBO ladder demo */
+  .dom{font-family:Consolas,monospace;font-size:12.5px;border-collapse:collapse;margin:16px 0;background:var(--code);border:1px solid var(--bd)}
+  .dom th{background:#161b22;color:#8b949e;font-weight:700;font-size:11px;text-align:right;padding:5px 9px}
+  .dom td{border:0;border-bottom:1px solid #11161d;padding:3px 9px;text-align:right}
+  .dom .pr{color:#8e99a6}.dom .vol{color:#aeb6bf}.dom .cnt{color:#6e7681}
+  .blk{display:inline-block;height:12px;margin-left:2px;border-radius:2px;color:#fff;font-size:10px;text-align:center;vertical-align:middle;line-height:12px}
+  .bk{background:rgba(38,166,154,.85)} .ak{background:rgba(239,83,80,.85)} .big{outline:1px solid #fff}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>MBO</h1>
+  <div class="v">Market-By-Order · order-by-order DOM (Rithmic DBO)</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#what"><span class="vi">Nó là gì</span><span class="en">What it is</span></a>
+  <a href="#sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></a>
+  <a href="#see"><span class="vi">Thấy gì trên ladder</span><span class="en">What you see</span></a>
+  <a href="#settings"><span class="vi">Cài đặt ⚙</span><span class="en">Settings ⚙</span></a>
+  <a href="#how"><span class="vi">Cách hoạt động</span><span class="en">How it works</span></a>
+  <a href="#probe"><span class="vi">Probe entitlement</span><span class="en">Entitlement probe</span></a>
+  <a href="#parity"><span class="vi">Đối chiếu ATAS</span><span class="en">ATAS parity</span></a>
+  <a href="#roadmap"><span class="vi">Lộ trình (Phase 2)</span><span class="en">Roadmap (Phase 2)</span></a>
+  <hr>
+  <a href="mbo.md" class="h" target="_blank"><span class="vi">↓ mbo.md (Markdown cho AI)</span><span class="en">↓ mbo.md (Markdown for AI)</span></a>
+  <a href="dom.html" class="h"><span class="vi">← DOM (sổ gộp L2)</span><span class="en">← DOM (aggregated L2)</span></a>
+  <a href="api.html" class="h"><span class="vi">← Tài liệu WebSocket API</span><span class="en">← WebSocket API reference</span></a>
+</nav>
+<main>
+
+<h2 id="what" style="margin-top:0"><span class="vi">MBO là gì</span><span class="en">What it is</span></h2>
+<p><span class="vi"><b>Order-by-order</b> depth of market dựng trên <b>DBO (Depth-By-Order)</b> của Rithmic. Trong khi <a class="h" href="dom.html">DOM</a> thường hiện <b>size gộp</b> tại mỗi giá (Level 2 / MBP), MBO hiện <b>từng lệnh riêng</b> tạo nên size đó — phân biệt được <b>1 lệnh 500</b> với <b>50 lệnh 10</b> ở cùng giá, thấy <b>hàng đợi</b> (queue/priority), và (Phase 2) bắt iceberg/spoof.</span>
+<span class="en">An <b>order-by-order</b> depth of market built on Rithmic <b>DBO (Depth-By-Order)</b>. Where the regular <a class="h" href="dom.html">DOM</a> shows the <b>aggregated</b> size at each price (Level 2 / MBP), MBO shows the <b>individual orders</b> that make up that size — telling <b>one 500-lot order</b> from <b>fifty 10-lot orders</b> at the same price, showing the <b>queue</b> (priority), and (Phase 2) detecting icebergs/spoofs.</span></p>
+
+<table class="dom">
+<tr><th>Vol</th><th>Bid</th><th>Price</th><th>Ask</th><th>Vol</th></tr>
+<tr><td class="vol">—</td><td></td><td class="pr">4152.7</td><td><span class="blk ak" style="width:46px">250</span> <span class="cnt">×1</span></td><td class="vol">250</td></tr>
+<tr><td class="vol">31</td><td><span class="cnt">×4</span> <span class="blk bk" style="width:24px">15</span><span class="blk bk" style="width:14px">8</span><span class="blk bk" style="width:9px">5</span><span class="blk bk" style="width:7px">3</span></td><td class="pr">4152.3</td><td></td><td class="vol">—</td></tr>
+<tr><td class="vol">20</td><td><span class="cnt">×2</span> <span class="blk bk" style="width:20px">12</span><span class="blk bk" style="width:14px">8</span></td><td class="pr">4152.2</td><td></td><td class="vol">—</td></tr>
+</table>
+<p style="color:var(--sub);font-size:13px"><span class="vi">(Mỗi <b>ô</b> = 1 lệnh, rộng theo size, xếp theo queue. <span class="b">Bid xanh</span>/<span class="s">Ask đỏ</span>. <code>×N</code> = số lệnh; <b>Vol</b> = tổng.)</span>
+<span class="en">(Each <b>block</b> = one order, width ∝ size, queue-ordered. <span class="b">Bid green</span>/<span class="s">Ask red</span>. <code>×N</code> = order count; <b>Vol</b> = total.)</span></p>
+
+<h2 id="sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></h2>
+<table>
+<tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Vì sao</span><span class="en">Why</span></th></tr>
+<tr><td><b><span class="vi">Sổ order-by-order</span><span class="en">Order-by-order book</span></b></td><td><code>@mbo</code> / <code>@mbo&lt;N&gt;</code></td>
+    <td><span class="vi">Mỗi mức trả <code>[giá, số lệnh, tổng, [sizes…]]</code> — từng lệnh chờ, xếp theo queue. Gateway duy trì sổ per-order từ DBO, emit ~20 Hz.</span><span class="en">Each level returns <code>[price, count, total, [sizes…]]</code> — the resting orders, queue-ordered. Gateway maintains a per-order book from DBO, emits ~20 Hz.</span></td></tr>
+<tr><td><span class="vi">Tổng gộp mỗi mức</span><span class="en">Aggregated total</span></td><td><code>@mbo</code> (<code>total</code>) / <code>@depth</code></td>
+    <td><span class="vi">MBO <code>total</code> = Σ lệnh trong cửa sổ; <code>@depth</code> cho tổng cả sổ ở mọi mức (sâu hơn cửa sổ MBO).</span><span class="en">MBO <code>total</code> = Σ orders in window; <code>@depth</code> gives the full-book total at every level (deeper than the MBO window).</span></td></tr>
+<tr><td><span class="vi">Kiểm tra entitlement / xem DBO thô</span><span class="en">Verify entitlement / raw DBO</span></td><td><code>mboProbe</code> (RPC)</td>
+    <td><span class="vi">Sub DBO quanh BBO vài giây, trả <code>{entitled, events, distinctOrders, hasExchOrdId, hasPriority, sample[]}</code>.</span><span class="en">Subscribes DBO around BBO for a few seconds, returns <code>{entitled, events, distinctOrders, hasExchOrdId, hasPriority, sample[]}</code>.</span></td></tr>
+</table>
+<div class="note warn"><span class="vi"><b>Entitlement:</b> DBO thường là gói market-data <b>RIÊNG</b> so với L1/L2. Không có quyền → <code>subscribeDbo</code> bị từ chối (báo qua alert), <code>@mbo</code> rỗng. Chạy <code>mboProbe</code> để xác nhận trước.</span>
+<span class="en"><b>Entitlement:</b> DBO is usually a <b>separate</b> Rithmic market-data subscription from L1/L2. Without it, <code>subscribeDbo</code> is rejected (via an alert) and <code>@mbo</code> stays empty. Run <code>mboProbe</code> to confirm first.</span></div>
+<pre><code>{ "stream":"comex.gcq6@mbo20", "data":{
+    "s":"GCQ6",
+    "bids":[ [4152.3, 4, 31, [15,8,5,3]], [4152.2, 2, 20, [12,8]] ],
+    "asks":[ [4152.7, 1, 250, [250]] ] } }</code></pre>
+<p><span class="vi">Mỗi mức = <code>[giá, số lệnh, tổng size, sizes[]]</code>. <code>sizes[]</code> xếp theo <b>queue priority</b> (đầu hàng trước), tối đa 64 lệnh/mức. <code>@mbo&lt;N&gt;</code> cắt top <i>N</i> mức mỗi bên (như <code>@depth&lt;N&gt;</code>).</span>
+<span class="en">Each level = <code>[price, orderCount, totalSize, sizes[]]</code>. <code>sizes[]</code> are sorted by <b>queue priority</b> (front first), capped at 64/level. <code>@mbo&lt;N&gt;</code> slices to the top <i>N</i> levels each side (like <code>@depth&lt;N&gt;</code>).</span></p>
+
+<h2 id="see"><span class="vi">Thấy gì trên ladder</span><span class="en">What you see</span></h2>
+<p><span class="vi">Bật panel <b>DOM</b>, rồi <b>⚙ → "MBO — order-by-order"</b>. Cột Bid/Ask đổi từ 1 thanh đặc thành <b>1 block/lệnh</b>:</span>
+<span class="en">Turn on the <b>DOM</b> panel, then <b>⚙ → "MBO — order-by-order"</b>. The Bid/Ask columns change from one solid bar to <b>one block per order</b>:</span></p>
+<ul>
+<li><span class="vi"><b>Block từng lệnh</b> — mỗi lệnh chờ là 1 ô, <b>rộng ∝ size</b> (ô cơ bản cho size-1, lớn hơn thì rộng theo tỷ lệ), vẽ theo <b>queue</b> từ trục giá vào (bid sang trái, ask sang phải). Số size in <b>trong</b> ô khi đủ rộng.</span>
+<span class="en"><b>Per-order blocks</b> — each resting order is its own block, <b>width ∝ size</b> (a base cell for size-1, scaling up), drawn in <b>queue order</b> from the price axis inward (bid left, ask right). Size printed <b>inside</b> when wide enough.</span></li>
+<li><code>×N</code> — <span class="vi">số <b>lệnh</b> tại mức đó (vd <code>×4</code> = 4 lệnh riêng).</span><span class="en">the order <b>count</b> at that level (e.g. <code>×4</code> = four separate orders).</span></li>
+<li><b>Vol</b> — <span class="vi">cột riêng cho <b>tổng</b> size mỗi mức (không chồng lên block nữa).</span><span class="en">a dedicated column for the per-level <b>total</b> (no longer overlapping the blocks).</span></li>
+</ul>
+
+<h2 id="settings"><span class="vi">Cài đặt ⚙</span><span class="en">Settings ⚙</span></h2>
+<table>
+<tr><th><span class="vi">Cài đặt</span><span class="en">Setting</span></th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><b>MBO — order-by-order</b></td><td><span class="vi">Bật/tắt. Subscribe <code>@mbo&lt;N&gt;</code> (bổ sung — KHÔNG đụng luồng <code>@depth</code>/heatmap).</span><span class="en">Master toggle. Subscribes <code>@mbo&lt;N&gt;</code> (additive — does not disturb <code>@depth</code>/heatmap).</span></td></tr>
+<tr><td><span class="vi">Cỡ ô mỗi lệnh (px)</span><span class="en">Cell size (px)</span></td><td><span class="vi">Bề rộng ô cơ bản (size-1); lệnh lớn nở thêm. 2–40 px.</span><span class="en">Base width of a size-1 block; larger orders scale up. 2–40 px.</span></td></tr>
+<tr><td><span class="vi">Tô đậm lệnh ≥</span><span class="en">Highlight ≥</span></td><td><span class="vi">Lệnh ≥ ngưỡng → màu đậm (bắt lệnh đơn lớn). 0 = tắt.</span><span class="en">Orders ≥ this render full-opacity (spot big single orders). 0 = off.</span></td></tr>
+<tr><td><span class="vi">Ẩn lệnh &lt;</span><span class="en">Hide &lt;</span></td><td><span class="vi">Lệnh nhỏ hơn ngưỡng → không vẽ (bớt nhiễu lệnh lẻ). 0 = tắt.</span><span class="en">Orders below this are not drawn (de-clutter). 0 = off.</span></td></tr>
+</table>
+<div class="note"><span class="vi"><b>Panel tự rộng:</b> khung DOM nới ra vừa <b>dòng nhiều/nặng ô nhất</b> trong cửa sổ MBO ⇒ hiện toàn bộ lệnh không bị cắt; các cột khác <b>giữ nguyên bề rộng</b> (panel to ra, chart co lại). Lưu theo từng mã.</span>
+<span class="en"><b>Panel auto-width:</b> the DOM panel widens to fit the <b>densest row</b> in the MBO window so nothing is clipped; the other columns <b>keep their normal width</b> (panel grows, chart reflows). Saved per symbol.</span></div>
+
+<h2 id="how"><span class="vi">Cách hoạt động (gateway)</span><span class="en">How it works (gateway)</span></h2>
+<p><span class="vi"><b>DBO theo TỪNG GIÁ.</b> <code>subscribeDbo(exch, sym, price)</code> sub feed order-by-order cho <b>1 mức giá</b> — không có lệnh "sub cả sổ". Nên gateway duy trì <b>cửa sổ cuộn</b>:</span>
+<span class="en"><b>DBO is per-PRICE.</b> <code>subscribeDbo(exch, sym, price)</code> subscribes the order-by-order feed for <b>one price</b> — there is no "subscribe the whole book". So the gateway maintains a <b>rolling window</b>:</span></p>
+<ul>
+<li><span class="vi"><code>MboBook</code>/symbol: <code>ExchOrdId → {price, size, side, priority, firstMs, lastMs}</code>.</span>
+<span class="en"><code>MboBook</code> per symbol: <code>ExchOrdId → {price, size, side, priority, firstMs, lastMs}</code>.</span></li>
+<li><span class="vi">Timer 60 ms giữ cửa sổ sub <b>±20 tick</b> quanh BBO, unsub mức trôi ra ngoài (+8 tick hysteresis chống churn). Ref-count/symbol như <code>_mdRef</code> — nhiều chart cùng mã dùng chung.</span>
+<span class="en">60 ms timer keeps the window subscribed to <b>±20 ticks</b> around BBO, unsubscribing levels that drift out (+8-tick hysteresis). Ref-counted per symbol like <code>_mdRef</code> — many charts share.</span></li>
+<li><span class="vi"><code>OnDbo</code>: <code>Image/New</code> thêm, <code>Change</code> sửa, <code>Delete</code> xoá; giá làm tròn về tick (Rithmic trả float như <code>4151.900000000001</code>).</span>
+<span class="en"><code>OnDbo</code>: <code>Image/New</code> add, <code>Change</code> update, <code>Delete</code> remove; price rounded to the tick grid (Rithmic returns floats like <code>4151.900000000001</code>).</span></li>
+<li><span class="vi">Mỗi nhịp gom theo giá (sort theo <code>Priority</code>) → emit <code>@mbo</code> (~20 Hz), bọc <code>MboBox</code> để <code>Route</code> cắt <code>@mbo&lt;N&gt;</code>→<code>Top(N)</code> (như <code>DepthBox</code>). Reconnect → xoá tập-giá-đã-sub để timer sub lại.</span>
+<span class="en">Each tick aggregates by price (sorted by <code>Priority</code>) → emits <code>@mbo</code> (~20 Hz), wrapped in <code>MboBox</code> so <code>Route</code> slices <code>@mbo&lt;N&gt;</code>→<code>Top(N)</code> (like <code>DepthBox</code>). On reconnect the subscribed-price set is cleared so the timer re-subscribes.</span></li>
+</ul>
+
+<h2 id="probe"><span class="vi">Probe entitlement (<code>mboProbe</code>)</span><span class="en">Entitlement probe (<code>mboProbe</code>)</span></h2>
+<p><span class="vi">Chạy ở Console (F12) <b>sau khi mở chart mã đó</b> (cần có BBO):</span>
+<span class="en">Run in the Console (F12) <b>after opening the symbol's chart</b> (needs a BBO):</span></p>
+<pre><code>rpc("mboProbe",{exchange:"COMEX",symbol:"GCQ6",levels:6,ms:8000}).then(r=>console.log(JSON.stringify(r,null,2)))</code></pre>
+<table>
+<tr><th>Field</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>entitled</code></td><td><span class="vi"><code>true</code> = nhận được DBO. <code>false</code> = bị từ chối → lý do ở <code>alerts[]</code>.</span><span class="en"><code>true</code> = DBO received. <code>false</code> = rejected → reason in <code>alerts[]</code>.</span></td></tr>
+<tr><td><code>events</code> · <code>new/change/delete/image</code></td><td><span class="vi">Số event DBO trong cửa sổ.</span><span class="en">DBO events in the window.</span></td></tr>
+<tr><td><code>distinctOrders</code></td><td><span class="vi">Số <code>ExchOrdId</code> riêng biệt.</span><span class="en">Distinct <code>ExchOrdId</code>s seen.</span></td></tr>
+<tr><td><code>hasExchOrdId</code> · <code>hasPriority</code></td><td><span class="vi">Sàn có cấp id lệnh + queue priority không (cần cho queue + iceberg/spoof Phase 2).</span><span class="en">Whether the exchange supplies per-order id + queue priority (needed for queue + Phase-2).</span></td></tr>
+<tr><td><code>sample[]</code></td><td><span class="vi">40 event đầu: <code>[type, side, price, size, exchOrdId, priority, tsMs]</code>.</span><span class="en">First 40 events: <code>[type, side, price, size, exchOrdId, priority, tsMs]</code>.</span></td></tr>
+</table>
+
+<h2 id="parity"><span class="vi">Đối chiếu ATAS MBO DOM</span><span class="en">ATAS MBO DOM parity</span></h2>
+<table>
+<tr><th>ATAS "MBO DOM"</th><th>Status</th></tr>
+<tr><td><span class="vi">Block từng lệnh (rộng ∝ size, theo queue)</span><span class="en">Per-order blocks (width ∝ size, queue order)</span></td><td><span class="st ok">✓</span></td></tr>
+<tr><td><span class="vi">Mỗi mức: <b>V</b> (tổng) + <b>C</b> (số lệnh)</span><span class="en">Per-level <b>V</b> (total) + <b>C</b> (count)</span></td><td><span class="st ok">✓</span></td></tr>
+<tr><td><span class="vi">Số size trong ô</span><span class="en">Order-size number inside the block</span></td><td><span class="st ok">✓</span></td></tr>
+<tr><td><span class="vi">Tô đậm lệnh lớn / ẩn lệnh nhỏ</span><span class="en">Highlight large / hide tiny</span></td><td><span class="st ok">✓</span></td></tr>
+<tr><td><span class="vi">Tooltip Ctrl-hover từng lệnh (giá/vol/time/id/priority)</span><span class="en">Per-order Ctrl-hover tooltip</span></td><td><span class="st td">○</span></td></tr>
+<tr><td><span class="vi">MBO Heatmap (EMA thời gian + trừ spoof)</span><span class="en">MBO Heatmap (time-weighted + spoof subtraction)</span></td><td><span class="st td">○ Phase 2</span></td></tr>
+<tr><td><span class="vi">Bắt iceberg / spoof</span><span class="en">Iceberg / spoof detector</span></td><td><span class="st td">○ Phase 2</span></td></tr>
+</table>
+
+<h2 id="roadmap"><span class="vi">Lộ trình (Phase 2)</span><span class="en">Roadmap (Phase 2)</span></h2>
+<p><span class="vi">Book engine đã lưu <b>vòng đời</b> mỗi lệnh (<code>firstMs</code>/<code>lastMs</code>) — đầu vào cho:</span>
+<span class="en">The book engine already keeps each order's <b>lifetime</b> (<code>firstMs</code>/<code>lastMs</code>) — the input for:</span></p>
+<ul>
+<li><b>MBO Heatmap</b> — <span class="vi">EMA theo thời gian của size nghỉ mỗi giá (lệnh nghỉ thật → sáng, nhấp nháy → mờ) + <b>trừ spoof</b> (lệnh non + chưa khớp bị loại). Nâng cấp so với heatmap lấy từ <code>@depth</code> hiện tại.</span><span class="en">time-weighted EMA of resting volume per price (real resting → bright, flicker → fades) + <b>spoof subtraction</b> (young + unfilled orders excluded). The upgrade over the current <code>@depth</code>-sampled heatmap.</span></li>
+<li><b><span class="vi">Bắt iceberg / spoof</span><span class="en">Iceberg / spoof detection</span></b> — <span class="vi">theo <code>ExchOrdId</code>: refill cùng giá (iceberg), lệnh to chưa khớp bị pull nhanh xa BBO (spoof) → highlight + alert.</span><span class="en">track each <code>ExchOrdId</code>: refills at one price (iceberg), big unfilled orders pulled fast far from BBO (spoof) → highlight + alert.</span></li>
+</ul>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="dom.html">DOM</a> ·
+<a class="h" href="heatmap.html">Heatmap</a> ·
+<a class="h" href="api.html"><span class="vi">WebSocket API</span><span class="en">WebSocket API</span></a> ·
+<a class="h" href="mbo.md" target="_blank">mbo.md</a></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

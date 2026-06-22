@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Footprint Guide</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  h3{font-size:18px;color:#fff;margin-top:26px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  .step{display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;margin-right:8px}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  .fp{font-family:Consolas,monospace;font-size:13px;border-collapse:collapse;margin:14px 0}
+  .fp td{border:1px solid var(--bd);padding:4px 10px;text-align:right}
+  .fp .pr{color:var(--sub);text-align:center;background:var(--panel)}
+  .fp .bid{color:#ff8a8a}.fp .ask{color:#7fe3d5}
+  .fp .poc{outline:2px solid var(--yel);outline-offset:-2px}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Footprint Guide</h1>
+  <div class="v">Order-flow from the WS API</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#what"><span class="vi">Footprint là gì</span><span class="en">What is a footprint</span></a>
+  <a href="#sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></a>
+  <a href="#data"><span class="vi">Dữ liệu cần</span><span class="en">The data you need</span></a>
+  <a href="#algo"><span class="vi">Thuật toán</span><span class="en">Algorithm</span></a>
+  <a href="#metrics"><span class="vi">Chỉ số thống kê</span><span class="en">Statistics</span></a>
+  <a href="#py"><span class="vi">Ví dụ — Python</span><span class="en">Example — Python</span></a>
+  <a href="#js"><span class="vi">Ví dụ — JavaScript</span><span class="en">Example — JavaScript</span></a>
+  <a href="#pitfalls"><span class="vi">Bẫy thường gặp</span><span class="en">Pitfalls</span></a>
+  <hr>
+  <a href="footprint.md" class="h" target="_blank"><span class="vi">↓ footprint.md (Markdown cho AI)</span><span class="en">↓ footprint.md (Markdown for AI)</span></a>
+  <a href="api.html" class="h"><span class="vi">← Tài liệu WebSocket API</span><span class="en">← WebSocket API reference</span></a>
+  <a href="bigtrades.html" class="h"><span class="vi">→ Big trades (parity ATAS)</span><span class="en">→ Big trades (ATAS parity)</span></a>
+  <a href="recipes.html" class="h"><span class="vi">→ Cookbook chỉ báo (Recipes)</span><span class="en">→ Indicator cookbook (Recipes)</span></a>
+  <a href="dom.html" class="h"><span class="vi">→ DOM (order book ladder)</span><span class="en">→ DOM (order book ladder)</span></a>
+</nav>
+<main>
+
+<h2 id="what"><span class="vi">Footprint là gì</span><span class="en">What is a footprint</span></h2>
+<p><span class="vi">Một <b>footprint</b> (còn gọi order-flow / cluster / bid-ask chart) tách mỗi cây nến theo <b>mức giá</b>,
+và ở từng mức cho thấy khối lượng khớp ở phía <span class="b">mua</span> (ask) so với phía <span class="s">bán</span> (bid).
+Nó biến 1 cây nến thành một cột các hàng giá như sau:</span>
+<span class="en">A <b>footprint</b> (a.k.a. order-flow / cluster / bid-ask chart) breaks each candle down by <b>price level</b>
+and shows, at every level, how much volume traded on the <span class="b">buy</span> (ask) side vs the
+<span class="s">sell</span> (bid) side. It turns a single candle into a column of price rows like:</span></p>
+<table class="fp">
+<tr><td class="bid">8</td><td class="pr">5501.00</td><td class="ask">31</td></tr>
+<tr class="poc"><td class="bid">42</td><td class="pr">5500.75</td><td class="ask">95</td></tr>
+<tr><td class="bid">60</td><td class="pr">5500.50</td><td class="ask">18</td></tr>
+<tr><td class="bid">12</td><td class="pr">5500.25</td><td class="ask">4</td></tr>
+</table>
+<p><span class="vi"><span class="s">Trái = khối lượng bán</span> · giá ở giữa · <span class="b">phải = khối lượng mua</span>.
+Hàng vàng là <b>POC</b> (giá khớp nhiều nhất). Từ đây đọc được sự hấp thụ, mất cân bằng và delta.</span>
+<span class="en"><span class="s">Left = sell volume</span> · price in the middle · <span class="b">right = buy volume</span>.
+The yellow row is the <b>POC</b> (most-traded price). From this you read absorption, imbalances and delta.</span></p>
+
+<h2 id="sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></h2>
+<p><span class="vi">Footprint dựng hoàn toàn từ <b>các lệnh khớp riêng lẻ có kèm bên chủ động</b>. Bạn chỉ cần đúng
+hai nguồn từ <a class="h" href="api.html">WebSocket API</a> — một cho lịch sử, một cho realtime:</span>
+<span class="en">A footprint is built entirely from <b>individual trades that carry an aggressor side</b>. You need exactly
+two data sources from the <a class="h" href="api.html">WebSocket API</a> — one for history, one for live:</span></p>
+<table>
+<tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Vì sao</span><span class="en">Why</span></th></tr>
+<tr><td><b><span class="vi">Footprint nến quá khứ</span><span class="en">Footprint for past candles</span></b></td><td><code>aggTrades</code> (request)</td>
+    <td><span class="vi">Replay trade lịch sử với <code>[time, price, qty, side]</code> — dữ liệu thô cho nến quá khứ.</span><span class="en">Replays historical trades with <code>[time, price, qty, side]</code> — the raw input for past bars.</span></td></tr>
+<tr><td><b><span class="vi">Footprint nến live</span><span class="en">Footprint for the live bar</span></b></td><td><code>@trade</code> (stream)</td>
+    <td><span class="vi">Mỗi trade mới cập nhật các mức của nến hiện tại theo thời gian thực.</span><span class="en">Each new trade updates the current bar's levels in real time.</span></td></tr>
+<tr><td><span class="vi">Vẽ OHLC (tuỳ chọn)</span><span class="en">OHLC overlay (optional)</span></td><td><code>klines</code> + <code>@kline_&lt;iv&gt;</code></td>
+    <td><span class="vi">Chỉ khi muốn vẽ thêm thân/râu nến. <b>Không bắt buộc</b> cho footprint.</span><span class="en">Only if you also want the candle body/wick drawn. <b>Not required</b> for the footprint itself.</span></td></tr>
+<tr><td><span class="vi">Ngữ cảnh spread (tuỳ chọn)</span><span class="en">Spread context (optional)</span></td><td><code>@bookTicker</code></td>
+    <td><span class="vi">Bid/ask tốt nhất — để phân loại trade khi <code>side</code> rỗng (tick rule).</span><span class="en">Best bid/ask — lets you classify trades when <code>side</code> is empty (tick rule).</span></td></tr>
+</table>
+<div class="note"><span class="vi">Footprint tối thiểu = <b><code>aggTrades</code></b> (lịch sử) + <b><code>@trade</code></b> (live). Còn lại chỉ là hiển thị.</span>
+<span class="en">Minimum viable footprint = <b><code>aggTrades</code></b> (history) + <b><code>@trade</code></b> (live). Everything else is presentation.</span></div>
+
+<h2 id="data"><span class="vi">Dữ liệu cần</span><span class="en">The data you need</span></h2>
+<p><span class="vi">Cả hai nguồn cho cùng một dạng trade. Chuẩn hoá về một bản ghi:</span><span class="en">Both sources give you the same trade shape. Normalize them to one record:</span></p>
+<table>
+<tr><th>Field</th><th><span class="vi">Từ</span><span class="en">From</span> <code>aggTrades</code></th><th><span class="vi">Từ</span><span class="en">From</span> <code>@trade</code></th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td>time (ms)</td><td><code>row[0]</code></td><td><code>data.T</code></td><td><span class="vi">Thời điểm khớp</span><span class="en">When the trade printed</span></td></tr>
+<tr><td>price</td><td><code>row[1]</code></td><td><code>data.p</code></td><td><span class="vi">Giá khớp</span><span class="en">Trade price</span></td></tr>
+<tr><td>qty</td><td><code>row[2]</code></td><td><code>data.q</code></td><td><span class="vi">Số hợp đồng</span><span class="en">Contracts</span></td></tr>
+<tr><td>side</td><td><code>row[3]</code></td><td><code>data.side</code></td><td><span class="b">"B"</span> <span class="vi">mua</span><span class="en">buy</span> · <span class="s">"S"</span> <span class="vi">bán</span><span class="en">sell</span> · <code>""</code> <span class="vi">không rõ</span><span class="en">unknown</span></td></tr>
+</table>
+
+<h2 id="algo"><span class="vi">Thuật toán</span><span class="en">Algorithm</span></h2>
+<p><span class="vi">Footprint là một bảng đếm lồng nhau: <code>bucket[barStart][price] = { buy, sell }</code>.</span>
+<span class="en">Footprint is a nested tally: <code>bucket[barStart][price] = { buy, sell }</code>.</span></p>
+<p><span class="step">1</span><b><span class="vi">Chọn interval</span><span class="en">Pick the interval</span></b> <span class="vi">và tính độ dài theo ms, vd <code>1m → 60000</code>.</span><span class="en">and compute its length in ms, e.g. <code>1m → 60000</code>.</span></p>
+<p><span class="step">2</span><b><span class="vi">Tìm nến của mỗi trade</span><span class="en">Find each trade's bar</span></b> <span class="vi">bằng cách làm tròn xuống timestamp:</span><span class="en">by flooring its timestamp:</span></p>
+<pre><code>barStart = Math.floor(timeMs / intervalMs) * intervalMs;</code></pre>
+<p><span class="step">3</span><b><span class="vi">Cộng trade vào mức giá</span><span class="en">Add the trade to its price level</span></b><span class="vi">, tách theo side:</span><span class="en">, split by side:</span></p>
+<pre><code>cell = bucket[barStart][price]            // {buy:0, sell:0}
+if (side === "B") cell.buy  += qty
+else if (side === "S") cell.sell += qty
+else { /* unknown -> tick rule, xem Pitfalls */ }</code></pre>
+<p><span class="step">4</span><b><span class="vi">Nạp lịch sử, rồi cộng live.</span><span class="en">Seed history, then keep adding live.</span></b> <span class="vi">Replay <code>aggTrades</code> một lần để điền nến quá khứ, sau đó áp dụng mỗi <code>@trade</code> y hệt — nến hiện tại lớn dần theo từng tick.</span><span class="en">Replay <code>aggTrades</code> once to fill past bars, then apply every <code>@trade</code> the same way — the current bar grows tick by tick.</span></p>
+<p><span class="step">5</span><b><span class="vi">Vẽ</span><span class="en">Render</span></b> <span class="vi">mỗi nến thành một cột: mỗi mức giá đã khớp là một hàng, hiển thị bán | mua, tô màu theo khối lượng, đánh dấu POC/delta.</span><span class="en">each bar as a column: one row per price that traded, showing sell-vol | buy-vol, colored by volume, with POC/delta highlighted.</span></p>
+
+<h2 id="metrics"><span class="vi">Chỉ số thống kê (mỗi nến)</span><span class="en">Statistics (per bar)</span></h2>
+<table>
+<tr><th><span class="vi">Chỉ số</span><span class="en">Metric</span></th><th><span class="vi">Công thức</span><span class="en">Formula</span></th><th><span class="vi">Đọc là</span><span class="en">Reads as</span></th></tr>
+<tr><td><b>Delta</b></td><td>Σ buy − Σ sell</td><td><span class="vi">Áp lực chủ động ròng (xanh = bên mua dẫn)</span><span class="en">Net aggressive pressure (green = buyers led)</span></td></tr>
+<tr><td><b>POC</b></td><td><span class="vi">giá có max (buy+sell)</span><span class="en">price with max (buy+sell)</span></td><td><span class="vi">Nơi giao dịch nhiều nhất</span><span class="en">Where the most business happened</span></td></tr>
+<tr><td><b><span class="vi">Tổng KL</span><span class="en">Total volume</span></b></td><td>Σ (buy+sell)</td><td><span class="vi">Mức hoạt động của nến</span><span class="en">Bar activity</span></td></tr>
+<tr><td><b><span class="vi">Mất cân bằng bid/ask</span><span class="en">Bid/Ask imbalance</span></b></td><td>buy[p] vs sell[p−1tick] ≥ 3×</td><td><span class="vi">Thống trị chéo → hấp thụ/chủ động</span><span class="en">Diagonal dominance → absorption/initiative</span></td></tr>
+</table>
+
+<h2 id="py"><span class="vi">Ví dụ đầy đủ — Python</span><span class="en">Full example — Python</span></h2>
+<p><span class="vi">Dựng footprint live: replay 1 giờ lịch sử, rồi stream trade.</span><span class="en">Builds a live footprint: replays one hour of history, then streams trades.</span></p>
+<pre><code>import asyncio, json, time, math, collections, websockets
+
+URL="ws://127.0.0.1:9001/"; EXCH="CME"; SYM="ESU6"; IV_MS=60_000   # 1-minute bars
+# bucket[barStart][price] = [buy, sell]
+book = collections.defaultdict(lambda: collections.defaultdict(lambda: [0,0]))
+
+def add(t_ms, price, qty, side, last=[None]):
+    if side not in ("B","S"):                     # tick-rule fallback
+        side = "B" if last[0] is None or price >= last[0] else "S"
+    last[0] = price
+    bar = (t_ms // IV_MS) * IV_MS
+    cell = book[bar][price]
+    cell[0 if side=="B" else 1] += qty
+
+def show(bar):
+    levels = book[bar]
+    buy  = sum(c[0] for c in levels.values())
+    sell = sum(c[1] for c in levels.values())
+    poc  = max(levels, key=lambda p: sum(levels[p]))
+    print(f"bar {time.strftime('%H:%M', time.localtime(bar/1000))}  "
+          f"D={buy-sell:+d}  POC={poc}  vol={buy+sell}")
+
+async def main():
+    async with websockets.connect(URL, max_size=None) as ws:
+        now = int(time.time()*1000)
+        # 1) history -> seed footprint
+        await ws.send(json.dumps({"method":"aggTrades","id":1,"params":{
+            "exchange":EXCH,"symbol":SYM,"startTime":now-3600_000,"endTime":now}}))
+        # 2) live trades
+        await ws.send(json.dumps({"method":"SUBSCRIBE","id":2,
+            "params":[f"{EXCH}.{SYM}@trade"]}))
+        async for raw in ws:
+            m = json.loads(raw)
+            if m.get("id")==1 and m.get("result"):                 # aggTrades reply
+                for t,p,q,s in m["result"]: add(t,p,q,s)
+                print("seeded", len(m["result"]), "trades")
+            elif m.get("stream","").endswith("@trade"):            # live trade
+                d=m["data"]; add(d["T"], d["p"], d["q"], d["side"])
+                show((d["T"]//IV_MS)*IV_MS)
+
+asyncio.run(main())</code></pre>
+
+<h2 id="js"><span class="vi">Ví dụ đầy đủ — JavaScript</span><span class="en">Full example — JavaScript</span></h2>
+<pre><code>const URL="ws://127.0.0.1:9001/", EXCH="CME", SYM="ESU6", IV_MS=60000;
+const book = new Map();                      // barStart -> Map(price -> {buy,sell})
+let last = null;
+function cell(bar, price){
+  if(!book.has(bar)) book.set(bar, new Map());
+  const m = book.get(bar);
+  if(!m.has(price)) m.set(price, {buy:0, sell:0});
+  return m.get(price);
+}
+function add(t, price, qty, side){
+  if(side!=="B" &amp;&amp; side!=="S") side = (last===null || price>=last) ? "B" : "S";  // tick rule
+  last = price;
+  const bar = Math.floor(t/IV_MS)*IV_MS;
+  const c = cell(bar, price);
+  if(side==="B") c.buy += qty; else c.sell += qty;
+}
+function metrics(bar){
+  const m = book.get(bar); if(!m) return;
+  let buy=0, sell=0, poc=null, pv=-1;
+  for(const [p,c] of m){ buy+=c.buy; sell+=c.sell; const t=c.buy+c.sell; if(t>pv){pv=t;poc=p;} }
+  console.log(`D=${buy-sell}  POC=${poc}  vol=${buy+sell}`);
+}
+
+const ws = new WebSocket(URL); let id=1;
+ws.onopen = () => {
+  const now = Date.now();
+  ws.send(JSON.stringify({method:"aggTrades", id:1, params:{
+    exchange:EXCH, symbol:SYM, startTime:now-3600000, endTime:now}}));
+  ws.send(JSON.stringify({method:"SUBSCRIBE", id:2, params:[`${EXCH}.${SYM}@trade`]}));
+};
+ws.onmessage = (e) => {
+  const m = JSON.parse(e.data);
+  if(m.id===1 &amp;&amp; m.result){ m.result.forEach(([t,p,q,s])=>add(t,p,q,s)); }
+  else if((m.stream||"").endsWith("@trade")){
+    const d=m.data; add(d.T, d.p, d.q, d.side); metrics(Math.floor(d.T/IV_MS)*IV_MS);
+  }
+};</code></pre>
+
+<h2 id="pitfalls"><span class="vi">Bẫy thường gặp</span><span class="en">Pitfalls</span></h2>
+<ul>
+<li><span class="vi"><b>Phân loại side.</b> Ưu tiên <code>side</code> từ server (<span class="b">"B"</span>/<span class="s">"S"</span>). Khi nó là <code>""</code>, dùng <i>tick rule</i>: giá ≥ trade trước → mua, ngược lại → bán (như trong ví dụ). Chính xác hơn thì so với bid/ask tốt nhất từ <code>@bookTicker</code>.</span>
+<span class="en"><b>Side classification.</b> Prefer the server's <code>side</code> (<span class="b">"B"</span>/<span class="s">"S"</span>). When it is <code>""</code>, fall back to the <i>tick rule</i>: price ≥ last trade → buy, else sell (used in the examples). For better accuracy, compare against best bid/ask from <code>@bookTicker</code>.</span></li>
+<li><span class="vi"><b>Căn nến.</b> <code>floor(time/intervalMs)*intervalMs</code> căn theo epoch, khớp ranh giới phút/giờ. Nến tick/volume/range <b>không</b> căn theo thời gian — footprint theo thời gian chỉ hợp lý với interval thời gian (<code>s/m/h/d</code>).</span>
+<span class="en"><b>Bar alignment.</b> <code>floor(time/intervalMs)*intervalMs</code> aligns to the epoch, which matches minute/hour boundaries. Tick/volume/range bars are <b>not</b> time-aligned — footprint by time only makes sense for time-based intervals (<code>s/m/h/d</code>).</span></li>
+<li><span class="vi"><b>Lịch sử + live chồng lấn.</b> <code>aggTrades</code> kết thúc ở "now" và <code>@trade</code> live tiếp tục từ đó; ranh giới liền mạch. Đừng đếm trùng bằng cách replay hai lần cùng một khoảng.</span>
+<span class="en"><b>History + live overlap.</b> <code>aggTrades</code> ends at "now" and live <code>@trade</code> continues from there; the boundary is seamless. Don't double-count by replaying an overlapping window twice.</span></li>
+<li><span class="vi"><b>Giá float làm key.</b> Giá khớp là bội số tick chính xác (vd 5500.25); dùng số làm key map là ổn. Hiển thị số lẻ theo tick của mã, đừng cố định.</span>
+<span class="en"><b>Float prices as keys.</b> Trade prices are exact tick multiples (e.g. 5500.25); using the number as a map key is fine. Format display decimals from the instrument's tick, not a fixed value.</span></li>
+<li><span class="vi"><b>Tick replay chỉ có cho phiên LIVE đang chạy.</b> <code>aggTrades</code> dựa trên tick-replay nội phiên của Rithmic, chỉ phục vụ trade của <b>phiên đang mở</b>. Khi phiên đã đóng (qua đêm, cuối tuần, nghỉ lễ) thì tick từng lệnh <b>không còn replay được</b> — <code>aggTrades</code> trả rỗng kể cả với cửa sổ nằm gọn trong phiên cũ đó. Đây là giới hạn của data-plant Rithmic, không phải lỗi, và nới cửa sổ thời gian <b>không</b> lấy lại được. Nến OHLC (<code>klines</code>) thì vẫn có lịch sử — chỉ phần tách mua/bán theo từng lệnh là không. Hệ quả: <b>footprint lịch sử chỉ có khi thị trường đang mở</b>; khi <code>aggTrades</code> rỗng, báo cho người dùng là chợ đóng và dựng footprint <b>realtime</b> từ <code>@trade</code> khi giao dịch trở lại — đừng coi replay rỗng là lỗi.</span>
+<span class="en"><b>Tick replay only covers the live/current session.</b> <code>aggTrades</code> is backed by Rithmic's intraday tick replay, which serves trades only for the <b>session that is currently open</b>. Once a session closes (overnight, weekends, holidays) its per-trade ticks are <b>no longer replayable</b> — <code>aggTrades</code> returns empty even for a window squarely inside that past session. This is a Rithmic data-plant limitation, not a bug, and widening the window does <b>not</b> recover them. OHLC bars (<code>klines</code>) <i>are</i> available historically — only the per-trade buy/sell split is not. Consequence: <b>historical footprint is only available while the market is open</b>; when <code>aggTrades</code> returns empty, tell the user the market is closed and build footprint <b>live</b> from <code>@trade</code> once trading resumes — don't treat the empty replay as an error.</span></li>
+</ul>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="api.html"><span class="vi">Tài liệu WebSocket API</span><span class="en">WebSocket API reference</span></a> ·
+<a class="h" href="bigtrades.html">Big trades</a> ·
+<a class="h" href="recipes.html">Recipes</a> ·
+<a class="h" href="dom.html">DOM</a> ·
+<a class="h" href="mbo.html">MBO</a>
+<span class="vi">— đầy đủ schema message + cách dựng chỉ báo.</span><span class="en">— full message schemas + how to build indicators.</span></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

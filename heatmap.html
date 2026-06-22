@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Heatmap (Bookmap-style)</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --blu:#2d78dc; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  h3{font-size:18px;color:#fff;margin-top:26px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  .st{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
+  .st.ok{color:var(--grn);border-color:#1f6f64;background:#10211e}
+  .st.td{color:var(--sub);border-color:var(--bd);background:var(--panel2)}
+  .cmap{height:22px;border-radius:6px;margin:10px 0;border:1px solid var(--bd);
+        background:linear-gradient(90deg,#08101c,#002e6e 18%,#16cdf0 38%,#ffffff 50%,#ffeb46 64%,#ff961e 80%,#e82c1e)}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Heatmap</h1>
+  <div class="v">Liquidity heatmap · Bookmap-style</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#what"><span class="vi">Nó là gì</span><span class="en">What it is</span></a>
+  <a href="#sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></a>
+  <a href="#layers"><span class="vi">Các lớp vẽ</span><span class="en">Layers</span></a>
+  <a href="#settings"><span class="vi">Cài đặt ⚙</span><span class="en">Settings ⚙</span></a>
+  <a href="#interact"><span class="vi">Tương tác</span><span class="en">Interaction</span></a>
+  <a href="#internals"><span class="vi">Bên trong</span><span class="en">Internals</span></a>
+  <a href="#parity"><span class="vi">Đối chiếu Bookmap</span><span class="en">Bookmap parity</span></a>
+  <hr>
+  <a href="heatmap.md" class="h" target="_blank"><span class="vi">↓ heatmap.md (cho AI)</span><span class="en">↓ heatmap.md (for AI)</span></a>
+  <a href="dom.html" class="h"><span class="vi">→ DOM (cùng sổ lệnh)</span><span class="en">→ DOM (same book)</span></a>
+  <a href="storage.html" class="h"><span class="vi">→ Lưu trữ &amp; tối ưu API</span><span class="en">→ Storage &amp; API tuning</span></a>
+  <a href="api.html" class="h"><span class="vi">← WebSocket API</span><span class="en">← WebSocket API</span></a>
+</nav>
+<main>
+
+<h2 id="what" style="margin-top:0"><span class="vi">Heatmap là gì</span><span class="en">What it is</span></h2>
+<p><span class="vi"><b>Heatmap thanh khoản</b> theo <b>thời gian × giá</b>, kiểu <b>Bookmap</b>: mỗi cột pixel là một thời điểm,
+mỗi hàng là một giá; độ sáng ô = size lệnh chờ tại (thời gian, giá). Vẽ đè thêm: <b>đường best bid/ask</b>, <b>bóng trade</b>, và
+<b>histogram sổ lệnh hiện tại</b> ở mép phải. Là một primitive LWC nằm <b>dưới</b> nến (bật "Hiện nến" thì footprint/nến đè lên).</span>
+<span class="en">A <b>liquidity heatmap</b> over <b>time × price</b>, modelled on <b>Bookmap</b>: each pixel column is a moment,
+each row a price; cell brightness = resting order size at that (time, price). Overlaid: a <b>best bid/ask line</b>,
+<b>trade bubbles</b>, and a <b>current order-book depth histogram</b> on the right edge. An LWC primitive drawn <b>under</b> the
+candles (turn on "show candles" to overlay footprint/candles).</span></p>
+<div class="cmap"></div>
+<p style="color:var(--sub);font-size:13px"><span class="vi">Dải màu (ít → nhiều thanh khoản): tối → xanh dương → cyan → <b>trắng</b> → vàng → cam → <b>đỏ</b>. Gamma nâng tương phản.</span>
+<span class="en">Colormap (low → high liquidity): dark → blue → cyan → <b>white</b> → yellow → orange → <b>red</b>. Gamma boosts contrast.</span></p>
+
+<h2 id="sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></h2>
+<p><span class="vi">Heatmap ghép <b>3 nguồn LIVE</b> (không replay lịch sử — dựng tiến từ lúc bật):</span>
+<span class="en">The heatmap combines <b>3 live sources</b> (no history replay — it builds forward from when you open it):</span></p>
+<table>
+<tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Vì sao</span><span class="en">Why</span></th></tr>
+<tr><td><b><span class="vi">Ô nhiệt (thanh khoản)</span><span class="en">Heat cells</span></b></td><td><a class="h" href="api.html#s-depth"><code>@depth&lt;N&gt;</code></a></td>
+  <td><span class="vi">Toàn bộ sổ mỗi snapshot; lấy mẫu mỗi <b>300 ms</b> thành 1 cột. <code>N</code> = độ sâu (dùng chung DOM).</span><span class="en">Full book per snapshot; sampled every <b>300 ms</b> into a column. <code>N</code> = depth (shared with DOM).</span></td></tr>
+<tr><td><b><span class="vi">Đường bid/ask</span><span class="en">Bid/ask line</span></b></td><td><a class="h" href="api.html#s-bookticker"><code>@bookTicker</code></a></td>
+  <td><span class="vi">Vẽ từ <b>mỗi</b> thay đổi quote (không phải mẫu 300 ms) -> đường sát, bóng trade khớp đúng.</span><span class="en">From <b>every</b> quote change (not the 300 ms sample) so the line is tight and bubbles sit on it.</span></td></tr>
+<tr><td><b><span class="vi">Bóng trade</span><span class="en">Trade bubbles</span></b></td><td><a class="h" href="api.html#s-trade"><code>@trade</code></a></td>
+  <td><span class="vi">Một chấm mờ mỗi lệnh; bán kính ∝ √qty; xanh = mua / đỏ = bán.</span><span class="en">A translucent dot per print; radius ∝ √qty; blue = buy / red = sell.</span></td></tr>
+<tr><td><b><span class="vi">Histogram sổ lệnh (mép phải)</span><span class="en">Depth histogram (right edge)</span></b></td><td><a class="h" href="api.html#s-depth"><code>@depth&lt;N&gt;</code></a></td>
+  <td><span class="vi">Size bid/ask chờ tại mỗi giá <b>ngay lúc này</b>, vẽ thanh ngang từ trục giá.</span><span class="en">Resting bid/ask size per price <b>right now</b>, horizontal bars from the price axis.</span></td></tr>
+</table>
+<p class="note"><span class="vi"><b>Tối thiểu</b> = <code>@depth</code> (ô + histogram) + <code>@bookTicker</code> (đường). <code>@trade</code> chỉ thêm bóng. Depth cần quyền <b>L2</b> từ Rithmic.</span>
+<span class="en"><b>Minimum</b> = <code>@depth</code> (cells + histogram) + <code>@bookTicker</code> (line). <code>@trade</code> only adds bubbles. Depth needs <b>L2</b> entitlement.</span></p>
+
+<h2 id="layers"><span class="vi">Các lớp vẽ (dưới → trên)</span><span class="en">Layers (bottom → top)</span></h2>
+<ol>
+<li><span class="vi"><b>Ô nhiệt</b> — mỗi cột 300 ms, mỗi mức sổ là 1 ô màu. Sáng = <code>log(size+1)/log(max)</code> mũ <b>gamma</b>. Cột lấp đầy từ cột trước (không hở sọc đen). Luôn trải <b>full bề ngang pane</b>.</span>
+<span class="en"><b>Heat cells</b> — per 300 ms column, each book level is a colored rectangle. Brightness = <code>log(size+1)/log(max)</code> ^ <b>gamma</b>. Columns gap-fill (no black stripes). Always stretched to <b>full pane width</b>.</span></li>
+<li><span class="vi"><b>Đường bid/ask</b> — step line từ <code>@bookTicker</code>. <b>Trái vạch vàng = nét liền; phải (vùng sổ lệnh) = nét đứt.</b> Chưa có tick mới thì giữ giá cuối kéo ngang tới mép phải.</span>
+<span class="en"><b>Bid/ask line</b> — step line from <code>@bookTicker</code>. <b>Left of the yellow line = solid; right (depth zone) = dashed.</b> Holds the last value to the right edge when no new tick.</span></li>
+<li><span class="vi"><b>Sổ lệnh hiện tại</b> (Bookmap mép phải) — thanh ngang của sổ mới nhất: <span class="s">đỏ = ask</span> (trên giá), <span class="b">xanh = bid</span> (dưới). Dài ∝ size; cột to nhất chạm <b>"vạch vàng"</b>.</span>
+<span class="en"><b>Current order-book depth</b> (Bookmap right edge) — horizontal bars of the latest book: <span class="s">red = ask</span> (above), <span class="b">green = bid</span> (below). Length ∝ size; the largest bar reaches the <b>"yellow line"</b>.</span></li>
+<li><span class="vi"><b>Bóng trade</b> — vòng tròn mờ tại (thời gian, giá) của lệnh.</span><span class="en"><b>Trade bubbles</b> — translucent circles at (trade time, price).</span></li>
+</ol>
+
+<h2 id="settings"><span class="vi">Cài đặt ⚙</span><span class="en">Settings ⚙</span></h2>
+<table>
+<tr><th><span class="vi">Cài đặt</span><span class="en">Setting</span></th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th><th>Default</th></tr>
+<tr><td><span class="vi">Cửa sổ thời gian</span><span class="en">Window (min)</span></td><td><span class="vi">Giữ bao nhiêu phút heatmap gần nhất trong buffer</span><span class="en">Minutes of recent heatmap kept in the buffer</span></td><td>5</td></tr>
+<tr><td><span class="vi">Độ tương phản (gamma)</span><span class="en">Contrast (gamma)</span></td><td><span class="vi">Cao = tối, chỉ thanh khoản lớn sáng (bớt vàng); thấp = nhiều màu</span><span class="en">High = darker, only big liquidity bright; low = more color</span></td><td>2.2</td></tr>
+<tr><td><span class="vi">Hiện nến</span><span class="en">Show candles</span></td><td><span class="vi">Tắt = Bookmap thuần (giá = đường bid/ask). Bật = nến/footprint đè lên heat</span><span class="en">Off = pure Bookmap (price = bid/ask line). On = candles/footprint over the heat</span></td><td>off</td></tr>
+<tr><td><span class="vi">Sổ lệnh hiện tại</span><span class="en">Current depth</span></td><td><span class="vi">Histogram sổ lệnh mép phải bật/tắt</span><span class="en">Right-edge depth histogram on/off</span></td><td>on</td></tr>
+<tr><td><span class="vi">Bề rộng sổ lệnh (%)</span><span class="en">Depth width (%)</span></td><td><span class="vi">Vạch vàng cách trục giá bao nhiêu (cột to nhất chạm tới)</span><span class="en">How far the yellow line sits from the price axis</span></td><td>33%</td></tr>
+<tr><td><span class="vi">Độ sâu sổ lệnh</span><span class="en">Depth levels</span></td><td><span class="vi"><code>N</code> mức mỗi bên kéo qua <code>@depth&lt;N&gt;</code> — <b>dùng chung DOM</b></span><span class="en"><code>N</code> levels each side via <code>@depth&lt;N&gt;</code> — <b>shared with DOM</b></span></td><td>100</td></tr>
+</table>
+
+<h2 id="interact"><span class="vi">Tương tác</span><span class="en">Interaction</span></h2>
+<table>
+<tr><th><span class="vi">Thao tác</span><span class="en">Action</span></th><th><span class="vi">Kết quả</span><span class="en">Result</span></th></tr>
+<tr><td><span class="vi"><b>Lăn chuột</b> (ẩn nến)</span><span class="en"><b>Mouse wheel</b> (candles hidden)</span></td><td><span class="vi">Zoom <b>cửa sổ thời gian</b> (mới nhất ghim mép phải), luôn full-width. Lăn lên = zoom in, xuống = zoom out (tối đa = data trong buffer).</span><span class="en">Zoom the <b>time window</b> (newest pinned right), always full-width. Up = in, down = out (max = data in buffer).</span></td></tr>
+<tr><td><span class="vi"><b>Double-click</b></span><span class="en"><b>Double-click</b></span></td><td><span class="vi">Reset zoom về full buffer.</span><span class="en">Reset zoom to full buffer.</span></td></tr>
+<tr><td><span class="vi">Lăn chuột (hiện nến)</span><span class="en">Wheel (candles shown)</span></td><td><span class="vi">Rơi về zoom nến LWC bình thường.</span><span class="en">Falls through to normal LWC candle zoom.</span></td></tr>
+</table>
+
+<h2 id="internals"><span class="vi">Bên trong</span><span class="en">Internals</span></h2>
+<ul>
+<li><span class="vi">Sổ lệnh là cùng <code>DomBook</code> với DOM (dựng từ <code>OnBidQuote</code>/<code>OnAskQuote</code> + snapshot, phát <code>@depth&lt;N&gt;</code> ~30 Hz). Client lấy mẫu mỗi <code>HEAT_MS</code> = <b>300 ms</b> -> <code>heatCols</code>.</span>
+<span class="en">The book is the same <code>DomBook</code> as the DOM (from <code>OnBidQuote</code>/<code>OnAskQuote</code> + snapshot, emitted <code>@depth&lt;N&gt;</code> ~30 Hz). The client samples every <code>HEAT_MS</code> = <b>300 ms</b> -> <code>heatCols</code>.</span></li>
+<li><span class="vi">Đường bid/ask dùng mảng riêng <code>heatQuotes</code> theo từng <code>@bookTicker</code> (mịn hơn ô 300 ms) -> bóng khớp đường. X là <b>stretch full-width</b> <code>(T−viewStart)/viewMs × paneWidth</code> (LWC không có trục X dưới-cây-nến nên vẽ tay).</span>
+<span class="en">The bid/ask line uses a separate <code>heatQuotes</code> fed by each <code>@bookTicker</code> (finer than the 300 ms cells) -> bubbles align. X is a <b>full-width stretch</b> <code>(T−viewStart)/viewMs × paneWidth</code> (LWC has no sub-bar X axis, so it's hand-drawn).</span></li>
+<li><span class="vi">Xem <a class="h" href="storage.html">STORAGE</a>: cách <code>@depth&lt;N&gt;</code> cắt theo từng subscription để DOM + heatmap dùng chung 1 stream ở độ sâu chọn.</span>
+<span class="en">See <a class="h" href="storage.html">STORAGE</a>: how <code>@depth&lt;N&gt;</code> is trimmed per subscription so DOM + heatmap share one stream at a chosen depth.</span></li>
+</ul>
+
+<h2 id="parity"><span class="vi">Đối chiếu Bookmap</span><span class="en">Bookmap parity</span></h2>
+<table>
+<tr><th>Bookmap</th><th><span class="vi">Trạng thái</span><span class="en">Status</span></th></tr>
+<tr><td><span class="vi">Heatmap thanh khoản (thời gian × giá)</span><span class="en">Liquidity heatmap (time × price)</span></td><td><span class="st ok">✅</span></td></tr>
+<tr><td><span class="vi">Dải màu Bookmap + chỉnh tương phản</span><span class="en">Bookmap colormap + contrast</span></td><td><span class="st ok">✅</span></td></tr>
+<tr><td><span class="vi">Đường best bid/ask</span><span class="en">Best bid/ask line</span></td><td><span class="st ok">✅</span></td></tr>
+<tr><td><span class="vi">Bóng trade (size ∝ volume)</span><span class="en">Trade bubbles (size ∝ volume)</span></td><td><span class="st ok">✅</span></td></tr>
+<tr><td><span class="vi">Sổ lệnh hiện tại (mép phải)</span><span class="en">Current order-book depth (right edge)</span></td><td><span class="st ok">✅</span></td></tr>
+<tr><td><span class="vi">Lăn chuột zoom cửa sổ thời gian</span><span class="en">Time-window wheel zoom</span></td><td><span class="st ok">✅</span></td></tr>
+<tr><td><span class="vi">Đè nến/footprint (tuỳ chọn)</span><span class="en">Candles/footprint overlay</span></td><td><span class="st ok">✅</span></td></tr>
+<tr><td><span class="vi">Replay heatmap lịch sử</span><span class="en">Historical heatmap replay</span></td><td><span class="st td">⬜</span></td></tr>
+<tr><td><span class="vi">Phát hiện lệnh lớn / iceberg</span><span class="en">Large-lot / iceberg detection</span></td><td><span class="st td">⬜</span></td></tr>
+</table>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="api.html"><span class="vi">WebSocket API</span><span class="en">WebSocket API</span></a> ·
+<a class="h" href="dom.html">DOM</a> · <a class="h" href="mbo.html">MBO</a> · <a class="h" href="storage.html"><span class="vi">Lưu trữ</span><span class="en">Storage</span></a> ·
+<a class="h" href="footprint.html">Footprint</a> · <a class="h" href="bigtrades.html">Big trades</a> ·
+<a class="h" href="heatmap.md" target="_blank">heatmap.md</a></p>
+<p class="note"><span class="vi"><b>MBO Heatmap (kế hoạch — MBO.md Phase 2):</b> heatmap này lấy mẫu sổ <b>gộp</b> <code>@depth</code>. Bản dựng trên <b>MBO</b> (DBO) sẽ thêm EMA theo thời gian + trừ spoof — xem <a class="h" href="mbo.html">MBO</a>.</span>
+<span class="en"><b>MBO Heatmap (planned — MBO.md Phase 2):</b> this heatmap samples the <b>aggregated</b> <code>@depth</code> book; an <b>MBO</b> (DBO) version will add time-weighted EMA + spoof subtraction — see <a class="h" href="mbo.html">MBO</a>.</span></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

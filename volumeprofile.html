@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Volume Profile</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --blu:#2d78dc; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  h3{font-size:18px;color:#fff;margin-top:26px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  .st{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
+  .st.ok{color:var(--grn);border-color:#1f6f64;background:#10211e}
+  .st.td{color:var(--sub);border-color:var(--bd);background:var(--panel2)}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Volume Profile</h1>
+  <div class="v">Volume-at-price · VPOC · Value Area</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#what"><span class="vi">Nó là gì</span><span class="en">What it is</span></a>
+  <a href="#sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></a>
+  <a href="#modes"><span class="vi">3 chế độ</span><span class="en">The three modes</span></a>
+  <a href="#settings"><span class="vi">Cài đặt ⚙</span><span class="en">Settings ⚙</span></a>
+  <a href="#vpoc"><span class="vi">VPOC &amp; Value Area</span><span class="en">VPOC &amp; Value Area</span></a>
+  <a href="#internals"><span class="vi">Bên trong / vẽ</span><span class="en">Rendering / internals</span></a>
+  <a href="#nativevslocal"><span class="vi">Native vs local</span><span class="en">Native vs local</span></a>
+  <hr>
+  <a href="volumeprofile.md" class="h" target="_blank"><span class="vi">↓ volumeprofile.md (cho AI)</span><span class="en">↓ volumeprofile.md (for AI)</span></a>
+  <a href="footprint.html" class="h"><span class="vi">→ Footprint (cùng nguồn tick)</span><span class="en">→ Footprint (same tick source)</span></a>
+  <a href="storage.html" class="h"><span class="vi">→ Lưu trữ &amp; tối ưu API</span><span class="en">→ Storage &amp; API tuning</span></a>
+  <a href="api.html" class="h"><span class="vi">← WebSocket API</span><span class="en">← WebSocket API</span></a>
+</nav>
+<main>
+
+<h2 id="what" style="margin-top:0"><span class="vi">Volume Profile là gì</span><span class="en">What it is</span></h2>
+<p><span class="vi">Histogram <b>khối lượng theo giá</b>: thanh ngang cho biết <b>bao nhiêu volume khớp ở mỗi mức giá</b>, kèm
+<b>VPOC</b> (mức giá khối lượng lớn nhất), <b>Value Area</b> (VAH/VAL) và tô màu theo mức. Vẽ bằng primitive LWC ở
+<b>mép trái/phải</b> (gộp) hoặc <b>gắn vào nến từng phiên</b> (mỗi phiên). 3 chế độ: phiên hiện tại (native Rithmic) và
+bao nhiêu phiên đã đóng tuỳ ý (dựng từ kho tick local).</span>
+<span class="en">A <b>volume-at-price</b> histogram: horizontal bars showing <b>how much volume traded at each price</b>, plus the
+<b>VPOC</b> (highest-volume price), <b>Value Area</b> (VAH/VAL) and per-price coloring. Drawn as an LWC primitive at the
+<b>left/right edge</b> (composite) or <b>anchored to each session's candles</b> (per-session). Three modes cover the current
+session (native Rithmic) and any number of closed sessions (from the local tick store).</span></p>
+
+<h2 id="sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></h2>
+<p><span class="vi">Volume Profile là <b>request/response (RPC)</b>, không phải stream — gọi 1 lần rồi poll lại. Có <b>2</b> RPC; webapp chọn theo chế độ:</span>
+<span class="en">Volume Profile is <b>request/response (RPC)</b>, not a stream — call once and re-poll. There are <b>two</b> RPCs; the webapp picks by mode:</span></p>
+<table>
+<tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Trả về</span><span class="en">Returns</span></th></tr>
+<tr><td><span class="vi"><b>Phiên hiện tại, native</b> (khỏi cần data local)</span><span class="en"><b>Current session, native</b></span></td><td><code>volumeProfile {exchange, symbol}</code></td><td><code>{rows:[[price,vol]], total, vpoc, rp}</code> — <span class="vi"><code>getVolumeAtPrice</code> của Rithmic cho <b>riêng phiên live</b></span><span class="en">Rithmic's <code>getVolumeAtPrice</code> for the <b>live session only</b></span>. <code>rp</code> 0=ok · 7=no-data · -1=timeout.</td></tr>
+<tr><td><span class="vi"><b>N phiên đóng, gộp 1 cục</b></span><span class="en"><b>N closed sessions, composite</b></span></td><td><code>volumeProfileRange {exchange, symbol, startTime, endTime, days}</code></td><td><code>{rows, total, vpoc, sessions:&lt;count&gt;}</code> — <span class="vi">gộp volume-at-price toàn bộ các phiên</span><span class="en">merged volume-at-price across the sessions</span>.</td></tr>
+<tr><td><span class="vi"><b>N phiên đóng, mỗi phiên 1 profile</b></span><span class="en"><b>N closed sessions, one each</b></span></td><td><code>volumeProfileRange {…, days, split:"1"}</code></td><td><code>{sessions:[{start, end, rows, total, vpoc}], total, split:true}</code> — <span class="vi">1 profile/phiên, kèm dải thời gian (<code>start</code>/<code>end</code> ms) để client neo dưới nến phiên đó</span><span class="en">one profile per session, each carrying its time band so the client anchors it under that session's candles</span>.</td></tr>
+</table>
+<ul>
+<li><span class="vi"><code>days</code> = số <b>phiên GIAO DỊCH</b> (gateway lùi từ phiên hiện tại, <b>bỏ qua T7/CN</b> qua <code>IsWeekendSession</code> → chọn 6 ngày dính cuối tuần vẫn ra 6 profile, không phải 4). <code>startTime</code>/<code>endTime</code> là cửa sổ dự phòng khi không có <code>days</code>.</span>
+<span class="en"><code>days</code> = number of <b>trading sessions</b> (the gateway walks back from the current session <b>skipping weekends</b>, so 6 days straddling Sat+Sun still yields 6 profiles). <code>startTime</code>/<code>endTime</code> are the fallback window when <code>days</code> is absent.</span></li>
+<li><span class="vi">Chế độ range đọc <b>TickStore local</b> từng phiên. Phiên <b>đã đóng</b> mà kho trống → <b>backfill 1 lần</b> (<code>replayBars(Tick,1)</code> → merge → lần sau đọc local). Phiên <b>hiện tại</b> đọc live (không backfill).</span>
+<span class="en">The range modes read the <b>local TickStore</b> per session. A <b>closed</b> session whose store is empty is <b>backfilled once</b> (<code>replayBars(Tick,1)</code> → merged → next call serves local). The <b>current</b> session is read live (no backfill).</span></li>
+<li><span class="vi"><code>volumeProfileRange</code> bin theo <b>tick mã</b>; cài đặt <b>"Gộp tick"</b> bin thô hơn ở <b>client</b> (áp cho cả 3 chế độ, khỏi fetch lại).</span>
+<span class="en"><code>volumeProfileRange</code> bins by the <b>instrument tick</b>; the <b>"Gộp tick"</b> setting re-bins coarser <b>client-side</b> (applies to all three modes, no re-fetch).</span></li>
+</ul>
+<div class="note"><span class="vi"><b>Tối thiểu:</b> 1 lần gọi <code>volumeProfile</code> (phiên hiện tại, native) — chạy được kể cả khi chưa có lịch sử local.</span>
+<span class="en"><b>Minimum viable:</b> one <code>volumeProfile</code> call (current session, native) — works even with zero local history.</span></div>
+
+<h2 id="modes"><span class="vi">3 chế độ (⚙ → "Chế độ")</span><span class="en">The three modes</span></h2>
+<table>
+<tr><th><span class="vi">Chế độ</span><span class="en">Mode</span></th><th><span class="vi">Vẽ gì</span><span class="en">What it draws</span></th><th><span class="vi">Nguồn</span><span class="en">Source</span></th></tr>
+<tr><td><span class="vi">Phiên hiện tại (daily)</span><span class="en">Current session (daily)</span></td><td><span class="vi">1 profile cho <b>phiên live</b>, ghim mép chart.</span><span class="en">One profile for the <b>live session</b>, pinned to the edge.</span></td><td><span class="vi">Native <code>getVolumeAtPrice</code></span><span class="en">Native <code>getVolumeAtPrice</code></span></td></tr>
+<tr><td><span class="vi">Gộp N ngày (comp)</span><span class="en">Composite (comp)</span></td><td><span class="vi"><b>1 profile gộp</b> N phiên giao dịch gần nhất, ghim mép.</span><span class="en"><b>One merged</b> profile over the last N trading sessions, pinned to the edge.</span></td><td><code>volumeProfileRange</code></td></tr>
+<tr><td><span class="vi">Mỗi phiên (sess)</span><span class="en">Per-session (sess)</span></td><td><span class="vi"><b>1 profile/phiên</b>, neo vào dải nến phiên đó (trượt theo chart).</span><span class="en"><b>One profile per session</b>, anchored to that session's candle band (slides with the chart).</span></td><td><code>volumeProfileRange split=1</code></td></tr>
+</table>
+<ul>
+<li><span class="vi"><b>Ghim mép</b> (daily, comp): histogram mọc từ mép trái (hoặc phải — xem "Bên"); dài ∝ volume, chia theo <b>max của chính profile</b> → bar <b>không co/giãn</b> khi zoom/pan giá ra/vào tầm nhìn.</span>
+<span class="en"><b>Edge-pinned</b> (daily, comp): grows from the left (or right) edge; length ∝ volume, scaled to the profile's <b>own global max</b> → bars <b>don't resize</b> when you zoom/pan price in/out of view.</span></li>
+<li><span class="vi"><b>Mỗi phiên</b> (sess): mỗi profile phủ <b>trọn bề ngang nến của phiên</b> (mở→đóng), neo theo <b>chỉ số nến</b> (không theo wall-clock — chart nén gap cuối tuần/nến thiếu nên map theo giờ sẽ lệch). <b>Trượt theo nến</b> khi pan, bỏ vẽ khi cả phiên ra ngoài màn hình.</span>
+<span class="en"><b>Per-session</b> (sess): each fills its session's <b>full candle width</b> (open→close), anchored by <b>bar index</b> (not wall-clock — the chart compresses weekend/missing-bar gaps, so a wall-clock map drifts). It <b>slides with the candles</b> on pan, skipped when its band is fully off-screen.</span></li>
+</ul>
+
+<h2 id="settings"><span class="vi">Cài đặt ⚙</span><span class="en">Settings ⚙</span></h2>
+<table>
+<tr><th><span class="vi">Cài đặt</span><span class="en">Setting</span></th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th><th><span class="vi">Mặc định</span><span class="en">Default</span></th></tr>
+<tr><td>Chế độ</td><td>daily / comp / sess</td><td>daily</td></tr>
+<tr><td><span class="vi">Số ngày</span><span class="en">Days</span></td><td><span class="vi">Số <b>phiên giao dịch</b> (comp + sess; bỏ cuối tuần)</span><span class="en">Number of <b>trading sessions</b> (weekends skipped)</span></td><td>5</td></tr>
+<tr><td><span class="vi">Bề rộng histogram</span><span class="en">Width</span></td><td><span class="vi">Độ dài bar tối đa (<b>px</b>) ở chế độ ghim mép</span><span class="en">Max bar length in <b>px</b> (edge-pinned modes)</span></td><td>160</td></tr>
+<tr><td><span class="vi">Gộp tick</span><span class="en">Bin</span></td><td><span class="vi">Gộp <b>N tick/bậc giá</b> — profile thô hơn, ít cột (1 = tick gốc)</span><span class="en">Merge <b>N ticks per bucket</b> — coarser, fewer rows (1 = native tick)</span></td><td>1</td></tr>
+<tr><td><span class="vi">Bên</span><span class="en">Side</span></td><td><span class="vi">Histogram ghim mép <b>Trái</b> hay <b>Phải</b> (sát trục giá)</span><span class="en">Edge-pinned histogram grows from <b>left</b> or <b>right</b> (next to the price axis)</span></td><td><span class="vi">Trái</span><span class="en">left</span></td></tr>
+<tr><td>Value Area (%)</td><td><span class="vi">Đích Value-Area theo <b>% tổng volume</b> (VAH/VAL nới ra từ VPOC)</span><span class="en">Value-Area target as <b>% of total volume</b> (VAH/VAL span out from VPOC)</span></td><td>70</td></tr>
+<tr><td>Line VPOC</td><td><span class="vi">Vẽ VPOC thành đường giá vàng full chart</span><span class="en">Draw VPOC as a full-width yellow price line</span></td><td>on</td></tr>
+<tr><td>Line VAH/VAL</td><td><span class="vi">Vẽ VAH/VAL thành đường giá xanh đứt</span><span class="en">Draw VAH/VAL as dashed blue price lines</span></td><td>on</td></tr>
+</table>
+<p><span class="vi">Tự làm mới mỗi <b>30 s</b> (phiên live lớn dần). Đổi <b>ngày / chế độ / Gộp tick</b> → fetch lại; đổi <b>VA% / bề rộng / bên</b> → tính lại/vẽ lại tại chỗ (không RPC).</span>
+<span class="en">Auto-refreshes every <b>30 s</b> (the live session keeps growing). Changing <b>days / mode / bin</b> re-fetches; changing <b>VA% / width / side</b> recomputes or redraws in place (no RPC).</span></p>
+
+<h2 id="vpoc"><span class="vi">VPOC &amp; Value Area</span><span class="en">VPOC &amp; Value Area</span></h2>
+<ul>
+<li><span class="vi"><b>VPOC</b> (Volume Point of Control) = mức giá có volume <b>lớn nhất</b>. Tô vàng.</span>
+<span class="en"><b>VPOC</b> (Volume Point of Control) = the price row with the <b>largest</b> volume. Yellow.</span></li>
+<li><span class="vi"><b>Value Area</b> = dải quanh VPOC chứa <b>VA%</b> (mặc định 70%) tổng volume. Nới ra từ VPOC từng mức, mỗi bước lấy <b>bên kề có volume lớn hơn</b>, tới khi đủ đích. <b>VAH</b> = đỉnh dải, <b>VAL</b> = đáy.</span>
+<span class="en"><b>Value Area</b> = the band around the VPOC holding <b>VA%</b> (default 70%) of total volume. Expanded out from the VPOC one row at a time, each step taking the <b>adjacent side with the larger</b> volume, until the target is met. <b>VAH</b> = top, <b>VAL</b> = bottom.</span></li>
+<li><span class="vi">Chế độ <b>sess</b> tính VPOC/VA <b>từng phiên</b>; comp/daily tính trên profile gộp. Đổi VA% → tính lại tại chỗ (không fetch).</span>
+<span class="en">In <b>sess</b> mode VPOC/VA are <b>per session</b>; comp/daily compute on the merged profile. VA% changes recompute in place (no re-fetch).</span></li>
+</ul>
+
+<h2 id="internals"><span class="vi">Bên trong / cách vẽ</span><span class="en">Rendering / internals</span></h2>
+<ul>
+<li><span class="vi"><b>Ghim mép (comp/daily)</b> — <code>panel = min(bề-rộng, 45% pane)</code>; mỗi mức <code>len = vol / max-toàn-profile × panel</code>, vẽ từ mép đã chọn tại toạ độ giá. Độ dày hàng suy từ 2 toạ độ giá kề (giãn theo zoom dọc). Chia theo <b>max toàn profile</b> (không phải max đang hiện) → bar ổn định khi pan giá.</span>
+<span class="en"><b>Edge-pinned (comp/daily)</b> — <code>panel = min(width, 45% of pane)</code>; each row <code>len = vol / globalMax × panel</code>. Row thickness from two adjacent price coordinates. Scaling to the <b>global max</b> (not visible-max) keeps bars stable while panning price.</span></li>
+<li><span class="vi"><b>Mỗi phiên (sess)</b> — tìm <b>chỉ số nến</b> đầu/cuối trong <code>[start,end)</code> bằng tìm-kiếm-nhị-phân theo thời gian trong <code>bars[]</code>; x = <code>timeToCoordinate</code> khi on-screen, <code>anchor + Δindex × barSpacing</code> khi off-screen. <code>drawW = bề-rộng-dải × 0.92</code>, bar mọc từ giờ mở phiên. Cùng quy tắc <b>map theo chỉ số nến</b> của renderer footprint / big-trade.</span>
+<span class="en"><b>Per-session (sess)</b> — find the first/last <b>bar index</b> in <code>[start,end)</code> via a binary search of <code>bars[]</code> by time; x is <code>timeToCoordinate</code> on-screen and <code>anchor + Δindex × barSpacing</code> off-screen. <code>drawW = bandWidth × 0.92</code>, bars grow from the session open. Same <b>map-by-bar-index</b> rule the footprint / big-trade renderers use.</span></li>
+<li><span class="vi"><b>Gộp tick</b> — gộp mức về bậc thô hơn (N tick/bậc) ở client, rồi tính lại VPOC/VA/max.</span>
+<span class="en"><b>Gộp tick</b> — merges rows into coarser buckets (N ticks/bucket) client-side, then VPOC/VA/max recompute.</span></li>
+<li><span class="vi"><b>Tự lấp lịch sử</b> — comp/sess gặp phiên đóng kho trống → 1 lần <b>backfill tick</b> (<code>replayBars(Tick,1)</code> phân trang) merge vào kho; lần sau đọc local. Phiên hiện tại không backfill. Xem <a class="h" href="storage.html">STORAGE</a> (cờ coverage <code>D</code>/<code>V</code>/<code>E</code>/<code>P</code>).</span>
+<span class="en"><b>Self-filling history</b> — in comp/sess a closed session with an empty store triggers a one-time <b>tick backfill</b> (paged <code>replayBars(Tick,1)</code>) merged into the store; next call serves local. The current session is never backfilled. See <a class="h" href="storage.html">STORAGE</a> (coverage flags <code>D</code>/<code>V</code>/<code>E</code>/<code>P</code>).</span></li>
+</ul>
+
+<h2 id="nativevslocal"><span class="vi">Native vs local — khi nào dùng cái nào</span><span class="en">Native vs local — when each is used</span></h2>
+<table>
+<tr><th></th><th><code>volumeProfile</code> <span class="vi">(native)</span><span class="en">(native)</span></th><th><code>volumeProfileRange</code> <span class="vi">(local)</span><span class="en">(local)</span></th></tr>
+<tr><td><span class="vi">Phiên</span><span class="en">Sessions</span></td><td><span class="vi">chỉ hiện tại (live)</span><span class="en">current (live) only</span></td><td><span class="vi">N phiên đóng tuỳ ý (+ hiện tại)</span><span class="en">any N closed (+ current)</span></td></tr>
+<tr><td><span class="vi">Nguồn</span><span class="en">Source</span></td><td>Rithmic <code>getVolumeAtPrice</code></td><td><span class="vi">TickStore local (tự backfill)</span><span class="en">local TickStore (self-backfilled)</span></td></tr>
+<tr><td><span class="vi">Cần lịch sử local</span><span class="en">Needs local history</span></td><td><span class="vi">không</span><span class="en">no</span></td><td><span class="vi">có (tự lấp phiên đóng)</span><span class="en">yes (auto-fills closed sessions)</span></td></tr>
+<tr><td><span class="vi">Bậc giá</span><span class="en">Bin size</span></td><td><span class="vi">của Rithmic</span><span class="en">Rithmic's</span></td><td><span class="vi">tick mã, rồi "Gộp tick" ở client</span><span class="en">instrument tick, then "Gộp tick" client-side</span></td></tr>
+<tr><td><span class="vi">Chi phí</span><span class="en">Cost</span></td><td><span class="vi">1 lần, tức thì</span><span class="en">1 call, instant</span></td><td><span class="vi">1 lần; phiên lạnh lần đầu kèm 1 backfill tick</span><span class="en">1 call; first time on a cold session also runs a tick backfill</span></td></tr>
+</table>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="api.html"><span class="vi">WebSocket API</span><span class="en">WebSocket API</span></a> ·
+<a class="h" href="footprint.html">Footprint</a> · <a class="h" href="recipes.html"><span class="vi">Cookbook</span><span class="en">Cookbook</span></a> ·
+<a class="h" href="dom.html">DOM</a> · <a class="h" href="storage.html"><span class="vi">Lưu trữ</span><span class="en">Storage</span></a> ·
+<a class="h" href="volumeprofile.md" target="_blank">volumeprofile.md</a></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

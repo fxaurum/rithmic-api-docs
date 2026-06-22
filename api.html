@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — WebSocket API Reference</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  /* chuyển ngôn ngữ: mặc định hiện VI */
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto;gap:0}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  nav .grp{color:#fff;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:16px 0 4px 8px}
+  .langsw{display:flex;gap:0;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h3{font-size:18px;color:#fff;margin-top:28px}
+  h2:first-child{margin-top:0}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff;font-weight:600}
+  td code{white-space:nowrap}
+  .tag{display:inline-block;padding:1px 8px;border-radius:20px;font-size:12px;font-weight:600}
+  .req{background:rgba(47,129,247,.18);color:#6cb0ff} .strm{background:rgba(38,166,154,.18);color:#3fd9c7}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  .run{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:4px 12px;font:inherit;font-size:13px;cursor:pointer;margin:0 0 4px}
+  .run::before{content:"▶ "} .run:hover{filter:brightness(1.12)} .run:disabled{opacity:.55;cursor:default}
+  .out{display:none;background:#0b0f14;border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin:0 0 16px;max-height:220px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:12.5px;line-height:1.5;color:var(--grn);white-space:pre-wrap;word-break:break-word}
+  .trybar input{background:var(--code);color:var(--txt);border:1px solid var(--bd);border-radius:6px;padding:3px 7px;font:inherit;font-size:13px}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Rithmic WS API</h1>
+  <div class="v">Fxaurum gateway · Binance-style</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#overview"><span class="vi">Tổng quan</span><span class="en">Overview</span></a>
+  <a href="#connect"><span class="vi">Kết nối</span><span class="en">Connecting</span></a>
+  <a href="#lifecycle"><span class="vi">Vòng đời / nối lại</span><span class="en">Lifecycle &amp; reconnect</span></a>
+  <a href="#envelope"><span class="vi">Định dạng message</span><span class="en">Message format</span></a>
+  <div class="grp">Requests</div>
+  <a href="#klines">klines</a>
+  <a href="#aggtrades">aggTrades</a>
+  <a href="#bigtrades">bigTrades</a>
+  <a href="#volumeprofile">volumeProfile</a>
+  <a href="#volumeprofilerange">volumeProfileRange</a>
+  <a href="#continuousinfo">continuousInfo</a>
+  <a href="#syncticks">syncTicks</a>
+  <a href="#tickinfo">tickInfo</a>
+  <a href="#syncstatus">syncStatus</a>
+  <a href="#synchistory">syncHistory</a>
+  <a href="#rawticks">rawTicks</a>
+  <a href="#account">account</a>
+  <a href="#exchangeinfo">exchangeInfo</a>
+  <a href="#instrumentinfo">instrumentInfo</a>
+  <a href="#searchsymbol">searchSymbol</a>
+  <a href="#instrumentbyunderlying">instrumentByUnderlying</a>
+  <a href="#optionchain">optionChain</a>
+  <a href="#chainsub">chainSub / chainUnsub</a>
+  <a href="#ping">ping</a>
+  <a href="#subscribe">SUBSCRIBE / UNSUBSCRIBE</a>
+  <div class="grp">Streams</div>
+  <a href="#s-trade">@trade</a>
+  <a href="#s-book">@bookTicker</a>
+  <a href="#s-depth">@depth</a>
+  <a href="#s-mbo">@mbo</a>
+  <a href="#s-kline">@kline</a>
+  <div class="grp">Reference</div>
+  <a href="#intervals"><span class="vi">Khung thời gian</span><span class="en">Intervals</span></a>
+  <a href="#errors"><span class="vi">Lỗi</span><span class="en">Errors</span></a>
+  <a href="#notes"><span class="vi">Lưu ý</span><span class="en">Notes &amp; gotchas</span></a>
+  <a href="#changelog"><span class="vi">Lịch sử phiên bản</span><span class="en">Changelog</span></a>
+  <div class="grp"><span class="vi">Ví dụ</span><span class="en">Examples</span></div>
+  <a href="#ex-js">JavaScript</a>
+  <a href="#ex-py">Python</a>
+  <a href="#ex-cs">C#</a>
+  <hr>
+  <a href="api.md" class="h" target="_blank"><span class="vi">↓ api.md (Markdown cho AI)</span><span class="en">↓ api.md (Markdown for AI)</span></a>
+  <a href="footprint.html" class="h"><span class="vi">→ Hướng dẫn Footprint</span><span class="en">→ Footprint guide</span></a>
+  <a href="bigtrades.html" class="h"><span class="vi">→ Big trades (parity ATAS)</span><span class="en">→ Big trades (ATAS parity)</span></a>
+  <a href="recipes.html" class="h"><span class="vi">→ Cookbook chỉ báo (Recipes)</span><span class="en">→ Indicator cookbook (Recipes)</span></a>
+  <a href="dom.html" class="h"><span class="vi">→ DOM (order book ladder)</span><span class="en">→ DOM (order book ladder)</span></a>
+  <a href="heatmap.html" class="h"><span class="vi">→ Heatmap (Bookmap)</span><span class="en">→ Heatmap (Bookmap)</span></a>
+  <a href="volumeprofile.html" class="h"><span class="vi">→ Volume Profile (VPOC/VA)</span><span class="en">→ Volume Profile (VPOC/VA)</span></a>
+  <a href="continuous.html" class="h"><span class="vi">→ Hợp đồng liên tục (continuous)</span><span class="en">→ Continuous contract</span></a>
+  <a href="options.html" class="h"><span class="vi">→ Options · GEX · 0DTE</span><span class="en">→ Options · GEX · 0DTE</span></a>
+  <a href="storage.html" class="h"><span class="vi">→ Lưu trữ &amp; tối ưu API</span><span class="en">→ Storage &amp; API tuning</span></a>
+</nav>
+<main>
+
+<h2 id="overview"><span class="vi">Tổng quan</span><span class="en">Overview</span></h2>
+<p><span class="vi">Đây là <b>WebSocket API kiểu Binance</b> trên một endpoint duy nhất, phát dữ liệu thị trường
+futures (live + lịch sử) từ <b>Rithmic (R|API+)</b>. Client subscribe đúng stream nào thì chỉ nhận stream đó —
+không cần tự lọc.</span>
+<span class="en">This is a <b>Binance-style WebSocket API</b> over a single endpoint that streams live and historical
+futures market data from <b>Rithmic (R|API+)</b>. A client subscribes to exactly the streams it wants and
+receives only those — no client-side filtering needed.</span></p>
+<p><span class="vi">Cùng cổng HTTP đó cũng phục vụ: web app chart tại <code>GET /</code>, tài liệu này tại
+<code>GET /api.html</code>, và hướng dẫn footprint tại <code>GET /footprint.html</code>.</span>
+<span class="en">The same HTTP port also serves the chart web app at <code>GET /</code>, this document at
+<code>GET /api.html</code>, and the footprint guide at <code>GET /footprint.html</code>.</span></p>
+<table>
+<tr><th><span class="vi">Thuộc tính</span><span class="en">Property</span></th><th><span class="vi">Giá trị</span><span class="en">Value</span></th></tr>
+<tr><td>Transport</td><td><span class="vi">WebSocket (RFC 6455), khung text, JSON UTF-8</span><span class="en">WebSocket (RFC 6455), text frames, UTF-8 JSON</span></td></tr>
+<tr><td>Endpoint</td><td><code>ws://127.0.0.1:9001/</code></td></tr>
+<tr><td><span class="vi">Mã hoá</span><span class="en">Encoding</span></td><td><span class="vi">Mỗi message là 1 object JSON</span><span class="en">One JSON object per message</span></td></tr>
+<tr><td>Auth</td><td><span class="vi">Không cần ở socket — gateway đã đăng nhập Rithmic sẵn. Chỉ bind localhost.</span><span class="en">None at the socket — the gateway is already logged into Rithmic. Bind to localhost only.</span></td></tr>
+<tr><td>Symbol</td><td><span class="vi">Không phân biệt hoa/thường; server tự viết HOA (<code>esu6</code>→<code>ESU6</code>)</span><span class="en">Case-insensitive; the server upper-cases symbols (<code>esu6</code>→<code>ESU6</code>)</span></td></tr>
+<tr><td>Timestamp</td><td><span class="vi">Unix <b>mili-giây</b> (UTC) ở mọi nơi</span><span class="en">Unix <b>milliseconds</b> (UTC) everywhere</span></td></tr>
+</table>
+
+<h2 id="connect"><span class="vi">Kết nối</span><span class="en">Connecting</span></h2>
+<p><span class="vi">Mở WebSocket tới endpoint. Không có bước handshake/login — nối xong là gửi request và subscribe được ngay.</span>
+<span class="en">Open a WebSocket to the endpoint. There is no handshake/login step — once connected you may send requests and subscribe immediately.</span></p>
+<pre><code>ws = new WebSocket("ws://127.0.0.1:9001/");</code></pre>
+
+<h2 id="lifecycle"><span class="vi">Vòng đời kết nối &amp; tự nối lại</span><span class="en">Connection lifecycle &amp; reconnect</span></h2>
+<p><span class="vi">Có <b>2 kết nối độc lập</b> cần phân biệt:</span><span class="en">There are <b>two independent connections</b> to keep in mind:</span></p>
+<p><span class="vi"><b>1. WebSocket của bạn (client → gateway).</b> Không auth. Subscription gắn với socket của bạn — socket đóng là mất. Nên nếu <i>socket của bạn</i> rớt, hãy nối lại <b>và SUBSCRIBE lại</b> (vòng retry ~2s là đủ).</span>
+<span class="en"><b>1. Your WebSocket (client → gateway).</b> No auth. Server-side subscriptions are tied to your socket — if it closes they are dropped. So if <i>your</i> socket drops, reconnect <b>and re-SUBSCRIBE</b> (a ~2 s retry loop is fine).</span></p>
+<p><span class="vi"><b>2. Đường upstream của gateway tới Rithmic.</b> Gateway giữ <b>một</b> phiên R|API+ phục vụ mọi client. Nếu đường này rớt (chập mạng → Rithmic <code>ConnectionBroken</code>), gateway sẽ:</span>
+<span class="en"><b>2. The gateway's upstream link to Rithmic.</b> The gateway keeps <b>one</b> logged-in R|API+ session feeding all clients. If that link drops (network blip → Rithmic <code>ConnectionBroken</code>), the gateway:</span></p>
+<ul>
+<li><span class="vi"><b>tự nối lại</b> — thử khoảng <b>mỗi 30s tới khi được</b> (khớp nhịp "dưới 1 phút" của Rithmic; không giới hạn số lần), và</span>
+<span class="en"><b>auto-reconnects</b> — retries about <b>every 30 s until it succeeds</b> (matching Rithmic's sub-minute cadence; no attempt cap), and</span></li>
+<li><span class="vi">khi thành công, <b>tự phát lại MỌI subscription</b> đang có — bạn <b>không</b> cần SUBSCRIBE lại.</span>
+<span class="en">on success, <b>auto-restores every active subscription</b> — you do <b>not</b> re-SUBSCRIBE.</span></li>
+</ul>
+<p><span class="vi">Trong lúc upstream gián đoạn, stream chỉ <b>tạm dừng</b> rồi tự chạy lại khi nối được — không có frame lỗi cho cú chập tạm thời. Request (<code>klines</code>, <code>aggTrades</code>…) gửi đúng lúc gián đoạn có thể timeout; cứ gửi lại. Gateway chỉ ngừng thử khi Rithmic <b>từ chối</b> đăng nhập lại (TK hết hạn/khoá) hoặc người vận hành đăng xuất.</span>
+<span class="en">While the upstream is down, stream events simply <b>pause</b> and resume automatically once it reconnects — no error frame is sent for a transient blip. Requests sent during the outage may time out; just retry. The gateway stops trying only if Rithmic <b>rejects</b> the re-login (expired/disabled account) or the operator logs out.</span></p>
+<p class="note"><span class="vi"><b>Tóm lại cho client:</b> giữ socket mở, đừng huỷ chỉ vì stream im — gateway đang tự chữa upstream và sẽ phát lại subscription. Bạn chỉ cần tự lo nối lại cho <i>socket của mình</i>.</span>
+<span class="en"><b>Takeaway:</b> keep your socket open; don't tear down just because events went quiet — the gateway is healing the upstream and will replay your subscriptions. Only handle reconnection for <i>your own</i> socket.</span></p>
+
+<h2 id="envelope"><span class="vi">Định dạng message</span><span class="en">Message format</span></h2>
+<p><span class="vi">Mỗi message bạn <b>gửi</b> là object JSON có <code>method</code>. Gắn <code>id</code> (số hoặc chuỗi) để khớp với response.</span>
+<span class="en">Every message you <b>send</b> is a JSON object with a <code>method</code>. Attach a unique <code>id</code> (number or string) to correlate the response.</span></p>
+<pre><code>{ "method": "&lt;name&gt;", "params": { ... } | [ ... ], "id": 7 }</code></pre>
+<p><span class="vi">Có 2 loại message <b>đến từ</b> server:</span><span class="en">Two kinds of messages arrive <b>from</b> the server:</span></p>
+<table>
+<tr><th><span class="vi">Loại</span><span class="en">Kind</span></th><th><span class="vi">Hình dạng</span><span class="en">Shape</span></th><th><span class="vi">Khi nào</span><span class="en">When</span></th></tr>
+<tr><td><b>Response</b></td><td><code>{ "id":7, "status":200, "result":... }</code></td><td><span class="vi">Trả lời request cùng <code>id</code></span><span class="en">Reply to a request with that <code>id</code></span></td></tr>
+<tr><td><b><span class="vi">Stream event</span><span class="en">Stream event</span></b></td><td><code>{ "stream":"cme.esu6@trade", "data":{...} }</code></td><td><span class="vi">Đẩy liên tục sau khi SUBSCRIBE</span><span class="en">Pushed continuously after you SUBSCRIBE</span></td></tr>
+</table>
+<div class="note"><span class="vi">Phân loại: kiểm tra <code>msg.stream</code> trước (là push event); nếu không thì khớp <code>msg.id</code> với request đang chờ. Lỗi có <code>error</code> và/hoặc <code>status</code> ≥ 400.</span>
+<span class="en">Route by checking for <code>msg.stream</code> first (push event); otherwise match <code>msg.id</code> to a pending request. Errors carry <code>error</code> and/or a <code>status</code> ≥ 400.</span></div>
+
+<h2 id="klines">Requests</h2>
+<div class="note trybar"><span class="vi">Các nút <b>▶ Execute</b> dưới đây nối thẳng gateway và chạy <b>thật</b> (xem kết quả/stream trả về). Đổi mã ở đây:</span>
+<span class="en">The <b>▶ Execute</b> buttons below hit the gateway and run for <b>real</b> (see the actual response/stream). Change the instrument here:</span>
+&nbsp; Symbol <input id="trySym" value="ESU6" style="width:80px"> &nbsp; <span class="vi">Sàn</span><span class="en">Exch</span> <input id="tryExch" value="CME" style="width:60px"></div>
+<h3 id="klines-h"><span class="tag req">request</span> klines — <span class="vi">nến lịch sử</span><span class="en">historical candles</span></h3>
+<p><span class="vi">Trả về nến OHLCV trong một khoảng thời gian. Dựa trên bar-replay của Rithmic.</span>
+<span class="en">Returns OHLCV candles for a time window. Backed by Rithmic bar replay.</span></p>
+<pre><code>{ "method": "klines",
+  "params": { "exchange":"CME", "symbol":"ESU6", "interval":"1m",
+              "startTime": 1718000000000, "endTime": 1718003600000, "limit": 500 },
+  "id": 1 }</code></pre>
+<table>
+<tr><th>Param</th><th><span class="vi">Kiểu</span><span class="en">Type</span></th><th><span class="vi">Ghi chú</span><span class="en">Notes</span></th></tr>
+<tr><td><code>exchange</code></td><td>string</td><td><span class="vi">vd <code>CME</code>. Mặc định <code>CME</code>.</span><span class="en">e.g. <code>CME</code>. Default <code>CME</code>.</span></td></tr>
+<tr><td><code>symbol</code></td><td>string</td><td><span class="vi">Hợp đồng, vd <code>ESU6</code>. <b>Bắt buộc.</b></span><span class="en">Contract, e.g. <code>ESU6</code>. <b>Required.</b></span></td></tr>
+<tr><td><code>interval</code></td><td>string</td><td><span class="vi">Xem <a class="h" href="#intervals">Khung thời gian</a>. Mặc định <code>1m</code>.</span><span class="en">See <a class="h" href="#intervals">Intervals</a>. Default <code>1m</code>.</span></td></tr>
+<tr><td><code>startTime</code>/<code>endTime</code></td><td>int (ms)</td><td><span class="vi">Cửa sổ. Mặc định end=now, start=end−1h.</span><span class="en">Window. Default end = now, start = end − 1h.</span></td></tr>
+<tr><td><code>limit</code></td><td>int</td><td><span class="vi">Giữ tối đa N nến gần nhất. Mặc định 500.</span><span class="en">Keep at most the last N candles. Default 500.</span></td></tr>
+</table>
+<p><span class="vi">Response — mảng <code>[openMs, open, high, low, close, volume, closeMs]</code>:</span>
+<span class="en">Response — array of <code>[openMs, open, high, low, close, volume, closeMs]</code>:</span></p>
+<pre><code>{ "id":1, "status":200, "result":[
+  [1718000000000, 5500.25, 5501.00, 5499.75, 5500.50, 182, 1718000060000],
+  [1718000060000, 5500.50, 5502.25, 5500.25, 5501.75, 240, 1718000120000]
+]}</code></pre>
+<button class="run" data-method="klines">Execute</button><pre class="out"></pre>
+<div class="note warn"><span class="vi">Lần đầu cho mỗi instrument+interval sẽ "warm" bar-handle, mất ~2.5&nbsp;s. Kết quả rỗng nghĩa là không có nến trong cửa sổ (vd thị trường đóng cửa) — hãy nới cửa sổ rộng hơn.</span>
+<span class="en">The first request for a given instrument+interval warms a bar handle and may take ~2.5&nbsp;s. An empty result means there were no bars in the window (e.g. market closed) — widen the window.</span></div>
+
+<h3 id="aggtrades"><span class="tag req">request</span> aggTrades — <span class="vi">trade lịch sử</span><span class="en">historical trades</span></h3>
+<p><span class="vi">Trả về từng lệnh khớp lịch sử <b>kèm bên chủ động (aggressor)</b>. Đây là dữ liệu bạn replay để dựng <a class="h" href="footprint.html">footprint</a> cho nến quá khứ. Ưu tiên lấy từ Rithmic replay; phiên Rithmic không replay được (chợ đóng / phiên cũ) thì rơi xuống <b>kho tick cục bộ</b> của gateway (trade ghi xuống đĩa lúc live) — nên footprint/big-trade còn lại qua các lần khởi động. Rỗng chỉ khi cả hai đều không có.</span>
+<span class="en">Returns individual historical trade prints <b>with aggressor side</b>. This is the data you replay to build a <a class="h" href="footprint.html">footprint</a> for past candles. Served from Rithmic replay when available; for sessions Rithmic can no longer replay (market closed / older) it falls back to the gateway's <b>local tick store</b> (trades recorded live to disk), so footprint/big-trade history survives restarts. Empty only if neither has data.</span></p>
+<pre><code>{ "method":"aggTrades",
+  "params":{ "exchange":"CME", "symbol":"ESU6",
+             "startTime":1718000000000, "endTime":1718003600000, "limit":0 },
+  "id": 2 }</code></pre>
+<p><span class="vi">Response — mảng <code>[timeMs, price, qty, side, ordId, tu]</code>; side là <span class="b">"B"</span> (mua chủ động / quét ask) hoặc <span class="s">"S"</span> (bán chủ động / quét bid), hoặc <code>""</code> nếu không rõ. <code>tu</code> = mốc khớp <b>micro giây</b> của sàn — các print cùng matching event chia sẻ; cộng các print liên tiếp cùng <code>tu</code> = một cumulative trade (sweep), đúng khoá ATAS gom (<code>CumulativeTrade.Time</code>; xem recipes §1). <code>ordId</code> (<code>AggressorExchOrdId</code>) — Rithmic CÓ cấp nhưng gom theo nó gộp dồn lệnh khớp rải nhiều event; chỉ là dự phòng khi thiếu <code>tu</code>.</span>
+<span class="en">Response — array of <code>[timeMs, price, qty, side, ordId, tu]</code> where side is <span class="b">"B"</span> (buy aggressor / lifted ask) or <span class="s">"S"</span> (sell aggressor / hit bid), or <code>""</code> if unknown. <code>tu</code> = exchange match time in <b>microseconds</b> — prints of one matching event share it; sum consecutive prints sharing <code>tu</code> = one cumulative trade (sweep), the key ATAS groups on (its <code>CumulativeTrade.Time</code>; recipes §1). <code>ordId</code> (<code>AggressorExchOrdId</code>) — Rithmic supplies it but grouping by it over-merges an order filling across several events; fallback only when <code>tu</code> is missing.</span></p>
+<pre><code>{ "id":2, "status":200, "result":[
+  [1718000001120, 5500.25, 2, "B", "6417163530506", 1718000001120300],
+  [1718000001450, 5500.00, 1, "S", "6417163530632", 1718000001450900],
+  [1718000001450, 5500.00, 4, "S", "6417163530632", 1718000001450900]
+]}</code></pre>
+<button class="run" data-method="aggTrades">Execute</button><pre class="out"></pre>
+
+<h3 id="bigtrades"><span class="tag req">request</span> bigTrades — <span class="vi">big trade gom sẵn (server-side)</span><span class="en">cumulative big trades (server-side)</span></h3>
+<p><span class="vi">Gateway lấy tick thô trong khoảng (replay → kho local), <b>gom theo matching event</b> (<code>tu</code> → <code>o</code> → cửa sổ 50ms — luật ATAS), lọc <code>min</code>, và <b>chỉ trả về các bóng</b> — client vẽ big trade cả phiên mà không phải tải hàng triệu tick. Xem <a class="h" href="bigtrades.html">Big trades</a>.<br><b><code>merge</code></b> (ms, tùy chọn, mặc định <code>0</code>): <code>0</code> = gom chính xác theo matching-event; <code>&gt;0</code> = <b>gom kiểu ATAS cumulative</b> — gộp MỌI lệnh cùng chiều trong cửa sổ <code>merge</code> ms (bất kể <code>tu</code>/<code>o</code>) → bóng to/ít hơn, giống ATAS hơn (bỏ qua cache phiên, tính tươi).</span>
+<span class="en">The gateway pulls raw trades for the range (replay → local store), <b>groups by matching event</b> (<code>tu</code> → <code>o</code> → 50 ms window — the ATAS rule), filters by <code>min</code>, and returns <b>only the bubbles</b> — a client draws a whole session's big trades without pulling millions of ticks. See <a class="h" href="bigtrades.html">Big trades</a>.<br><b><code>merge</code></b> (ms, optional, default <code>0</code>): <code>0</code> = precise matching-event grouping; <code>&gt;0</code> = <b>ATAS-style cumulative window</b> — merge ALL same-side prints within <code>merge</code> ms regardless of <code>tu</code>/<code>o</code> → fewer, larger bubbles (bypasses the per-session cache, computed fresh).</span></p>
+<pre><code>{ "method":"bigTrades", "id":8,
+  "params":{ "exchange":"CME", "symbol":"ESU6", "startTime":1718000000000, "endTime":1718003600000, "min":50, "merge":0 } }
+→ { "id":8, "status":200, "result":[
+  [1718000001120, "B", 271, 7612.75, 7613.00],   // [timeMs, side, vol, firstPrice, lastPrice] — vol >= min
+  [1718000002360, "S", 84,  7611.50, 7611.50]    // firstPrice==lastPrice -> bóng tròn; khác nhau -> dải quét
+]}</code></pre>
+<button class="run" data-method="bigTrades">Execute</button><pre class="out"></pre>
+
+<h3 id="volumeprofile"><span class="tag req">request</span> volumeProfile — <span class="vi">volume-at-price phiên hiện tại (native)</span><span class="en">current-session volume-at-price (native)</span></h3>
+<p><span class="vi"><code>getVolumeAtPrice</code> của Rithmic cho <b>riêng phiên live</b> — khỏi cần data local. Xem <a class="h" href="volumeprofile.html">Volume Profile</a>.</span>
+<span class="en">Rithmic's <code>getVolumeAtPrice</code> for the <b>live session only</b> — no local history needed. See <a class="h" href="volumeprofile.html">Volume Profile</a>.</span></p>
+<pre><code>{ "method":"volumeProfile", "id":9, "params":{ "exchange":"CME", "symbol":"ESU6" } }
+→ { "id":9, "status":200, "result":{ "rows":[[5012.25,1840], …], "total":…, "vpoc":5012.25, "rp":0 } }   // rows giá tăng dần · vpoc=giá KL lớn nhất · rp 0=ok/7=no-data/-1=timeout</code></pre>
+<button class="run" data-method="volumeProfile">Execute</button><pre class="out"></pre>
+
+<h3 id="volumeprofilerange"><span class="tag req">request</span> volumeProfileRange — <span class="vi">VP nhiều phiên (kho local)</span><span class="en">multi-session VP (local store)</span></h3>
+<p><span class="vi">Dựng volume-at-price <b>N phiên giao dịch</b> từ kho tick (bỏ T7/CN; phiên đóng kho trống tự backfill 1 lần). <code>split:"1"</code> = mỗi phiên 1 profile; bỏ = gộp 1 cục. Xem <a class="h" href="volumeprofile.html">Volume Profile</a>.</span>
+<span class="en">Builds volume-at-price over <b>N trading sessions</b> from the tick store (skips Sat/Sun; an empty closed session is backfilled once). <code>split:"1"</code> = one profile per session; omitted = one merged. See <a class="h" href="volumeprofile.html">Volume Profile</a>.</span></p>
+<pre><code>{ "method":"volumeProfileRange", "id":10,
+  "params":{ "exchange":"CME", "symbol":"ESU6", "days":6, "split":"1" } }   // days = số PHIÊN giao dịch (bỏ cuối tuần) / trading sessions
+→ split:  { "sessions":[{ "start":…, "end":…, "rows":[[p,v],…], "total":…, "vpoc":… }], "total":…, "split":true }
+   merged: { "rows":[[p,v],…], "total":…, "vpoc":…, "sessions":&lt;count&gt; }</code></pre>
+<button class="run" data-method="volumeProfileRange">Execute</button><pre class="out"></pre>
+
+<h3 id="continuousinfo"><span class="tag req">request</span> continuousInfo — <span class="vi">chuỗi hợp đồng liên tục</span><span class="en">continuous-contract chain</span></h3>
+<p><span class="vi">Giải <b>chuỗi liên tục back-adjusted</b> cho 1 mã gốc từ các hợp đồng local. Trả <code>front</code> (hợp đồng subscribe live) + <code>segments</code> (đoạn từng hợp đồng + <code>offset</code> giá). Thêm <code>cont:{root,rule,adjust,rolls?}</code> vào <code>klines</code>/<code>aggTrades</code>/<code>bigTrades</code>/<code>volumeProfileRange</code> để nhận data ĐÃ ghép + back-adjusted. Xem <a class="h" href="continuous.html">Hợp đồng liên tục</a>.</span>
+<span class="en">Resolves the <b>back-adjusted continuous</b> chain for a root from the local contracts. Returns <code>front</code> (the live contract to subscribe) + <code>segments</code> (per-contract spans + price <code>offset</code>). Add <code>cont:{root,rule,adjust,rolls?}</code> to <code>klines</code>/<code>aggTrades</code>/<code>bigTrades</code>/<code>volumeProfileRange</code> to get data already stitched + back-adjusted. See <a class="h" href="continuous.html">Continuous contract</a>.</span></p>
+<pre><code>{ "method":"continuousInfo", "id":11,
+  "params":{ "exchange":"CME", "root":"ES", "rule":"date", "adjust":"1", "rolls":{ "ESM6":"20260619" } } }
+   // rule "date"|"volume" · adjust = back-adjust · rolls (tùy chọn / optional) ép ngày roll yyyymmdd (chỉ rule date / date rule only)
+→ { "id":11, "status":200, "result":{
+  "front":"ESU6",
+  "segments":[ { "sym":"ESM6", "start":0, "end":1781906400000, "offset":-12.5 },
+               { "sym":"ESU6", "start":1781906400000, "end":-1, "offset":0 } ] }}   // end=-1 = front (tới hiện tại) · offset cộng vào giá / added to price</code></pre>
+<button class="run" data-method="continuousInfo">Execute</button><pre class="out"></pre>
+
+<h3 id="syncticks"><span class="tag req">request</span> syncTicks — <span class="vi">tải lịch sử tick vào kho local</span><span class="en">backfill tick history into the local store</span></h3>
+<p><span class="vi">Đưa vào hàng đợi job <b>nền</b> hốt tick các phiên ĐÓNG từ Rithmic (<code>replayBars(Tick,1)</code>, phân trang) vào kho tick local, <b>phiên gần nhất trước</b> — để footprint/big-trade lịch sử dùng offline & sống qua restart. Trả về ngay; theo dõi tiến độ bằng <code>syncStatus</code>. Bỏ qua phiên <b>Thứ Bảy/Chủ Nhật</b> (CME nghỉ, khỏi gọi Rithmic) và dừng lùi <b>~10 ngày trước phiên liquid đầu tiên</b>. <code>priority:1</code> = chen trước hàng nền; <code>expMs</code> = HSD hợp đồng → tự chốt (finalize) sau khi bắt phiên cuối.</span>
+<span class="en">Queues a <b>background</b> job pulling closed-session ticks from Rithmic (<code>replayBars(Tick,1)</code>, paginated) into the local tick store, <b>recent-session-first</b> — so footprint/big-trade history works offline & survives restarts. Returns immediately; poll <code>syncStatus</code> for progress. Skips <b>Sat/Sun</b> sessions (CME closed, no Rithmic call) and stops <b>~10 days before the first liquid session</b>. <code>priority:1</code> jumps the queue; <code>expMs</code> = contract expiry → auto-finalize after the last session is captured.</span></p>
+<pre><code>{ "method":"syncTicks", "id":10,
+  "params":{ "exchange":"CME", "symbol":"ESM6", "startTime":1716000000000, "endTime":1718000000000, "expMs":1718323200000, "priority":1 } }
+→ { "id":10, "status":200, "result":{ "queued":12, "symbol":"ESM6", "kind":"tick" } }   // queued=0,"final":true nếu đã chốt / if finalized</code></pre>
+<p style="color:var(--sub);font-size:13px"><span class="vi">(không có nút Execute — đây là lệnh CÓ tác dụng phụ: sẽ chạy đồng bộ thật.)</span><span class="en">(no Execute button — this is a side-effecting call: it would start a real sync.)</span></p>
+
+<h3 id="tickinfo"><span class="tag req">request</span> tickInfo — <span class="vi">tóm tắt kho tick từng mã</span><span class="en">local-store summary per symbol</span></h3>
+<p><span class="vi">Kho local đang có gì cho mỗi mã — phục vụ popup quản lý "⤓ Lịch sử".</span>
+<span class="en">What the local store holds per symbol — drives the "sync history" popup.</span></p>
+<pre><code>{ "method":"tickInfo", "id":11, "params":{ "exchange":"CME", "symbols":["ESU6","ESM6"] } }
+→ { "id":11, "status":200, "result":[
+  { "symbol":"ESU6", "sessions":9, "ticks":1090000, "finalized":false, "syncing":true, "first":"20260605", "last":"20260618" }
+]}   // sessions=số phiên có data · ticks=tổng tick · finalized=đã chốt · syncing=đang sync · first/last=phiên đầu/cuối (yyyyMMdd)</code></pre>
+<button class="run" data-method="tickInfo">Execute</button><pre class="out"></pre>
+
+<h3 id="syncstatus"><span class="tag req">request</span> syncStatus — <span class="vi">tiến độ đồng bộ nền</span><span class="en">background sync progress</span></h3>
+<p><span class="vi">Tiến độ của 1 worker đồng bộ nền (cả tick lẫn nến). <code>pct</code> tính theo ĐỈNH hàng đợi → tăng dần khi rút.</span>
+<span class="en">Progress of the single background sync worker (ticks &amp; bars). <code>pct</code> is against the peak queue depth so it rises monotonically.</span></p>
+<pre><code>{ "method":"syncStatus", "id":12 }
+→ { "id":12, "status":200, "result":{ "remaining":7, "total":12, "done":5, "pct":41, "running":true, "current":"ESM6 tick 06-12" } }</code></pre>
+<button class="run" data-method="syncStatus">Execute</button><pre class="out"></pre>
+
+<h3 id="synchistory"><span class="tag req">request</span> syncHistory — <span class="vi">tải lịch sử nến vào kho bar</span><span class="en">backfill bar history into the bar store</span></h3>
+<p><span class="vi">Như <code>syncTicks</code> nhưng cho <b>kho nến</b> (klines) — để đổi khung thời gian / mã sau này đọc local. Đưa vào hàng đợi nền chung; theo dõi bằng <code>syncStatus</code>. Khi mở chart, các hợp đồng còn niêm yết cũng được prefetch nền.</span>
+<span class="en">Like <code>syncTicks</code> but for the <b>bar store</b> (klines) — so later timeframe/symbol switches read locally. Queued on the same background worker; track with <code>syncStatus</code>. Listed contracts are also prefetched in the background when a chart opens.</span></p>
+<pre><code>{ "method":"syncHistory", "id":13,
+  "params":{ "exchange":"CME", "symbol":"ESU6", "intervals":["1d","1m"] } }   // intervals tuỳ chọn (mặc định 1d) / optional (default 1d)
+→ { "id":13, "status":200, "result":{ "queued":2, "symbol":"ESU6" } }   // queued = số khung được xếp hàng / intervals queued</code></pre>
+<p style="color:var(--sub);font-size:13px"><span class="vi">(không có nút Execute — lệnh CÓ tác dụng phụ: sẽ chạy đồng bộ thật.)</span><span class="en">(no Execute button — side-effecting: it would start a real sync.)</span></p>
+
+<h3 id="rawticks"><span class="tag req">request</span> rawTicks — <span class="vi">đo độ sâu tick-history Rithmic (debug)</span><span class="en">probe Rithmic tick-history depth (debug)</span></h3>
+<p><span class="vi">Hỏi <b>thẳng Rithmic</b> (bỏ qua kho local) xem tick-history thật sự lùi được tới đâu, trả <b>mẫu đầu/cuối</b> thay vì cả payload. Như <code>mboProbe</code>: có <b>tác dụng phụ</b> (subscribe + replay), dùng để chẩn đoán — không nằm trong luồng client thường.</span>
+<span class="en">Asks <b>Rithmic directly</b> (bypassing the local store) how far back its tick history actually reaches, returning a <b>head/tail sample</b> instead of the full payload. Like <code>mboProbe</code> it has <b>side effects</b> (subscribe + replay) — a debugging tool, not the normal client path.</span></p>
+<pre><code>{ "method":"rawTicks", "id":14,
+  "params":{ "exchange":"CME", "symbol":"ESU6", "startTime":1782000000000, "endTime":1782010000000, "mode":"trades" } }
+   // mode: "trades" (mặc định → replayTrades, chỉ phiên hiện tại) | "bars"/"tick"/"1t" (→ getHistoryBars Tick/1, sâu ~90 ngày)
+→ { "id":14, "status":200, "result":{
+     "mode":"trades", "exchange":"CME", "symbol":"ESU6", "count":53120, "capped":false, "withOrderId":true,
+     "firstTs":1782000001000, "lastTs":1782009998000, "firstIso":"...Z", "lastIso":"...Z",
+     "sampleHead":[ [t,p,q,side,o,tu], ... ], "sampleTail":[ ... ] } }</code></pre>
+<div class="note warn"><span class="vi"><b>rawTicks</b> (debug): <code>count</code> = tổng dòng Rithmic trả (<code>capped:true</code> nếu nhiều hơn mẫu); <code>withOrderId</code> = có id lệnh aggressor (<code>o</code>); <code>firstTs</code>/<code>lastTs</code> = phạm vi thật nhận được. Trả khi có cờ hoàn tất hoặc timeout an toàn 40s. Xem <a class="h" href="storage.html">Storage</a>.</span>
+<span class="en"><b>rawTicks</b> (debug): <code>count</code> = total rows Rithmic returned (<code>capped:true</code> if more than the sample); <code>withOrderId</code> = rows carry the aggressor order id (<code>o</code>); <code>firstTs</code>/<code>lastTs</code> = the range actually returned. Replies on a completion flag or a 40 s safety timeout. See <a class="h" href="storage.html">Storage</a>.</span></div>
+
+<h3 id="account"><span class="tag req">request</span> account</h3>
+<p><span class="vi">Trả về các tài khoản giao dịch đang đăng nhập (flatten từ <code>AccountList</code> của Rithmic).</span>
+<span class="en">Returns the logged-in trading accounts (flattened Rithmic <code>AccountList</code>).</span></p>
+<pre><code>{ "method":"account", "id":3 }
+→ { "id":3, "status":200, "result": { "Accounts":[ { "AccountId":"...", "FcmId":"...", "IbId":"...", "AccountName":"..." } ] } }</code></pre>
+<button class="run" data-method="account">Execute</button><pre class="out"></pre>
+
+<h3 id="exchangeinfo"><span class="tag req">request</span> exchangeInfo</h3>
+<p><span class="vi">Trả về danh sách sàn mà tài khoản truy cập được.</span><span class="en">Returns the list of exchanges available to the account.</span></p>
+<pre><code>{ "method":"exchangeInfo", "id":4 }
+→ { "id":4, "status":200, "result": { "Exchanges":[ ... ] } }</code></pre>
+<button class="run" data-method="exchangeInfo">Execute</button><pre class="out"></pre>
+
+<h3 id="instrumentinfo"><span class="tag req">request</span> instrumentInfo</h3>
+<p><span class="vi">Thông tin tham chiếu của một mã: <b>tick size</b>, số lẻ giá, <b>ngày hết hạn</b> hợp đồng, point value… (nguồn chuẩn từ Rithmic — đừng đoán tick từ giá).</span>
+<span class="en">Reference data for an instrument: <b>tick size</b>, price decimals, contract <b>expiration</b>, point value… (authoritative from Rithmic — don't infer tick from prices).</span></p>
+<pre><code>{ "method":"instrumentInfo", "params":{ "exchange":"COMEX", "symbol":"GCG6" }, "id":6 }
+→ { "id":6, "status":200, "result":{
+     "symbol":"GCG6", "exchange":"COMEX",
+     "tickSize":0.1, "priceDecimals":1,
+     "expiration":"202602", "expirationTime":"...",
+     "pointValue":100, "currency":"USD",
+     "description":"Gold", "productCode":"GC", "instrumentType":"Future", "tradingExchange":"COMEX" } }</code></pre>
+<button class="run" data-method="instrumentInfo">Execute</button><pre class="out"></pre>
+<div class="note"><span class="vi">Gom từ <code>getRefData</code> + <code>getPriceIncrInfo</code> của Rithmic; có cache theo mã. Trường có thể thiếu nếu feed không trả (khi đó client tự suy tick từ giá làm fallback).</span>
+<span class="en">Aggregated from Rithmic <code>getRefData</code> + <code>getPriceIncrInfo</code>; cached per instrument. Fields may be missing if the feed doesn't return them (the client then falls back to inferring the tick from prices).</span></div>
+
+<h3 id="searchsymbol"><span class="tag req">request</span> searchSymbol</h3>
+<p><span class="vi">Tìm mã theo từ khoá (để gợi ý/chọn thay vì gõ tay). Trả danh sách instrument khớp.</span>
+<span class="en">Search instruments by keyword (for autocomplete/pick instead of typing). Returns matching instruments.</span></p>
+<pre><code>{ "method":"searchSymbol", "params":{ "query":"ES", "exchange":"CME" }, "id":7 }
+   // exchange tuỳ chọn: rỗng -> tìm tuần tự nhóm sàn chính CME/CBOT/NYMEX/COMEX rồi gộp (Rithmic bắt buộc 1 exchange/call).
+   // field mặc định "Symbol", op mặc định "Contains".
+   // field: Symbol | Description | ProductCode | InstrumentType | Exchange | ExpirationDate | Any
+   // op:    Contains | Equals | StartsWith | EndsWith
+→ { "id":7, "status":200, "result":[
+     { "symbol":"ESU6", "exchange":"CME", "description":"E-mini S&amp;P 500", "expiration":"202609", "productCode":"ES", "instrumentType":"Future" },
+     ... ] }</code></pre>
+<button class="run" data-method="searchSymbol">Execute</button><pre class="out"></pre>
+<div class="note"><span class="vi">Gom từ <code>searchInstrument</code> của Rithmic (mỗi kết quả là RefData đầy đủ). Có <b>kho symbol bền</b> (đĩa): trả ngay từ cache rồi refresh nền 1 lần/phiên — đỡ gọi Rithmic mỗi lần; hợp đồng hết hạn tự bị bỏ (rollover). <code>instrumentInfo</code> cũng đọc/ghi kho này.</span>
+<span class="en">From Rithmic <code>searchInstrument</code> (each result is full RefData). Backed by a <b>persistent symbol cache</b> (disk): served from cache first, refreshed once per run in the background — fewer Rithmic calls; expired contracts auto-dropped (rollover). <code>instrumentInfo</code> shares this store.</span></div>
+
+<h3 id="instrumentbyunderlying"><span class="tag req">request</span> instrumentByUnderlying <span class="vi">— chuỗi quyền chọn (Options popup + GEX/0DTE)</span><span class="en">— options chain (Options popup + GEX/0DTE)</span></h3>
+<p><span class="vi">Chuỗi quyền chọn của một <b>hợp đồng future</b> (future là underlying → strike settle vào nó, nhất quán spot). <b>Hai bước</b>; gateway <b>serialize</b> các call này (Rithmic single-in-flight — gọi chồng sẽ xếp hàng, không làm nhau timeout):</span>
+<span class="en">The options chain of a <b>futures contract</b> (the future is the underlying → strikes settle into it). <b>Two-step</b>; the gateway <b>serializes</b> these (Rithmic single-in-flight — concurrent calls queue instead of timing each other out):</span></p>
+<ol>
+<li><span class="vi"><code>expiration:""</code> → danh sách <b>ngày đáo hạn</b> (<code>CCYYMMDD</code>) của future (daily/weekly/monthly); <code>rows</code> rỗng.</span><span class="en"><code>expiration:""</code> → all option expiry <b>dates</b> (<code>CCYYMMDD</code>); <code>rows</code> empty.</span></li>
+<li><span class="vi"><code>expiration:"&lt;CCYYMMDD&gt;"</code> → các mã option (lưới strike) tại ngày đó.</span><span class="en"><code>expiration:"&lt;CCYYMMDD&gt;"</code> → the option instruments (strike grid) at that date.</span></li>
+</ol>
+<pre><code>{ "method":"instrumentByUnderlying", "params":{ "underlying":"ESU6", "exchange":"CME", "expiration":"" }, "id":8 }
+→ { "id":8, "status":200, "result":{ "expirations":["20260617","20260618", ...], "products":[], "rp":0, "rows":[] } }
+
+{ "method":"instrumentByUnderlying", "params":{ "underlying":"ESU6", "exchange":"CME", "expiration":"20260619" }, "id":9 }
+→ { "id":9, "status":200, "result":{ "expirations":["20260619"], "products":["E3D"], "rp":0,
+     "rows":[ ["ESU6 C7000",7000,"C","20260619","E3D"], ["ESU6 P7000",7000,"P","20260619","E3D"], ... ] } }</code></pre>
+<button class="run" data-method="instrumentByUnderlying">Execute</button><pre class="out"></pre>
+<table><tr><th>Field</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>expirations</code></td><td><span class="vi">Ngày đáo hạn option (CCYYMMDD)</span><span class="en">Option expiry dates (CCYYMMDD)</span></td></tr>
+<tr><td><code>rows</code></td><td><code>[symbol, strike, "C"/"P", expiration, productCode]</code></td></tr>
+<tr><td><code>rp</code></td><td><code>0</code>=ok · <code>7</code>=NO_DATA · <code>-1</code><span class="vi">=timeout (không trả trong 12s)</span><span class="en">=timeout (no reply in 12 s)</span></td></tr></table>
+<div class="note warn"><span class="vi"><b>Lọc Event Contracts</b> (<code>productCode</code> khớp <code>/^EC/</code> — vd <code>ECES</code>; EC vàng còn báo <b>strike ×10</b>). OI + bid/ask mỗi strike lấy từ stream <code>@bookTicker</code> (OI ở field <code>oi</code>) — GEX quét lô các strike ±dải, chụp, rồi huỷ. Không ra ngày → fallback <code>optionChain</code> (getOptionList theo tháng). Xem <a class="h" href="options.html">Options · GEX · 0DTE</a>.</span>
+<span class="en"><b>Filter Event Contracts</b> (<code>productCode</code> matching <code>/^EC/</code> — e.g. <code>ECES</code>; gold EC report a <b>10× strike</b>). Per-strike OI + bid/ask come from the <code>@bookTicker</code> stream (OI in <code>oi</code>); GEX batch-subscribes the strikes ±band, snapshots, unsubscribes. Falls back to <code>optionChain</code> (monthly getOptionList) if no dates. See <a class="h" href="options.html">Options · GEX · 0DTE</a>.</span></div>
+
+<h3 id="optionchain"><span class="tag req">request</span> optionChain <span class="vi">— chuỗi quyền chọn theo product + tháng (dự phòng)</span><span class="en">— options chain by product + month (fallback)</span></h3>
+<p><span class="vi">Đường còn lại để lấy chuỗi quyền chọn — Rithmic <code>getOptionList</code>, theo <b>mã product</b> + <b>tháng</b> (<code>YYYYMM</code>) thay vì 1 future cụ thể. <code>instrumentByUnderlying</code> được <b>ưu tiên</b> (spot-consistent, 1 call); <code>optionChain</code> là <b>dự phòng</b> khi <code>instrumentByUnderlying</code> không trả ngày nào. Xếp hàng như các call instrument khác; timeout <b>8s</b> → <code>rp:-1</code>.</span>
+<span class="en">The other route to an options chain — Rithmic <code>getOptionList</code>, keyed by <b>product code</b> + <b>month</b> (<code>YYYYMM</code>) instead of a specific future. <code>instrumentByUnderlying</code> is <b>preferred</b> (spot-consistent, one call); <code>optionChain</code> is the <b>fallback</b> when <code>instrumentByUnderlying</code> returns no dates. Serialized like other instrument calls; <b>8s</b> timeout → <code>rp:-1</code>.</span></p>
+<pre><code>{ "method":"optionChain", "id":10,
+  "params":{ "exchange":"CME", "product":"ES", "expiration":"202609" } }   // product BẮT BUỘC / required · expiration = YYYYMM (mặc định tháng này / default this month)
+→ { "id":10, "status":200, "result":{
+  "expirations":["20260919", ...],   // ngày đáo hạn hợp lệ (CCYYMMDD) / valid expiry dates
+  "products":["EW","E3D", ...], "rp":0,   // rp: 0=ok · 7=NO_DATA · -1=timeout
+  "rows":[ ["ESU6 C7000",7000,"C","20260919","EW"], ["ESU6 P7000",7000,"P","20260919","EW"] ] } }   // [symbol, strike, "C"/"P", expiration, productCode] — như instrumentByUnderlying</code></pre>
+<p class="note"><span class="vi">OI + bid/ask mỗi strike vẫn lấy từ <code>@bookTicker</code> (field <code>oi</code>) — giống <code>instrumentByUnderlying</code>.</span><span class="en">Per-strike OI + bid/ask still come from <code>@bookTicker</code> (the <code>oi</code> field) — same as <code>instrumentByUnderlying</code>.</span></p>
+<button class="run" data-method="optionChain">Execute</button><pre class="out"></pre>
+
+<h3 id="chainsub"><span class="tag req">request</span> chainSub / chainUnsub <span class="vi">— sub cả chuỗi option 1 call</span><span class="en">— bulk-subscribe a whole option chain</span></h3>
+<p><span class="vi">Một call subscribe <b>tất cả option của 1 underlying ở 1 kỳ hạn</b> trên Rithmic (<code>subscribeByUnderlying</code>) thay vì <code>subscribe</code> từng strike. Quote/OI/last vẫn chảy ra qua <code>@bookTicker</code> (và <code>@trade</code>) từng strike — client cứ subscribe các stream đó <b>như thường</b>; gateway chỉ <b>bỏ qua bước subscribe lẻ</b> cho các mã mà chuỗi đã phủ (mảng <code>symbols[]</code> bạn truyền). Đếm ref theo <code>exchange|underlying|expiration</code>; <code>chainUnsub</code> (hoặc ngắt kết nối) thả ref. Dùng cho <b>GEX</b> (quét OI) + <b>popup option</b>.</span>
+<span class="en">One call subscribes <b>all options of an underlying for one expiration</b> on Rithmic (<code>subscribeByUnderlying</code>) instead of one <code>subscribe</code> per strike. Quotes/OI/last still flow out via each strike's <code>@bookTicker</code> (and <code>@trade</code>) — the client subscribes those streams <b>as usual</b>; the gateway just <b>skips the per-strike Rithmic subscribe</b> for symbols a chain covers (the <code>symbols[]</code> you pass). Ref-counted per <code>exchange|underlying|expiration</code>; <code>chainUnsub</code> (or disconnect) releases it. Used by <b>GEX</b> (OI sweep) + the <b>options popup</b>.</span></p>
+<pre><code>{ "method":"chainSub", "id":15,
+  "params":{ "exchange":"COMEX", "underlying":"GCQ6", "expiration":"20260828",
+             "symbols":["GCQ6 C4150","GCQ6 P4150", ... ] } }
+→ { "id":15, "status":200, "result":{ "underlying":"GCQ6", "expiration":"20260828", "symbols":42, "bulk":true } }   // bulk=true: ref đầu tiên -> đã gọi Rithmic / first ref triggered the Rithmic subscribe
+
+{ "method":"chainUnsub", "id":16, "params":{ "exchange":"COMEX", "underlying":"GCQ6", "expiration":"20260828" } }</code></pre>
+<div class="note warn"><span class="vi">Đánh đổi: Rithmic stream <b>mọi</b> strike của kỳ hạn về gateway (feed nặng hơn) đổi lấy <b>ít call subscribe hơn hẳn</b> (né storm / "in use"). Xem <a class="h" href="options.html">Options · GEX · 0DTE</a>.</span>
+<span class="en">Trade-off: Rithmic streams <b>every</b> strike of the expiry to the gateway (heavier feed) in exchange for <b>far fewer subscribe calls</b> (dodges the per-strike storm / "in use" throttle). See <a class="h" href="options.html">Options · GEX · 0DTE</a>.</span></div>
+
+<h3 id="ping"><span class="tag req">request</span> ping</h3>
+<pre><code>{ "method":"ping", "id":5 }   →   { "id":5, "result":{} }</code></pre>
+<button class="run" data-method="ping">Execute</button><pre class="out"></pre>
+
+<h3 id="subscribe"><span class="tag req">request</span> SUBSCRIBE / UNSUBSCRIBE</h3>
+<p><span class="vi">Đăng ký (hoặc huỷ) một/nhiều stream. Tên stream là <code>&lt;SÀN&gt;.&lt;SYMBOL&gt;@&lt;loại&gt;</code> (không phân biệt hoa/thường).</span>
+<span class="en">Subscribe (or unsubscribe) to one or more streams. Stream names are <code>&lt;EXCHANGE&gt;.&lt;SYMBOL&gt;@&lt;type&gt;</code> (case-insensitive).</span></p>
+<pre><code>{ "method":"SUBSCRIBE",
+  "params":[ "CME.ESU6@trade", "CME.ESU6@bookTicker", "CME.ESU6@kline_1m", "CME.ESU6@depth10" ],
+  "id": 6 }
+→ { "id":6, "result":null }
+
+{ "method":"UNSUBSCRIBE", "params":[ "CME.ESU6@trade" ], "id":7 }   →   { "id":7, "result":null }
+{ "method":"LIST_SUBSCRIPTIONS", "id":8 }   →   { "id":8, "result":[ "cme.esu6@kline_1m", ... ] }</code></pre>
+<div class="note"><span class="vi">Sau SUBSCRIBE, các <span class="tag strm">stream</span> event tương ứng về liên tục cho tới khi UNSUBSCRIBE hoặc đóng socket. Subscription được đếm tham chiếu phía server và dùng chung giữa các client.</span>
+<span class="en">After SUBSCRIBE, matching <span class="tag strm">stream</span> events arrive continuously until you UNSUBSCRIBE or the socket closes. Subscriptions are reference-counted server-side and shared across clients.</span></div>
+
+<h2 id="s-trade">Streams</h2>
+<h3 id="s-trade-h"><span class="tag strm">stream</span> <code>@trade</code> — <span class="vi">lệnh khớp</span><span class="en">last-trade prints</span></h3>
+<p><span class="vi">Mỗi event là 1 lệnh khớp. Kèm bên chủ động <code>side</code>.</span><span class="en">One event per executed trade. Carries the aggressor <code>side</code>.</span></p>
+<pre><code>{ "stream":"cme.esu6@trade",
+  "data":{ "e":"trade", "s":"ESU6", "p":5500.25, "q":2, "side":"B", "T":1718000001120,
+           "tu":1718000001120300, "o":"6417163530506", "r":1718000001140 } }</code></pre>
+<button class="run" data-stream="@trade">Execute</button><pre class="out"></pre>
+<table>
+<tr><th>Field</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>p</code></td><td><span class="vi">Giá khớp</span><span class="en">Trade price</span></td></tr>
+<tr><td><code>q</code></td><td><span class="vi">Khối lượng (hợp đồng)</span><span class="en">Trade size (contracts)</span></td></tr>
+<tr><td><code>side</code></td><td><span class="b">"B"</span> <span class="vi">mua chủ động</span><span class="en">buy aggressor</span> · <span class="s">"S"</span> <span class="vi">bán chủ động</span><span class="en">sell aggressor</span> · <code>""</code> <span class="vi">không rõ</span><span class="en">unknown</span></td></tr>
+<tr><td><code>T</code></td><td><span class="vi">Thời điểm khớp (ms, giờ gốc sàn)</span><span class="en">Trade time (ms, exchange source time)</span></td></tr>
+<tr><td><code>tu</code></td><td><span class="vi">Mốc khớp <b>micro giây</b> của sàn — các print cùng matching event chia sẻ. Khoá gom <b>chính</b> cho cumulative trade / big trade kiểu ATAS (đúng <code>CumulativeTrade.Time</code>; recipes §1).</span><span class="en">Exchange match time in <b>microseconds</b> — prints of one matching event share it. <b>Primary</b> grouping key for ATAS-style cumulative trades / big trades (= ATAS's <code>CumulativeTrade.Time</code>; recipes §1).</span></td></tr>
+<tr><td><code>o</code></td><td><span class="vi">Id lệnh chủ động (<code>AggressorExchOrdId</code>) — Rithmic CÓ cấp, nhưng gom theo nó sẽ gộp dồn lệnh khớp rải nhiều event; chỉ là <b>dự phòng</b> khi thiếu <code>tu</code>.</span><span class="en">Aggressor order id (<code>AggressorExchOrdId</code>) — Rithmic supplies it, but grouping by it over-merges an order filling across several events; <b>fallback</b> only when <code>tu</code> is missing.</span></td></tr>
+<tr><td><code>r</code></td><td><span class="vi">Thời điểm gateway NHẬN trade (ms) — để đo độ trễ feed: <code>r − T</code></span><span class="en">Gateway receive time (ms) — to measure feed latency: <code>r − T</code></span></td></tr>
+</table>
+<div class="note"><span class="vi">Chỉ phát <b>lệnh khớp thật</b>. Ảnh chụp lệnh gần nhất mà Rithmic gửi lại mỗi lần (re)subscribe (callback <code>Image</code>) đã được lọc bỏ — bạn không bị nhận lệnh "ma" ở mốc thời gian cũ.</span>
+<span class="en">Only <b>real trade updates</b> are streamed. The last-trade snapshot Rithmic echoes on every (re)subscribe (its <code>Image</code> callback) is filtered out — you never get a stale phantom print at an old timestamp.</span></div>
+
+<h3 id="s-book"><span class="tag strm">stream</span> <code>@bookTicker</code> — <span class="vi">bid/ask tốt nhất</span><span class="en">best bid/ask</span></h3>
+<p><span class="vi">Bắn mỗi khi bid hoặc ask tốt nhất thay đổi.</span><span class="en">Fires whenever the best bid or ask changes.</span></p>
+<pre><code>{ "stream":"cme.esu6@bookticker",
+  "data":{ "s":"ESU6", "b":5500.00, "B":12, "a":5500.25, "A":9, "v":1284530, "oi":2103445, "l":5500.25 } }</code></pre>
+<button class="run" data-stream="@bookTicker">Execute</button><pre class="out"></pre>
+<table><tr><th>Field</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>b</code> / <code>B</code></td><td><span class="vi">Giá / khối lượng bid tốt nhất</span><span class="en">Best bid price / size</span></td></tr>
+<tr><td><code>a</code> / <code>A</code></td><td><span class="vi">Giá / khối lượng ask tốt nhất</span><span class="en">Best ask price / size</span></td></tr>
+<tr><td><code>v</code></td><td><span class="vi">KL phiên (cộng dồn, <code>TradeVolumeInfo.TotalVolume</code>); đi kèm quote kế tiếp</span><span class="en">Session volume (cumulative, <code>TradeVolumeInfo.TotalVolume</code>); rides on the next quote</span></td></tr>
+<tr><td><code>oi</code></td><td><span class="vi">Open interest (<code>OpenInterestInfo.Quantity</code>); đẩy ngay khi đổi</span><span class="en">Open interest (<code>OpenInterestInfo.Quantity</code>); pushed immediately on change</span></td></tr>
+<tr><td><code>l</code></td><td><span class="vi">Giá khớp cuối — kể cả <b>ảnh chụp</b> Rithmic gửi lúc (re)subscribe (<code>CallbackType.Image</code>), nên mã ít khớp (strike quyền chọn) vẫn có last mà không cần trade live</span><span class="en">Last trade price — incl. the <b>snapshot</b> Rithmic sends on (re)subscribe (<code>CallbackType.Image</code>), so illiquid instruments (option strikes) show a last with no live trade</span></td></tr></table>
+
+<h3 id="s-depth"><span class="tag strm">stream</span> <code>@depth</code> / <code>@depth&lt;N&gt;</code> — <span class="vi">sổ lệnh (DOM)</span><span class="en">order book (DOM)</span></h3>
+<p><span class="vi">Sổ lệnh realtime. <code>@depth</code> = toàn bộ; <code>@depth10</code> = <b>N mức gần giá nhất</b> mỗi bên. Cắt theo <b>từng subscription</b> trên sổ lệnh đang được duy trì liên tục — 2 client xem cùng mã ở độ sâu khác nhau được. Gateway giữ tối đa <b>1000</b> mức/bên (<code>DOM_MAX_LEVELS</code>). Web app subscribe <code>@depth&lt;N&gt;</code> với N từ ⚙ Heatmap <b>"Độ sâu sổ lệnh"</b> (mặc định <b>100</b>, dùng chung DOM + heatmap).</span>
+<span class="en">Live order book. <code>@depth</code> = full; <code>@depth10</code> = the <b>N nearest-to-price</b> levels each side. Trimmed <b>per subscription</b> on the continuously-maintained book — two clients can watch the same symbol at different depths. The gateway keeps up to <b>1000</b> levels/side (<code>DOM_MAX_LEVELS</code>). The web app subscribes <code>@depth&lt;N&gt;</code> with N from the Heatmap ⚙ <b>"Độ sâu sổ lệnh"</b> setting (default <b>100</b>, shared by DOM + heatmap).</span></p>
+<pre><code>{ "stream":"cme.esu6@depth10",
+  "data":{ "s":"ESU6", "bids":[[5500.00,12],[5499.75,40]], "asks":[[5500.25,9],[5500.50,33]] } }</code></pre>
+<button class="run" data-stream="@depth10">Execute</button><pre class="out"></pre>
+<table><tr><th>Field</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>bids</code></td><td><span class="vi">Mảng <code>[giá, kl]</code>, tốt nhất trước</span><span class="en">Array of <code>[price, size]</code>, best first</span></td></tr>
+<tr><td><code>asks</code></td><td><span class="vi">Mảng <code>[giá, kl]</code>, tốt nhất trước</span><span class="en">Array of <code>[price, size]</code>, best first</span></td></tr></table>
+<div class="note warn"><span class="vi">Depth cần tài khoản có quyền dữ liệu DOM của mã đó; nếu không, stream sẽ im lặng.</span>
+<span class="en">Depth requires the instrument's DOM data to be available to the account; if not, the stream stays silent.</span></div>
+
+<h3 id="s-mbo"><span class="tag strm">stream</span> <code>@mbo</code> / <code>@mbo&lt;N&gt;</code> — <span class="vi">sổ order-by-order (MBO/DBO)</span><span class="en">order-by-order book (MBO/DBO)</span></h3>
+<p><span class="vi">Như <code>@depth</code> nhưng <b>theo từng lệnh</b> thay vì size gộp. Gateway dựng sổ per-order (Rithmic <b>DBO</b>) trong cửa sổ cuộn <b>±20 tick</b> quanh BBO, emit ~20 Hz. <code>@mbo&lt;N&gt;</code> cắt top <i>N</i> mức mỗi bên. <b>Cần quyền DBO riêng</b> — kiểm bằng <code>mboProbe</code> trước. Xem <a class="h" href="mbo.html">MBO</a>.</span>
+<span class="en">Like <code>@depth</code> but <b>per individual order</b> instead of aggregated size. The gateway maintains a per-order book (Rithmic <b>DBO</b>) over a rolling <b>±20-tick</b> window around the BBO, ~20 Hz. <code>@mbo&lt;N&gt;</code> trims to top <i>N</i> levels each side. <b>Needs a separate DBO entitlement</b> — probe with <code>mboProbe</code> first. See <a class="h" href="mbo.html">MBO</a>.</span></p>
+<pre><code>{ "stream":"comex.gcq6@mbo20",
+  "data":{ "s":"GCQ6",
+           "bids":[ [4152.3, 4, 31, [15,8,5,3]], [4152.2, 2, 20, [12,8]] ],
+           "asks":[ [4152.7, 1, 250, [250]] ] } }</code></pre>
+<table><tr><th>Field</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>bids</code> / <code>asks</code></td><td><span class="vi">Mảng mức <code>[giá, số lệnh, tổng size, sizes[]]</code>, tốt nhất trước</span><span class="en">Array of levels <code>[price, orderCount, totalSize, sizes[]]</code>, best first</span></td></tr>
+<tr><td><code>sizes[]</code></td><td><span class="vi">Từng lệnh chờ tại giá đó, <b>xếp theo queue priority</b> (đầu hàng trước), tối đa 64/mức</span><span class="en">Individual resting orders at that price, <b>sorted by queue priority</b> (front first), capped 64/level</span></td></tr></table>
+<div class="note warn"><span class="vi"><b>mboProbe</b> (debug): <code>{"method":"mboProbe","params":{"exchange","symbol","levels","ms"}}</code> — sub DBO quanh BBO vài giây rồi trả <code>{entitled, events, distinctOrders, hasExchOrdId, hasPriority, sample[]}</code> và unsub. Chạy sau khi mở chart mã đó. <code>entitled:true</code> ⇒ DBO chạy → dùng được <code>@mbo</code>.</span>
+<span class="en"><b>mboProbe</b> (debug): <code>{"method":"mboProbe","params":{"exchange","symbol","levels","ms"}}</code> — subscribes DBO around the BBO for a few seconds, returns <code>{entitled, events, distinctOrders, hasExchOrdId, hasPriority, sample[]}</code> and unsubscribes. Run after opening the symbol's chart. <code>entitled:true</code> ⇒ DBO works → <code>@mbo</code> usable.</span></div>
+
+<h3 id="s-kline"><span class="tag strm">stream</span> <code>@kline_&lt;interval&gt;</code> — <span class="vi">nến live</span><span class="en">live candles</span></h3>
+<p><span class="vi">Đẩy object nến theo interval. Lưu ý: Rithmic thường chỉ bắn nến khi nến <b>đóng</b>, nên muốn nến <i>đang chạy</i> cập nhật mượt, đa số client tự dựng từ <code>@trade</code> (xem hướng dẫn footprint).</span>
+<span class="en">Pushes a candle object for the interval. Note: Rithmic typically emits a bar when it <b>closes</b>, so for a smoothly-updating <i>forming</i> candle most clients build it from <code>@trade</code> (see footprint guide).</span></p>
+<pre><code>{ "stream":"cme.esu6@kline_1m",
+  "data":{ "e":"kline", "s":"ESU6",
+           "k":{ "t":1718000000000, "T":1718000060000, "i":"1m",
+                 "o":5500.25, "h":5501.00, "l":5499.75, "c":5500.50, "v":182 } } }</code></pre>
+<button class="run" data-stream="@kline_1m">Execute</button><pre class="out"></pre>
+<table><tr><th>Field (<span class="vi">trong</span><span class="en">inside</span> <code>k</code>)</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>t</code> / <code>T</code></td><td><span class="vi">Thời điểm mở / đóng nến (ms)</span><span class="en">Candle open / close time (ms)</span></td></tr>
+<tr><td><code>i</code></td><td>Interval</td></tr>
+<tr><td><code>o h l c</code></td><td><span class="vi">Mở, cao, thấp, đóng</span><span class="en">Open, high, low, close</span></td></tr>
+<tr><td><code>v</code></td><td><span class="vi">Khối lượng</span><span class="en">Volume</span></td></tr></table>
+
+<h2 id="intervals"><span class="vi">Khung thời gian</span><span class="en">Intervals</span></h2>
+<p><span class="vi">Định dạng: <code>&lt;số&gt;&lt;đơn vị&gt;</code>. Đơn vị:</span><span class="en">Format: <code>&lt;number&gt;&lt;unit&gt;</code>. Units:</span></p>
+<table>
+<tr><th><span class="vi">Đơn vị</span><span class="en">Unit</span></th><th><span class="vi">Nghĩa</span><span class="en">Meaning</span></th><th><span class="vi">Ví dụ</span><span class="en">Examples</span></th></tr>
+<tr><td><code>s</code></td><td><span class="vi">giây</span><span class="en">seconds</span></td><td><code>1s 5s 10s 30s</code></td></tr>
+<tr><td><code>m</code></td><td><span class="vi">phút</span><span class="en">minutes</span></td><td><code>1m 2m 5m 15m</code></td></tr>
+<tr><td><code>h</code></td><td><span class="vi">giờ</span><span class="en">hours</span></td><td><code>1h 4h</code></td></tr>
+<tr><td><code>d</code> / <code>w</code></td><td><span class="vi">ngày / tuần</span><span class="en">daily / weekly</span></td><td><code>1d 1w</code></td></tr>
+<tr><td><code>t</code></td><td><span class="vi">nến tick</span><span class="en">tick bars</span></td><td><code>100t</code></td></tr>
+<tr><td><code>v</code></td><td><span class="vi">nến khối lượng</span><span class="en">volume bars</span></td><td><code>1000v</code></td></tr>
+<tr><td><code>r</code></td><td><span class="vi">nến range</span><span class="en">range bars</span></td><td><code>4r</code></td></tr>
+</table>
+
+<h2 id="errors"><span class="vi">Lỗi</span><span class="en">Errors</span></h2>
+<pre><code>{ "id":1, "status":400, "error":"thiếu symbol" }
+{ "id":7, "status":500, "error":"unknown request", "code":14, "omdesc":"unknown request",
+  "detail":"Raised in : com.omnesys.rapi.IhConn | Method : subscribeBar | Error : unknown request" }
+{ "id":3, "status":500, "error":"...", "code":"IOException" }
+{ "error":"bad stream: CME.ESU6@oops" }     // sai tên stream / no id echo</code></pre>
+<p><span class="vi">Reply lỗi có <code>error</code> (message) + <code>status</code> ≥ 400. <b>Exception còn kèm <code>code</code></b> để điều tra: <code>OMException</code> của Rithmic → số <b><code>rp</code></b> + <code>omdesc</code> (mô tả ngắn) + <code>detail</code> (raised-in/method); exception khác → tên kiểu .NET.</span>
+<span class="en">A failed reply carries <code>error</code> (message) + <code>status</code> ≥ 400. <b>Exceptions also carry <code>code</code></b> to investigate: a Rithmic <code>OMException</code> → the numeric <b><code>rp</code></b> + <code>omdesc</code> (short text) + <code>detail</code> (raised-in/method); other exceptions → the .NET type name.</span></p>
+<table><tr><th>status</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td>200</td><td>OK</td></tr>
+<tr><td>400</td><td><span class="vi">Request sai (thiếu/sai param) — chỉ <code>error</code></span><span class="en">Bad request — <code>error</code> only</span></td></tr>
+<tr><td>500</td><td><span class="vi">Exception server/Rithmic — <code>error</code> + <code>code</code> (+ <code>omdesc</code>/<code>detail</code> nếu OMException)</span><span class="en">Server/Rithmic exception — <code>error</code> + <code>code</code> (+ <code>omdesc</code>/<code>detail</code> for OMException)</span></td></tr></table>
+
+<h3><span class="vi">Mã <code>OMException</code> Rithmic (<code>code</code>/<code>rp</code>)</span><span class="en">Rithmic <code>OMException</code> codes (<code>code</code>/<code>rp</code>)</span></h3>
+<table><tr><th>rp</th><th><span class="vi">nghĩa</span><span class="en">meaning</span></th><th><span class="vi">nguyên do hay gặp</span><span class="en">typical cause</span></th></tr>
+<tr><td>6</td><td>bad input</td><td><span class="vi">param plant từ chối</span><span class="en">params the plant rejects</span></td></tr>
+<tr><td>7</td><td>no data</td><td><span class="vi">không có gì trong cửa sổ</span><span class="en">nothing for the window</span></td></tr>
+<tr><td>8</td><td>already exists</td><td><span class="vi">subscribe trùng / state đã có (thường vô hại)</span><span class="en">duplicate subscribe / state set (usually benign)</span></td></tr>
+<tr><td>9</td><td>in use</td><td><span class="vi">đang có request cùng loại chạy</span><span class="en">another request of the kind in progress</span></td></tr>
+<tr><td>10</td><td>in progress</td><td><span class="vi">request còn đang chạy</span><span class="en">request still running</span></td></tr>
+<tr><td>11</td><td>no handle</td><td><span class="vi">kết nối/handle chưa sẵn sàng (transient lúc start)</span><span class="en">connection/handle not ready (startup transient)</span></td></tr>
+<tr><td>13</td><td>permission</td><td><span class="vi">không có quyền data đó</span><span class="en">not entitled to that data</span></td></tr>
+<tr><td>14</td><td>unknown request</td><td><span class="vi">request không được phục vụ lúc này — vd <b>tick history cuối tuần/bảo trì</b> (bar history vẫn chạy)</span><span class="en">not served now — e.g. <b>tick history on weekends/maintenance</b> (bar history still works)</span></td></tr>
+<tr><td>1001</td><td>io error</td><td><span class="vi">plant I/O (nội bộ, login)</span><span class="en">plant I/O (internal, login)</span></td></tr>
+<tr><td>1002</td><td>authentication error</td><td>login/credentials</td></tr></table>
+
+<h3><span class="vi">Thông báo đẩy (stream <code>notice</code>)</span><span class="en">Notices (push — the <code>notice</code> stream)</span></h3>
+<pre><code>{ "stream":"notice", "data":{ "level":"error|warn|info", "msg":"Đồng bộ tick COMEX.GCQ6: unknown request (rp=14) — …", "detail":"…(tuỳ chọn)" } }</code></pre>
+<p><span class="vi">Lỗi nền không gắn được vào <code>id</code> nào được đẩy qua stream <code>notice</code>. Web hiện banner — <b class="s">đỏ</b>=error (cứng, vd permission), <b style="color:var(--yel)">vàng</b>=warn (transient/tự thử lại, vd kẹt tick cuối tuần), <b style="color:var(--acc)">xanh</b>=info (chẩn đoán); bấm để copy <code>detail</code>. First-chance OMException của máy login nội bộ rapiplus bị lọc bỏ; transient vòng đời subscribe (rp 6/8/11) chỉ log console server.</span>
+<span class="en">Background failures with no request <code>id</code> are pushed on the <code>notice</code> stream. The web shows a banner — <b class="s">red</b>=error (hard, e.g. permission), <b style="color:var(--yel)">yellow</b>=warn (transient/will retry, e.g. a weekend tick stall), <b style="color:var(--acc)">blue</b>=info (diagnostic); click to copy <code>detail</code>. First-chance OMExceptions from rapiplus's own login machinery are filtered out; benign subscribe-lifecycle transients (rp 6/8/11) log to the server console only.</span></p>
+
+<h2 id="notes"><span class="vi">Lưu ý &amp; bẫy</span><span class="en">Notes &amp; gotchas</span></h2>
+<ul>
+<li><span class="vi"><b>Symbol viết HOA.</b> Server tự viết hoa nhưng nên gửi sẵn chữ hoa (Rithmic phân biệt hoa/thường).</span><span class="en"><b>Uppercase symbols.</b> The server upper-cases symbols, but send them uppercase to be safe (Rithmic is case-sensitive).</span></li>
+<li><span class="vi"><b>Warm klines.</b> Lần đầu mỗi instrument+interval tốn ~2.5&nbsp;s (warm bar-handle); các lần sau tức thì.</span><span class="en"><b>klines warm-up.</b> First request per instrument+interval costs ~2.5&nbsp;s (bar-handle warm). Subsequent ones are immediate.</span></li>
+<li><span class="vi"><b>Ngoài giờ / cuối tuần.</b> Cửa sổ ngắn có thể trả 0 nến/trade vì thị trường đóng. Nới <code>startTime</code> để chạm phiên gần nhất rồi giữ N nến mới nhất phía client.</span><span class="en"><b>Off-hours / weekends.</b> A short window may return 0 candles/trades because the market is closed. Widen <code>startTime</code> to reach the last session, then keep the most recent N client-side.</span></li>
+<li><span class="vi"><b>Nến đang chạy.</b> <code>@kline</code> chủ yếu cập nhật khi nến đóng. Muốn nến hiện tại nhảy realtime, hãy tự gom <code>@trade</code>.</span><span class="en"><b>Forming candle.</b> <code>@kline</code> updates mainly on bar close. For a live-updating current bar, aggregate <code>@trade</code> yourself.</span></li>
+<li><span class="vi"><b>Tháng hợp đồng.</b> Futures đáo hạn theo quý (H/M/U/Z). Dùng hợp đồng đang active, vd <code>ESU6</code> = E-mini S&amp;P, tháng 9/2026.</span><span class="en"><b>Contract month.</b> Futures roll quarterly (H/M/U/Z). Use the active contract, e.g. <code>ESU6</code> = E-mini S&amp;P, Sep 2026.</span></li>
+</ul>
+
+<h2 id="ex-js"><span class="vi">Ví dụ</span><span class="en">Examples</span> — JavaScript (browser/Node)</h2>
+<pre><code>const ws = new WebSocket("ws://127.0.0.1:9001/");
+let id = 1;
+const pending = new Map();
+const rpc = (method, params) => new Promise(res => {
+  const myId = id++; pending.set(myId, res);
+  ws.send(JSON.stringify(params ? {method, params, id:myId} : {method, id:myId}));
+});
+
+ws.onmessage = (e) => {
+  const m = JSON.parse(e.data);
+  if (m.stream) {                       // push event
+    if (m.stream.endsWith("@trade")) console.log("trade", m.data.p, m.data.q, m.data.side);
+    return;
+  }
+  if (pending.has(m.id)) { pending.get(m.id)(m.result); pending.delete(m.id); }
+};
+
+ws.onopen = async () => {
+  const now = Date.now();
+  const candles = await rpc("klines", {exchange:"CME", symbol:"ESU6", interval:"1m",
+                                       startTime: now - 6*86400000, endTime: now, limit:200});
+  console.log("got", candles.length, "candles");
+  ws.send(JSON.stringify({method:"SUBSCRIBE", params:["CME.ESU6@trade","CME.ESU6@bookTicker"], id:id++}));
+};</code></pre>
+
+<h2 id="ex-py"><span class="vi">Ví dụ</span><span class="en">Examples</span> — Python (<code>websockets</code>)</h2>
+<pre><code>import asyncio, json, time, websockets
+
+async def main():
+    async with websockets.connect("ws://127.0.0.1:9001/") as ws:
+        now = int(time.time() * 1000)
+        await ws.send(json.dumps({"method":"klines","id":1,"params":{
+            "exchange":"CME","symbol":"ESU6","interval":"1m",
+            "startTime": now - 6*86400000, "endTime": now, "limit":200}}))
+        await ws.send(json.dumps({"method":"SUBSCRIBE","id":2,
+            "params":["CME.ESU6@trade"]}))
+        async for raw in ws:
+            m = json.loads(raw)
+            if m.get("stream","").endswith("@trade"):
+                d = m["data"]; print("trade", d["p"], d["q"], d["side"])
+            elif m.get("id") == 1:
+                print("candles:", len(m["result"]))
+
+asyncio.run(main())</code></pre>
+
+<h2 id="ex-cs"><span class="vi">Ví dụ</span><span class="en">Examples</span> — C# (<code>ClientWebSocket</code>)</h2>
+<pre><code>using System.Net.WebSockets; using System.Text; using System.Text.Json;
+
+var ws = new ClientWebSocket();
+await ws.ConnectAsync(new Uri("ws://127.0.0.1:9001/"), default);
+
+async Task Send(object o) {
+    var b = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(o));
+    await ws.SendAsync(b, WebSocketMessageType.Text, true, default);
+}
+long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+await Send(new { method="klines", id=1, @params=new {
+    exchange="CME", symbol="ESU6", interval="1m",
+    startTime=now-6*86400000L, endTime=now, limit=200 } });
+await Send(new { method="SUBSCRIBE", id=2, @params=new[]{ "CME.ESU6@trade" } });
+
+var buf = new byte[1<<20];
+while (ws.State == WebSocketState.Open) {
+    var r = await ws.ReceiveAsync(buf, default);
+    var doc = JsonDocument.Parse(Encoding.UTF8.GetString(buf, 0, r.Count)).RootElement;
+    if (doc.TryGetProperty("stream", out var s) &amp;&amp; s.GetString().EndsWith("@trade")) {
+        var d = doc.GetProperty("data");
+        Console.WriteLine($"trade {d.GetProperty("p")} x{d.GetProperty("q")} {d.GetProperty("side")}");
+    }
+}</code></pre>
+
+<h2 id="changelog"><span class="vi">Lịch sử phiên bản</span><span class="en">Changelog</span></h2>
+<p><span class="vi">Phiên bản API hiện tại: <b>1.7.0</b>. Theo <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — thay đổi phá vỡ tương thích sẽ tăng số MAJOR.</span>
+<span class="en">Current API version: <b>1.7.0</b>. Follows <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — breaking changes bump the MAJOR number.</span></p>
+
+<h3>1.7.0 — 2026-06-22</h3>
+<ul>
+<li><span class="vi"><b>Hợp đồng liên tục — <code>continuousInfo</code> + tham số <code>cont</code>.</b> Ghép back-adjusted theo rollover: chọn <b>root</b> (vd <code>ES</code>) → gateway nối các hợp đồng có trong kho local (<code>ESM6</code>→<code>ESU6</code>→…) thành một chuỗi liền mạch, <b>dịch giá hợp đồng cũ</b> theo chênh settlement tại mỗi roll. <code>continuousInfo</code> trả <code>{front, segments:[{symbol,start,end,offset}]}</code>; client subscribe <code>front</code> live + vẽ vạch roll. Truyền <code>cont:{root,rule,adjust,rolls}</code> cho <code>klines</code>, <code>aggTrades</code>, <code>bigTrades</code>, <code>volumeProfileRange</code> → cả <b>nến lẫn orderflow</b> (footprint/VP/big-trade) đều liên tục + back-adjusted. <code>rule</code> = <code>date</code> (roll ở HSD) hoặc <code>volume</code> (roll khi volume hợp đồng sau vượt). Xem <a class="h" href="continuous.html">Continuous</a>.</span>
+<span class="en"><b>Continuous contract — <code>continuousInfo</code> + <code>cont</code> param.</b> Back-adjusted rollover: pick a <b>root</b> (e.g. <code>ES</code>) → the gateway stitches the locally-stored contracts (<code>ESM6</code>→<code>ESU6</code>→…) into one seamless series, <b>back-adjusting</b> older prices by the cumulative settlement gap at each roll. <code>continuousInfo</code> returns <code>{front, segments:[{symbol,start,end,offset}]}</code>; the client subscribes <code>front</code> live + draws roll markers. Passing <code>cont:{root,rule,adjust,rolls}</code> to <code>klines</code>, <code>aggTrades</code>, <code>bigTrades</code> and <code>volumeProfileRange</code> makes <b>candles and orderflow</b> (footprint/VP/big-trade) continuous + back-adjusted. <code>rule</code> = <code>date</code> (roll at expiry) or <code>volume</code> (roll when the next contract's daily volume overtakes). See <a class="h" href="continuous.html">Continuous</a>.</span></li>
+<li><span class="vi"><b>Volume Profile — <code>volumeProfile</code> + <code>volumeProfileRange</code>.</b> <code>volumeProfile</code> trả volume-at-price phiên hiện tại native của Rithmic (<code>getVolumeAtPrice</code>). <code>volumeProfileRange</code> dựng profile <b>nhiều phiên</b> từ kho tick local: gộp (1 profile) hoặc <code>split:1</code> (mỗi phiên 1 profile, kèm dải thời gian). <code>days</code> = số <b>phiên giao dịch</b> (bỏ cuối tuần); phiên đóng tự backfill 1 lần. Phục vụ 3 chế độ VP + VPOC + Value Area. Xem <a class="h" href="volumeprofile.html">Volume Profile</a>.</span>
+<span class="en"><b>Volume Profile — <code>volumeProfile</code> + <code>volumeProfileRange</code>.</b> <code>volumeProfile</code> returns Rithmic's native current-session volume-at-price (<code>getVolumeAtPrice</code>). <code>volumeProfileRange</code> builds a <b>multi-session</b> profile from the local tick store: composite (one merged profile) or <code>split:1</code> (one per session, each with its time band). <code>days</code> counts <b>trading sessions</b> (weekends skipped); closed sessions self-backfill once. Powers the VP overlay's three modes + VPOC + Value Area. See <a class="h" href="volumeprofile.html">Volume Profile</a>.</span></li>
+<li><span class="vi"><b><code>rawTicks</code> (debug) đã ghi tài liệu.</b> Đo trực tiếp độ sâu tick-history Rithmic (<code>trades</code> → phiên hiện tại; <code>bars</code> → ~90 ngày), trả mẫu đầu/cuối. + <code>syncHistory</code> và <code>chainSub</code>/<code>chainUnsub</code> giờ có mục riêng ở đây (trước chỉ trong API.md).</span>
+<span class="en"><b><code>rawTicks</code> (debug) documented.</b> Probes how deep Rithmic's tick history reaches (<code>trades</code> → current session; <code>bars</code> → ~90 days), returning a head/tail sample. Also: <code>syncHistory</code> and <code>chainSub</code>/<code>chainUnsub</code> now have their own sections here (previously API.md-only).</span></li>
+</ul>
+
+<h3>1.6.0 — 2026-06-19</h3>
+<ul>
+<li><span class="vi"><b>MBO (Market-By-Order) — <code>@mbo</code> / <code>@mbo&lt;N&gt;</code> + <code>mboProbe</code>.</b> Sổ order-by-order trên Rithmic <b>DBO</b> (sub theo giá, cửa sổ cuộn ±20 tick quanh BBO, ~20 Hz). Mỗi mức <code>[giá, số lệnh, tổng, sizes[]]</code> (sizes xếp theo queue). <code>mboProbe</code> kiểm <b>quyền DBO riêng</b> + dump event thô. Phục vụ chế độ DOM order-by-order. Xem <a class="h" href="mbo.html">MBO</a>.</span>
+<span class="en"><b>MBO (Market-By-Order) — <code>@mbo</code> / <code>@mbo&lt;N&gt;</code> + <code>mboProbe</code>.</b> Order-by-order book on Rithmic <b>DBO</b> (per-price subscribe, rolling ±20-tick window around BBO, ~20 Hz). Levels carry <code>[price, orderCount, totalSize, sizes[]]</code> (sizes queue-ordered). <code>mboProbe</code> verifies the <b>separate DBO entitlement</b> + dumps raw events. Powers the DOM order-by-order mode. See <a class="h" href="mbo.html">MBO</a>.</span></li>
+<li><span class="vi"><b><code>@bookTicker</code> thêm <code>l</code> (giá khớp cuối).</b> Gồm cả ảnh chụp Rithmic gửi lúc (re)subscribe (<code>CallbackType.Image</code>) → mã ít khớp (strike option) vẫn có last; ảnh Image KHÔNG ghi vào kho/footprint (không trade ma).</span>
+<span class="en"><b><code>@bookTicker</code> gains <code>l</code> (last trade).</b> Includes the snapshot Rithmic sends on (re)subscribe (<code>CallbackType.Image</code>) → illiquid instruments (option strikes) show a last; the Image print is <b>not</b> written to the store/footprint (no ghost trades).</span></li>
+<li><span class="vi"><b><code>chainSub</code> / <code>chainUnsub</code> — sub cả chuỗi option 1 call (<code>subscribeByUnderlying</code>).</b> 1 call phủ cả option của 1 underlying/kỳ hạn thay vì sub từng strike; quote/OI/last vẫn route qua <code>@bookTicker</code> từng strike. Dùng cho GEX (sweep OI) + popup option → ít call hơn hẳn (né storm / "in use").</span>
+<span class="en"><b><code>chainSub</code> / <code>chainUnsub</code> — bulk option-chain subscribe (<code>subscribeByUnderlying</code>).</b> One call covers all options of an underlying/expiration instead of per-strike; quotes/OI/last still route via each strike's <code>@bookTicker</code>. Used by GEX (OI sweep) + options popup → far fewer subscribe calls (dodges the storm / "in use" throttle).</span></li>
+</ul>
+
+<h3>1.5.0 — 2026-06-18</h3>
+<ul>
+<li><span class="vi"><b>RPC quản lý kho tick local — <code>syncTicks</code>, <code>tickInfo</code>, <code>syncStatus</code></b> (+ <code>syncHistory</code> cho nến). <code>syncTicks</code> tải tick phiên đóng vào kho (gần nhất trước, nền, 1 worker); <code>priority:1</code> chen hàng; <code>expMs</code> tự chốt hợp đồng hết hạn. <code>tickInfo</code> tóm tắt kho mỗi mã; <code>syncStatus</code> trả <code>pct</code> theo đỉnh hàng đợi. Phục vụ popup "⤓ Lịch sử".</span>
+<span class="en"><b>Local tick-store management RPCs — <code>syncTicks</code>, <code>tickInfo</code>, <code>syncStatus</code></b> (+ <code>syncHistory</code> for bars). <code>syncTicks</code> backfills closed-session ticks (recent-first, background, single worker); <code>priority:1</code> jumps the queue; <code>expMs</code> auto-finalizes an expired contract. <code>tickInfo</code> summarizes the store per symbol; <code>syncStatus</code> returns <code>pct</code> against peak queue depth. Powers the "⤓ history" popup.</span></li>
+<li><span class="vi"><b>Giới hạn sync thông minh hơn.</b> Bỏ qua phiên <b>Thứ Bảy/Chủ Nhật</b> (CME nghỉ, khỏi gọi Rithmic → ít <code>OMException</code>) và dừng lùi <b>~10 ngày trước phiên liquid đầu tiên</b> (tự dò mốc hợp đồng bắt đầu giao dịch) thay vì lê qua đuôi pre-listing chết. Phiên &lt; ~100 tick = pre-liquid → bỏ.</span>
+<span class="en"><b>Smarter sync bounds.</b> Skips <b>Sat/Sun</b> sessions (CME closed, no Rithmic call → far fewer <code>OMException</code>s) and stops <b>~10 days before the first liquid session</b> (auto-detected contract start) instead of dragging through a dead pre-listing tail. Sessions under ~100 ticks are dropped as pre-liquid.</span></li>
+<li><span class="vi"><b><code>bigTrades</code> thêm <code>merge</code> (ms).</b> <code>0</code> (mặc định) = gom chính xác theo matching-event; <code>&gt;0</code> = <b>cửa sổ cumulative kiểu ATAS</b> — gộp mọi lệnh cùng chiều trong <code>merge</code> ms → bóng to/ít hơn (bỏ qua cache phiên). Cho client canh độ gộp khớp ATAS.</span>
+<span class="en"><b><code>bigTrades</code> gains <code>merge</code> (ms).</b> <code>0</code> (default) keeps precise matching-event grouping; <code>&gt;0</code> switches to an <b>ATAS-style cumulative window</b> — merge all same-side prints within <code>merge</code> ms → fewer, larger bubbles (bypasses the per-session cache). Lets a client dial bubble aggregation to match ATAS.</span></li>
+<li><span class="vi"><b>Kho tick v2 (trên đĩa).</b> Một file <code>.tick</code> <b>mỗi phiên CME</b> (header <code>FXTK</code> 32B + record 29B có <code>tu</code> in-record), index <code>tick.coverage</code> mỗi mã (thay mọi <code>.fxv</code>), và bỏ sidecar <code>.fxu</code> (<code>tu</code> vào thẳng record — hết bug lệch <code>.fxt</code>/<code>.fxu</code>). Thư mục đổi <code>Database</code>→<code>TickDb</code>; layout cũ <b>tự migrate</b> không mất tick. Định dạng trên dây (<code>@trade</code>/<code>aggTrades</code>/<code>bigTrades</code>) không đổi.</span>
+<span class="en"><b>Tick store v2 (on-disk).</b> One <code>.tick</code> file <b>per CME session</b> (32B <code>FXTK</code> header + 29B records with <code>tu</code> in-record), a per-symbol <code>tick.coverage</code> index (replaces all <code>.fxv</code>), and the <code>.fxu</code> sidecar is gone (<code>tu</code> moved in-record — fixes the old <code>.fxt</code>/<code>.fxu</code> alignment bug). Folder renamed <code>Database</code>→<code>TickDb</code>; old layouts <b>auto-migrate</b> with zero tick loss. Wire format (<code>@trade</code>/<code>aggTrades</code>/<code>bigTrades</code>) unchanged.</span></li>
+<li><span class="vi"><b>Nến 1m dựng từ tick local.</b> Phiên đóng có tick → dựng nến 1m cục bộ (m5/15m/1h/4h gộp từ đó), đã verify khớp byte-for-byte với klines Rithmic — mở lại/đổi khung đọc local thay vì gọi lại Rithmic.</span>
+<span class="en"><b>1m candles derived from local ticks.</b> Closed sessions with stored ticks build 1m bars locally (m5/15m/1h/4h aggregate from that), verified byte-for-byte identical to Rithmic klines — reopen/timeframe-switch reads locally instead of re-hitting Rithmic.</span></li>
+<li><span class="vi"><b><code>optionChain</code> đã có doc.</b> Call chuỗi quyền chọn theo product+tháng (Rithmic <code>getOptionList</code>, dự phòng của <code>instrumentByUnderlying</code>) giờ có section riêng — cùng dạng <code>rows = [symbol, strike, "C"/"P", expiration, productCode]</code>; OI/bid-ask mỗi strike qua <code>@bookTicker</code>.</span>
+<span class="en"><b><code>optionChain</code> documented.</b> The product+month options-chain call (Rithmic <code>getOptionList</code>, <code>instrumentByUnderlying</code>'s fallback) now has its own section — same <code>rows = [symbol, strike, "C"/"P", expiration, productCode]</code> shape; per-strike OI/bid-ask via <code>@bookTicker</code>.</span></li>
+</ul>
+
+<h3>1.4.0 — 2026-06-17</h3>
+<ul>
+<li><span class="vi"><b><code>instrumentByUnderlying</code> (chuỗi quyền chọn) — đã tài liệu hoá.</b> Hai bước (<code>expiration:""</code> → ngày đáo hạn; <code>expiration:"&lt;CCYYMMDD&gt;"</code> → strike), <b>serialize</b> ở server (single-in-flight — hết timeout chồng nhau), lọc Event Contracts (<code>/^EC/</code>), fallback <code>optionChain</code> theo tháng. Nền cho popup Options + <b>GEX / 0DTE</b> (Black-76, dealer gamma, Call/Put Wall, γ-flip). Xem <a class="h" href="options.html">Options · GEX · 0DTE</a>.</span>
+<span class="en"><b><code>instrumentByUnderlying</code> (options chain) — documented.</b> Two-step (<code>expiration:""</code> → expiry dates; <code>expiration:"&lt;CCYYMMDD&gt;"</code> → strikes), <b>serialized</b> server-side (single-in-flight — no mutual timeouts), Event Contracts filtered (<code>/^EC/</code>), monthly <code>optionChain</code> fallback. Powers the Options popup + <b>GEX / 0DTE</b> (Black-76, dealer gamma, Call/Put Wall, γ-flip). See <a class="h" href="options.html">Options · GEX · 0DTE</a>.</span></li>
+</ul>
+
+<h3>1.3.0 — 2026-06-15</h3>
+<ul>
+<li><span class="vi"><b><code>bigTrades</code> (mới) — gom big-trade ở server.</b> Gateway gom tick thô theo matching event (<code>tu</code>) và chỉ trả các bóng <code>[t, side, vol, firstPrice, lastPrice]</code> ≥ <code>min</code> — client vẽ big trade cả phiên mà không phải tải hàng triệu tick. Nguồn = replay Rithmic → kho local (có <code>tu</code> từ sidecar <code>.fxu</code>).</span>
+<span class="en"><b><code>bigTrades</code> (new) — server-side cumulative-trade detection.</b> Gateway groups raw trades by matching event (<code>tu</code>) and returns only the bubbles <code>[t, side, vol, firstPrice, lastPrice]</code> ≥ <code>min</code> — a client draws a whole session's big trades without pulling millions of ticks. Source = Rithmic replay → local store (with <code>tu</code> from the <code>.fxu</code> sidecar).</span></li>
+<li><span class="vi"><b>Mốc khớp micro giây <code>tu</code> — gom theo matching event (chuẩn ATAS).</b> <code>@trade</code> và <code>aggTrades</code> kèm <code>tu</code> (mốc khớp µs: <code>SourceSsboe</code>·1e6 + <code>SourceUsecs</code>); client gom cumulative trade theo <code>tu</code> bằng nhau — đúng khoá ATAS dùng (<code>CumulativeTrade.Time</code>). Rithmic cũng cấp <code>AggressorExchOrdId</code> (<code>o</code>), nhưng gom theo <code>o</code> gộp dồn lệnh khớp rải nhiều event (lệch cao hơn ATAS) → <code>o</code> chỉ là dự phòng khi thiếu <code>tu</code>. Thay heuristic ms cũ làm cắt đuôi sweep ở điểm đảo chiều. Hàng <code>aggTrades</code> giờ là <code>[t,p,q,side,o,tu]</code>.</span>
+<span class="en"><b>Microsecond match time <code>tu</code> — matching-event grouping (true ATAS parity).</b> <code>@trade</code> and <code>aggTrades</code> carry <code>tu</code> (match µs: <code>SourceSsboe</code>·1e6 + <code>SourceUsecs</code>); clients group cumulative trades by identical <code>tu</code> — the key ATAS uses (its <code>CumulativeTrade.Time</code>). Rithmic also supplies <code>AggressorExchOrdId</code> (<code>o</code>), but grouping by <code>o</code> over-merges an order filling across several events (drifts higher than ATAS) → <code>o</code> is only a fallback when <code>tu</code> is missing. Replaces the ms-only heuristic that clipped a sweep's tail at reversals. <code>aggTrades</code> rows are now <code>[t,p,q,side,o,tu]</code>.</span></li>
+<li><span class="vi"><b><code>instrumentInfo</code> (mới).</b> Tick size, số lẻ giá, ngày hết hạn, point value… nguồn chuẩn từ Rithmic — client khỏi đoán tick từ giá (sửa lỗi format mã như GC 0.1).</span>
+<span class="en"><b><code>instrumentInfo</code> (new).</b> Tick size, price decimals, expiration, point value… authoritative from Rithmic — no inferring the tick from prices (fixes formatting for instruments like GC 0.1).</span></li>
+<li><span class="vi"><b><code>searchSymbol</code> (mới) + kho symbol bền.</b> Tìm mã theo từ khoá; phục vụ từ cache đĩa, refresh nền 1 lần/phiên, tự bỏ hợp đồng rollover. <code>instrumentInfo</code> dùng chung kho này (đỡ gọi lại mỗi login). Để trống sàn = tìm CME/CBOT/NYMEX/COMEX.</span>
+<span class="en"><b><code>searchSymbol</code> (new) + persistent symbol cache.</b> Keyword instrument search; served from a disk cache, refreshed once per run, auto-pruned on rollover. <code>instrumentInfo</code> shares the cache (fewer calls per login). Empty exchange = search CME/CBOT/NYMEX/COMEX.</span></li>
+<li><span class="vi"><b><code>@depth</code> realtime đúng nghĩa.</b> Gateway tự dựng sổ lệnh từ quote từng mức (OnBid/OnAsk) + snapshot, phát ~30Hz liên tục (không còn đứng hình) — nền cho DOM ladder.</span>
+<span class="en"><b>Live <code>@depth</code>.</b> The gateway maintains the book from per-level quotes + snapshot, emitting ~30 Hz continuously (no more frozen book) — powers the DOM ladder.</span></li>
+<li><span class="vi"><b>Vá kho tick full-ngày.</b> Mở chart sẽ backfill toàn bộ tick ngày hiện tại vào kho local (liền lỗ do app từng tắt giữa phiên).</span>
+<span class="en"><b>Full-day tick backfill.</b> Opening a chart backfills the whole current day's ticks into the local store (patches gaps from the app being off mid-session).</span></li>
+<li><span class="vi">Web chart: <b>DOM ladder</b> kiểu ATAS SmartDOM (Today/Bid/Sells/Buys/Ask/Chg, auto-center, xem ngày cũ từ store); <b>dropdown chọn sàn</b>; footprint imbalance sửa thành <b>đường chéo</b>; nến <b>rỗng/đặc theo zoom</b> khi bật footprint.</span>
+<span class="en">Web chart: <b>DOM ladder</b> (ATAS SmartDOM-style: Today/Bid/Sells/Buys/Ask/Chg, auto-center, historical day from store); <b>exchange dropdown</b>; footprint imbalance fixed to <b>diagonal</b>; <b>hollow/solid candles by zoom</b> with footprint on.</span></li>
+</ul>
+
+<h3>1.2.0 — 2026-06-15</h3>
+<ul>
+<li><span class="vi"><b>Tự nối lại upstream.</b> Đường tới Rithmic rớt thì gateway tự nối lại (thử ~30s/lần, không giới hạn) và <b>tự phát lại MỌI subscription</b> — client cứ giữ socket, <b>không</b> cần SUBSCRIBE lại. Xem mục <i>Vòng đời &amp; nối lại</i>.</span>
+<span class="en"><b>Upstream auto-reconnect.</b> If the gateway's Rithmic link drops, it reconnects (~30 s retries, no cap) and <b>auto-restores every active subscription</b> — clients keep their socket open and do <b>not</b> re-SUBSCRIBE. See <i>Connection lifecycle &amp; reconnect</i>.</span></li>
+<li><span class="vi"><b>Kho tick cục bộ.</b> Trade live được ghi xuống đĩa; <code>aggTrades</code> phục vụ footprint/big-trade từ kho khi Rithmic không replay được phiên cũ (chạy cả khi chợ đóng, còn qua các lần khởi động).</span>
+<span class="en"><b>Local tick store.</b> Live trades are recorded to disk; <code>aggTrades</code> serves footprint/big-trade history from the store when Rithmic can't replay a past session (works after market close, survives restarts).</span></li>
+<li><span class="vi"><code>@trade</code> lọc bỏ ảnh chụp lúc (re)subscribe (callback <code>Image</code> của Rithmic) — chỉ phát lệnh khớp thật, không còn lệnh "ma" ở mốc cũ.</span>
+<span class="en"><code>@trade</code> filters the on-(re)subscribe snapshot (Rithmic <code>Image</code>) — only real trade updates, no stale phantom print.</span></li>
+<li><span class="vi">Web chart: footprint vẽ thẳng trên Lightweight Charts (cột mua/bán, POC, delta); nến đã đóng dựng từ feed conflated tự sửa lại từ replay chuẩn.</span>
+<span class="en">Web chart: footprint renders natively on Lightweight Charts (buy/sell ladder, POC, delta); closed bars from a conflated live feed self-heal from authoritative replay.</span></li>
+</ul>
+
+<h3>1.1.0 — 2026-06-14</h3>
+<ul>
+<li><span class="vi"><code>klines</code>: tải nến lịch sử ổn định hơn khi đổi nhanh khung thời gian, symbol hoặc ngày.</span>
+<span class="en"><code>klines</code>: more reliable historical candles when rapidly switching interval, symbol or date.</span></li>
+<li><span class="vi">Web chart chuyển sang <b>TradingView Lightweight Charts</b> (nến/volume/crosshair/zoom mượt), thêm <b>chọn số ngày</b> lịch sử và <b>đánh dấu lệnh lớn</b>.</span>
+<span class="en">Web chart moved to <b>TradingView Lightweight Charts</b> (candles/volume/crosshair/smooth zoom), added a <b>history-days</b> selector and <b>big-trade markers</b>.</span></li>
+<li><span class="vi">Đăng nhập nhanh hơn: danh sách System/Gateway được <b>cache cục bộ</b> (lần sau mở app đổ ngay, không chờ liên hệ license server mỗi lần).</span>
+<span class="en">Faster login: the System/Gateway list is <b>cached locally</b> (instant on later launches, no per-launch license-server round-trip).</span></li>
+<li><span class="vi">Stream <code>@trade</code> thêm field <code>r</code> (thời điểm gateway nhận) → web chart hiện <b>độ trễ feed</b> (ms) để chẩn đoán delay.</span>
+<span class="en">Stream <code>@trade</code> gains an <code>r</code> field (gateway receive time) → the web chart shows a <b>feed-latency</b> badge (ms) for diagnosing delays.</span></li>
+</ul>
+
+<h3>1.0.0 — 2026-06-13</h3>
+<ul>
+<li><span class="vi">Phát hành đầu. Streams: <code>@trade</code>, <code>@bookTicker</code>, <code>@depth[N]</code>, <code>@kline_&lt;interval&gt;</code>.</span>
+<span class="en">Initial release. Streams: <code>@trade</code>, <code>@bookTicker</code>, <code>@depth[N]</code>, <code>@kline_&lt;interval&gt;</code>.</span></li>
+<li><span class="vi">Requests: <code>klines</code>, <code>aggTrades</code>, <code>account</code>, <code>exchangeInfo</code>, <code>instrumentInfo</code>, <code>searchSymbol</code>, <code>ping</code>, <code>SUBSCRIBE</code>/<code>UNSUBSCRIBE</code>.</span>
+<span class="en">Requests: <code>klines</code>, <code>aggTrades</code>, <code>account</code>, <code>exchangeInfo</code>, <code>instrumentInfo</code>, <code>searchSymbol</code>, <code>ping</code>, <code>SUBSCRIBE</code>/<code>UNSUBSCRIBE</code>.</span></li>
+<li><span class="vi">Footprint = <code>aggTrades</code> (lịch sử) + <code>@trade</code> (live). Timestamp Unix mili-giây ở mọi nơi.</span>
+<span class="en">Footprint = <code>aggTrades</code> (history) + <code>@trade</code> (live). Timestamps are Unix milliseconds everywhere.</span></li>
+</ul>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Tiếp theo — dựng chỉ báo từ API này: </span><span class="en">Next — build indicators on this API: </span>
+<a class="h" href="footprint.html"><span class="vi">Hướng dẫn Footprint</span><span class="en">Footprint guide</span></a> ·
+<a class="h" href="bigtrades.html"><span class="vi">Big trades (parity ATAS)</span><span class="en">Big trades (ATAS parity)</span></a> ·
+<a class="h" href="recipes.html"><span class="vi">Cookbook chỉ báo (CVD, VWAP, Volume Profile, DOM, Heatmap…)</span><span class="en">Indicator cookbook (CVD, VWAP, Volume Profile, DOM, Heatmap…)</span></a> ·
+<a class="h" href="dom.html">DOM</a> · <a class="h" href="mbo.html">MBO</a> ·
+<a class="h" href="heatmap.html">Heatmap</a> · <a class="h" href="volumeprofile.html">Volume Profile</a> ·
+<a class="h" href="continuous.html"><span class="vi">Hợp đồng liên tục</span><span class="en">Continuous contract</span></a> ·
+<a class="h" href="options.html"><span class="vi">Options · GEX · 0DTE</span><span class="en">Options · GEX · 0DTE</span></a> ·
+<a class="h" href="storage.html"><span class="vi">Lưu trữ</span><span class="en">Storage</span></a>.</p>
+
+</main>
+</div>
+<script>
+//===== Live "Execute": nối thẳng gateway đang phục vụ trang này (cùng host) =====
+(function(){
+  let ws=null, id=1; const pend=new Map(), scb=new Map();
+  let SYM="ESU6", EXCH="CME";
+  function conn(){ return new Promise((res,rej)=>{
+    if(ws&&ws.readyState===1) return res(ws);
+    if(ws&&ws.readyState===0){ ws.addEventListener("open",()=>res(ws),{once:true}); return; }
+    ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+(location.host||"127.0.0.1:9001")+"/");
+    ws.onmessage=(ev)=>{ let m; try{m=JSON.parse(ev.data)}catch(e){return}
+      if(m.stream){ const cb=scb.get(String(m.stream).toLowerCase()); if(cb) cb(m.data); return; }
+      if(m.id!=null&&pend.has(m.id)){ const p=pend.get(m.id); pend.delete(m.id);
+        (m.error||(m.status&&m.status>=400)) ? p.rej(new Error(m.error||("status "+m.status))) : p.res(m.result); } };
+    ws.onopen=()=>res(ws); ws.onerror=()=>rej(new Error("không nối được gateway"));
+  });}
+  async function req(method,params){ const w=await conn(), i=id++;
+    return new Promise((res,rej)=>{ pend.set(i,{res,rej}); setTimeout(()=>{ if(pend.delete(i)) rej(new Error("timeout")); },30000);
+      w.send(JSON.stringify(params===undefined?{method,id:i}:{method,params,id:i})); }); }
+  async function stream(name,ms,maxN){ const w=await conn(), key=name.toLowerCase(), got=[];
+    return new Promise((res)=>{ let done=false; const fin=()=>{ if(done)return; done=true; scb.delete(key);
+        try{ w.send(JSON.stringify({method:"UNSUBSCRIBE",params:[name],id:id++})); }catch(e){} res(got); };
+      scb.set(key,(d)=>{ got.push(d); if(got.length>=maxN) fin(); });
+      w.send(JSON.stringify({method:"SUBSCRIBE",params:[name],id:id++})); setTimeout(fin,ms); }); }
+  function show(out,v){ let s; if(Array.isArray(v)){ s=JSON.stringify(v.slice(0,8),null,1); if(v.length>8) s+="\n… ("+v.length+" phần tử)"; }
+    else s=JSON.stringify(v,null,1); out.textContent=s; }
+  async function run(btn){ const out=btn.nextElementSibling; out.style.display="block"; out.textContent="⏳ đang chạy…"; btn.disabled=true;
+    try{ const now=Date.now();
+      if(btn.dataset.stream){ const ev=await stream((EXCH+"."+SYM+btn.dataset.stream).toLowerCase(),4000,3);
+        if(ev.length) show(out,ev); else out.textContent="(không có event trong 4s — ngoài giờ giao dịch?)"; }
+      else{ const m=btn.dataset.method; let p;
+        if(m==="klines") p={exchange:EXCH,symbol:SYM,interval:"1m",startTime:now-3*864e5,endTime:now,limit:30};
+        else if(m==="aggTrades") p={exchange:EXCH,symbol:SYM,startTime:now-30*6e4,endTime:now,limit:30};
+        else if(m==="bigTrades") p={exchange:EXCH,symbol:SYM,startTime:now-6*36e5,endTime:now,min:50};
+        else if(m==="instrumentInfo") p={exchange:EXCH,symbol:SYM};
+        else if(m==="searchSymbol") p={query:(SYM.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||SYM),exchange:EXCH};
+        else if(m==="instrumentByUnderlying") p={underlying:SYM,exchange:EXCH,expiration:""};
+        else if(m==="optionChain") p={exchange:EXCH,product:(SYM.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||SYM)};   // expiration mặc định = tháng này
+        else if(m==="tickInfo") p={exchange:EXCH,symbols:[SYM]};
+        else if(m==="volumeProfile") p={exchange:EXCH,symbol:SYM};
+        else if(m==="volumeProfileRange") p={exchange:EXCH,symbol:SYM,days:5,split:"1"};
+        else if(m==="continuousInfo") p={exchange:EXCH,root:(SYM.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||SYM),rule:"date",adjust:"1"};
+        show(out, await req(m,p)); }
+    }catch(e){ out.textContent="Lỗi: "+e.message; } finally{ btn.disabled=false; } }
+  document.addEventListener("click",(e)=>{ const b=e.target.closest(".run"); if(b){ e.preventDefault(); run(b); } });
+  document.addEventListener("input",(e)=>{ if(e.target.id==="trySym") SYM=(e.target.value.trim().toUpperCase())||"ESU6";
+    if(e.target.id==="tryExch") EXCH=(e.target.value.trim().toUpperCase())||"CME"; });
+})();
+</script>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

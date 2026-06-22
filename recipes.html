@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Indicator & Order-Flow Recipes</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:260px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  nav a.sub{padding-left:20px;font-size:13px}
+  nav .grp{color:#fff;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:14px 8px 4px}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:22px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:42px}
+  h2:first-child{margin-top:0}
+  h3{font-size:17px;color:#fff;margin-top:24px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:12.5px;line-height:1.55}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  .dl{margin:10px 0;padding:8px 12px;background:var(--panel2);border:1px solid var(--bd);border-radius:8px;font-size:13.5px}
+  .dl b{color:#fff}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  .st{display:inline-block;font-size:12px;font-weight:700;padding:1px 9px;border-radius:20px;white-space:nowrap;border:1px solid transparent;vertical-align:middle}
+  .st.ok{color:var(--grn);border-color:#1f6f64;background:#10211e}
+  .st.wip{color:var(--acc);border-color:#1d3a5c;background:#0d1d2e}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0}
+  .legend span{color:var(--sub);font-size:13px}
+  ol li,ul li{margin:4px 0}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Recipes</h1>
+  <div class="v">Indicator &amp; order-flow cookbook</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#prim"><span class="vi">Nguyên liệu dữ liệu</span><span class="en">Data primitives</span></a>
+  <div class="grp"><span class="vi">Dựng được hôm nay</span><span class="en">Buildable today</span></div>
+  <a href="#r1" class="sub">1 · <span class="vi">Big trades</span><span class="en">Big trades</span></a>
+  <a href="#r2" class="sub">2 · CVD</a>
+  <a href="#r3" class="sub">3 · VWAP</a>
+  <a href="#r4" class="sub">4 · Volume Profile</a>
+  <a href="#r5" class="sub">5 · DOM</a>
+  <a href="#r6" class="sub">6 · <span class="vi">Heatmap</span><span class="en">Heatmap</span></a>
+  <div class="grp"><span class="vi">Nâng cao (lộ trình)</span><span class="en">Advanced (roadmap)</span></div>
+  <a href="#r7" class="sub">7 · MBO DOM</a>
+  <a href="#r8" class="sub">8 · <span class="vi">Chuỗi quyền chọn</span><span class="en">Options chain</span></a>
+  <a href="#r9" class="sub">9 · GEX</a>
+  <div class="grp">&nbsp;</div>
+  <a href="#pitfalls"><span class="vi">Bẫy thường gặp</span><span class="en">Pitfalls</span></a>
+  <hr>
+  <a href="recipes.md" class="h" target="_blank"><span class="vi">↓ recipes.md (Markdown cho AI)</span><span class="en">↓ recipes.md (Markdown for AI)</span></a>
+  <a href="api.html" class="h"><span class="vi">← Tài liệu WebSocket API</span><span class="en">← WebSocket API reference</span></a>
+  <a href="footprint.html" class="h">Footprint</a>
+  <a href="bigtrades.html" class="h">Big trades</a>
+  <a href="dom.html" class="h">DOM</a>
+</nav>
+<main>
+
+<h2 style="margin-top:0"><span class="vi">Indicator &amp; Order-Flow Recipes</span><span class="en">Indicator &amp; Order-Flow Recipes</span></h2>
+<p><span class="vi">Một <b>cookbook</b>: với mỗi chỉ báo futures phổ biến — <i>dùng</i> stream/request nào của API và <i>thuật toán</i>
+để tính. Mỗi recipe tự chứa, không phụ thuộc ngôn ngữ — dựng từ WebSocket API bằng JS, Python, C#, gì cũng được. Mục tiêu:
+cho người dùng một tham chiếu để xây chỉ báo, rồi từ đó xây chiến lược/bot.</span>
+<span class="en">A <b>cookbook</b>: for each popular futures indicator, <i>which</i> API streams/requests to use and the
+<i>algorithm</i> to compute it. Each recipe is self-contained and language-agnostic — build it from the WebSocket API in JS,
+Python, C#, anything. The goal is to give end users a reference to build indicators and, from there, trading strategies/bots.</span></p>
+<div class="legend">
+  <span><span class="st ok">✓</span> <span class="vi">dựng được từ stream đang chạy hôm nay</span><span class="en">buildable from streams shipping today</span></span>
+  <span><span class="st wip">🛠</span> <span class="vi">cần một stream còn trong lộ trình</span><span class="en">needs a stream still on the roadmap</span></span>
+</div>
+<p style="color:var(--sub);font-size:13.5px"><span class="vi">Tài liệu đi kèm: </span><span class="en">Companion docs: </span>
+<a class="h" href="api.html">API</a> <span class="vi">(schema message đầy đủ)</span><span class="en">(full message schemas)</span> ·
+<a class="h" href="footprint.html">Footprint</a> ·
+<a class="h" href="bigtrades.html">Big trades</a> <span class="vi">(bảng parity ATAS)</span><span class="en">(ATAS parity tracker)</span>.</p>
+
+<h2 id="prim"><span class="vi">Nguyên liệu dữ liệu (mọi recipe đều xây trên đây)</span><span class="en">Data primitives (what every recipe builds on)</span></h2>
+<table>
+<tr><th><span class="vi">Nguồn</span><span class="en">Source</span></th><th><span class="vi">Loại</span><span class="en">Kind</span></th><th><span class="vi">Cho bạn</span><span class="en">Gives you</span></th><th><span class="vi">Recipe dùng</span><span class="en">Used by</span></th></tr>
+<tr><td><code>@trade</code></td><td>stream</td><td><span class="vi">trade khớp live</span><span class="en">live trade prints</span> <code>{p,q,side,T,tu,o,r}</code> (<code>o</code> = <span class="vi">id lệnh chủ động, Rithmic có cấp</span><span class="en">aggressor order id, supplied by Rithmic</span>; <code>tu</code> = <span class="vi">mốc khớp µs</span><span class="en">match time µs</span>)</td><td>Big trades, CVD, VWAP, Volume Profile, Footprint</td></tr>
+<tr><td><code>aggTrades</code></td><td>request</td><td><span class="vi">trade lịch sử</span><span class="en">historical trades</span> <code>[t,p,q,side,o,tu]</code> (Rithmic replay → <span class="vi">local store</span><span class="en">local store</span>)</td><td><span class="vi">seed bất kỳ chỉ báo theo trade</span><span class="en">seeding any trade-based indicator</span></td></tr>
+<tr><td><code>@bookTicker</code></td><td>stream</td><td><span class="vi">bid/ask tốt nhất</span><span class="en">best bid/ask</span> <code>{b,B,a,A}</code></td><td><span class="vi">spread, microprice, side theo tick-rule</span><span class="en">spread, microprice, tick-rule side</span></td></tr>
+<tr><td><code>@depth</code> / <code>@depthN</code></td><td>stream</td><td><span class="vi">sổ lệnh</span><span class="en">order book</span> <code>{bids[],asks[]}</code></td><td><span class="vi">DOM, Heatmap, mất cân bằng sổ</span><span class="en">DOM, Heatmap, book imbalance</span></td></tr>
+<tr><td><code>@kline_&lt;iv&gt;</code> / <code>klines</code></td><td>stream/request</td><td><span class="vi">nến OHLCV</span><span class="en">OHLCV candles</span></td><td><span class="vi">overlay nến, trục thời gian</span><span class="en">bar overlay, time axis</span></td></tr>
+</table>
+<p><span class="vi"><b>Quy ước side</b> ở mọi nơi: <code>"B"</code> = mua chủ động (lift ask), <code>"S"</code> = bán chủ động (hit bid),
+<code>""</code> = không rõ → áp <i>tick rule</i> (giá ≥ trade trước ⇒ mua, ngược lại ⇒ bán; hoặc so với bid/ask tốt nhất).</span>
+<span class="en"><b>Side convention</b> everywhere: <code>"B"</code> = buy aggressor (lifted ask), <code>"S"</code> = sell aggressor
+(hit bid), <code>""</code> = unknown → apply the <i>tick rule</i> (price ≥ last trade ⇒ buy, else sell; or compare to best
+bid/ask).</span></p>
+<div class="note"><span class="vi"><b>Reset phiên.</b> Hầu hết chỉ báo cộng dồn (CVD, VWAP, Volume Profile) reset tại <b>giờ mở phiên</b>.
+Chọn một ranh giới phiên (vd CME equity index RTH open, hoặc daily reset của sàn) và đưa accumulator về 0 ở đó.</span>
+<span class="en"><b>Session reset.</b> Most cumulative indicators (CVD, VWAP, Volume Profile) reset at the <b>session open</b>. Pick a
+session boundary (e.g. CME equity index RTH open, or the exchange daily reset) and zero the accumulators there.</span></div>
+
+<h2 id="r1">1 · <span class="vi">Big trades / phát hiện block</span><span class="en">Big trades / block detection</span> <span class="st ok">✓</span></h2>
+<p><span class="vi">Đánh dấu các print lớn bất thường — size tổ chức, sweep, iceberg lộ diện. (Mô phỏng theo ATAS <i>Big trades</i>.)</span>
+<span class="en">Flag unusually large prints — institutional size, sweeps, icebergs surfacing. (Modelled on ATAS <i>Big trades</i>.)</span></p>
+<div class="dl"><b><span class="vi">Dữ liệu:</span><span class="en">Data:</span></b> <code>@trade</code> (live) + <code>aggTrades</code> (<span class="vi">lịch sử để back-fill marker</span><span class="en">history to back-fill markers</span>).</div>
+<p><b><span class="vi">Hai chế độ</span><span class="en">Two modes</span></b></p>
+<ul>
+<li><b>Cumulative</b> <span class="vi">(mặc định): gộp các print thuộc <b>cùng một matching event</b> thành một trade logic, rồi lọc theo tổng size. Một lệnh chủ động quét nhiều mức giá hiện ra MỘT marker, không phải cụm print nhỏ. Đây là cách ATAS <i>CumulativeTrades</i> hoạt động.</span>
+<span class="en">(default): merge prints that belong to the <b>same matching event</b> into one logical trade, then threshold the <b>summed</b> size. A single aggressive order that swept several price levels shows as ONE marker, not a cluster of small prints. This is how ATAS <i>CumulativeTrades</i> works.</span></li>
+<li><b>Separate</b><span class="vi">: lọc ngưỡng từng print riêng lẻ.</span><span class="en">: threshold each individual print.</span></li>
+</ul>
+<p><b><span class="vi">Gộp nhóm — dùng mốc matching event (<code>tu</code>).</span><span class="en">Grouping — use the matching-event timestamp (<code>tu</code>).</span></b>
+<span class="vi"> Một matching event (một cú quét) đóng dấu mọi print cùng một transact time của sàn; gateway đẩy ra ở <code>tu</code> (micro giây). Gộp dãy print liên tiếp cùng <code>tu</code> = một cumulative trade — đúng khoá mà <code>CumulativeTrade</code> của ATAS dùng (<code>.Time</code>). Rithmic <i>cũng</i> cấp <code>o</code> (<code>AggressorExchOrdId</code>) nhưng <b>đừng</b> lấy làm khoá chính: một lệnh có thể khớp rải qua nhiều event (lệnh nằm chờ/iceberg ăn dần), gộp theo <code>o</code> sẽ gộp dồn thành cụm to mà ATAS tách riêng (đo được lệch cao hơn ATAS). Chỉ dùng <code>o</code> dự phòng khi thiếu <code>tu</code>; còn khi chỉ có ms (replay store cũ) thì <b>cửa sổ thời gian</b> (cùng side trong <code>sweepMs</code>, vd 50&nbsp;ms). Thứ tự: <code>tu</code> → <code>o</code> → cửa sổ thời gian.</span>
+<span class="en"> A matching event (one aggressing sweep) stamps every print with the same exchange transact time; the gateway forwards it as <code>tu</code> (microseconds). Group the run of consecutive prints with an identical <code>tu</code> into one cumulative trade — exactly what ATAS's <code>CumulativeTrade</code> keys on (its <code>.Time</code>). Rithmic <i>also</i> supplies <code>o</code> (<code>AggressorExchOrdId</code>) but <b>don't</b> make it the primary key: one order can fill across several match events (a resting/iceberg order eaten over time), and grouping by <code>o</code> merges those into one oversized trade that ATAS shows separately (measured to drift higher than ATAS). Use <code>o</code> only as a fallback when <code>tu</code> is absent; a <b>time window</b> (same side within <code>sweepMs</code>, e.g. 50&nbsp;ms) when only millisecond time survives (old store replay). Order: <code>tu</code> → <code>o</code> → time window.</span></p>
+<p><b><span class="vi">Thuật toán (cumulative)</span><span class="en">Algorithm (cumulative)</span></b></p>
+<ol>
+<li><span class="vi">Chọn size <code>min</code> (và <code>max</code> tuỳ chọn, 0 = không trần).</span><span class="en">Pick <code>min</code> size (and optional <code>max</code>, 0 = no cap).</span></li>
+<li><span class="vi">Duyệt trade theo thời gian với nhóm hiện hành <code>{side, vol, o, tu, tLast, tArr}</code>.</span><span class="en">Walk trades in time order with a current group <code>{side, vol, o, tu, tLast, tArr}</code>.</span></li>
+<li><span class="vi"><b>Cùng nhóm</b> nếu print có <code>tu</code> bằng <code>tu</code> của nhóm (cùng matching event); hoặc cùng <code>o</code> (cùng lệnh aggressor, dự phòng); nếu không (chỉ có ms) thì cùng side <b>và</b> trong <code>sweepMs</code> kể từ <code>tLast</code>. Khớp → cộng; ngược lại <b>chốt</b> (phát nếu <code>min ≤ vol</code> và <code>max ≤ 0 || vol &lt; max</code>) rồi mở nhóm mới.</span>
+<span class="en"><b>Same group</b> if the print's <code>tu</code> equals the group's <code>tu</code> (same matching event); else equal <code>o</code> (same aggressor order, fallback); else (ms only) same side <b>and</b> within <code>sweepMs</code> of <code>tLast</code>. Match → add; otherwise <b>flush</b> (emit if <code>min ≤ vol</code> and <code>max ≤ 0 || vol &lt; max</code>) and start a new group.</span></li>
+<li><span class="vi">Chốt nhóm cuối ở cuối danh sách (lịch sử) hoặc sau khoảng hở &gt; <code>sweepMs</code> (live: dùng timer). Đo khoảng hở live theo <b>mốc tới máy</b>, không phải timestamp sàn, để độ trễ feed không chốt nhóm non rồi cắt đuôi sweep.</span><span class="en">Flush the final group at end of list (history) or after a gap &gt; <code>sweepMs</code> (live: a timer). Measure the live gap from <b>arrival time</b>, not the exchange timestamp, so feed latency can't close a group early and clip a sweep's tail.</span></li>
+<li><span class="vi">Vẽ marker (▲ dưới nến cho mua, ▼ trên nến cho bán) hoặc bong bóng theo khối lượng; nhãn = size nhóm.</span><span class="en">Render markers (▲ below bar for buy, ▼ above for sell) or bubbles sized by volume; label = group size.</span></li>
+</ol>
+<pre><code>function buildBigTrades(trades, {min, max=0, sweepMs=50, cumulative=true}){  // trades: [{T,q,side,tu,o}] sorted by T
+  const ok = v =&gt; v&gt;=min &amp;&amp; (max&lt;=0 || v&lt;max), out=[];
+  if(!cumulative){ for(const t of trades) if(ok(t.q)) out.push({T:t.T, q:t.q, side:t.side||""}); return out; }
+  let g=null; const flush=()=&gt;{ if(g &amp;&amp; ok(g.q)) out.push({T:g.T, q:g.q, side:g.side}); g=null; };
+  const same=(t,s)=&gt; g &amp;&amp; ((t.tu&amp;&amp;g.tu) ? t.tu===g.tu              // cùng matching event (µs) — khoá ATAS (.Time)
+                          : (t.o&amp;&amp;g.o) ? t.o===g.o                  // hoặc cùng id lệnh aggressor (dự phòng)
+                          : (!g.o &amp;&amp; s===g.side &amp;&amp; (t.T-g.last)&lt;=sweepMs));  // fallback chỉ-ms
+  for(const t of trades){ const s=t.side||"";
+    if(same(t,s)){ g.q+=t.q; g.last=t.T; }
+    else { flush(); g={T:t.T, q:t.q, side:s, tu:t.tu||0, o:t.o||"", last:t.T}; } }
+  flush(); return out;
+}</code></pre>
+<div class="note"><span class="vi"><b>Tinh chỉnh:</b> ngưỡng cố định bắn sai giữa các hợp đồng/phiên. <b>Percentile trượt</b> (đánh dấu size trên percentile 99 của N trade gần nhất) tự thích nghi theo thanh khoản. ATAS chồng thêm bộ lọc: <b>vị trí giá</b> và <b>cỡ marker theo khối lượng</b> đã có trong chart tham chiếu; <b>cửa sổ giờ trong ngày</b> và <b>cảnh báo</b> còn trong lộ trình. Bản phân tích parity-ATAS đầy đủ — gồm hộp sweep FirstPrice→LastPrice và vì sao AutoFilter không thể khớp 1:1 — được theo dõi trong <a class="h" href="bigtrades.html">Big trades</a>.</span>
+<span class="en"><b>Tuning:</b> a fixed threshold misfires across contracts/sessions. A <b>rolling percentile</b> (flag size above the 99th of the last N trades) adapts to liquidity automatically. ATAS layers more filters: <b>price-location</b> and <b>marker size scaled by volume</b> are already in the reference chart; <b>time-of-day window</b> and <b>alerts</b> are on the roadmap. The full ATAS-parity breakdown — including the FirstPrice→LastPrice sweep range and why AutoFilter can't be matched 1:1 — is tracked in <a class="h" href="bigtrades.html">Big trades</a>.</span></div>
+
+<h2 id="r2">2 · CVD — <span class="vi">Cumulative Volume Delta</span><span class="en">Cumulative Volume Delta</span> <span class="st ok">✓</span></h2>
+<p><span class="vi">Trụ cột order-flow. Tổng chạy của khối lượng mua chủ động trừ bán; phân kỳ so với giá báo hiệu sự hấp thụ.</span>
+<span class="en">The order-flow staple. Running sum of aggressive buy minus sell volume; divergence vs price signals absorption.</span></p>
+<div class="dl"><b><span class="vi">Dữ liệu:</span><span class="en">Data:</span></b> <code>@trade</code> (<span class="vi">field</span><span class="en">the</span> <code>side</code>) + <code>aggTrades</code> <span class="vi">để seed phiên</span><span class="en">to seed the session</span>.</div>
+<p><b><span class="vi">Thuật toán</span><span class="en">Algorithm</span></b></p>
+<ol>
+<li><code>cvd = 0</code> <span class="vi">tại giờ mở phiên.</span><span class="en">at session open.</span></li>
+<li><span class="vi">Mỗi trade:</span><span class="en">Each trade:</span> <code>cvd += (side==="B" ? +q : side==="S" ? -q : signByTickRule()*q)</code>.</li>
+<li><span class="vi">Vẽ <code>cvd</code> thành đường ở sub-pane dưới giá. So độ dốc với độ dốc giá.</span><span class="en">Plot <code>cvd</code> as a line in a sub-pane under price. Compare slope vs price slope.</span></li>
+</ol>
+<pre><code>let cvd = 0, last = null; const series = [];
+function onTrade(d){
+  let s = d.side;
+  if (s!=="B" &amp;&amp; s!=="S"){ s = (last===null || d.p&gt;=last) ? "B" : "S"; }  // tick rule
+  last = d.p;
+  cvd += (s==="B" ? d.q : -d.q);
+  series.push({ time: Math.floor(d.T/1000), value: cvd });
+}</code></pre>
+<table>
+<tr><th><span class="vi">Đọc</span><span class="en">Read</span></th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><span class="vi">Giá lên, CVD lên</span><span class="en">Price up, CVD up</span></td><td><span class="vi">chủ động mua lành mạnh</span><span class="en">healthy buy initiative</span></td></tr>
+<tr><td><span class="vi">Giá lên, CVD phẳng/xuống</span><span class="en">Price up, CVD flat/down</span></td><td><b><span class="vi">phân kỳ giảm</span><span class="en">bearish divergence</span></b> — <span class="vi">bên mua lift nhưng bên bán hấp thụ</span><span class="en">buyers lifting but sellers absorbing</span></td></tr>
+<tr><td><span class="vi">CVD bước dốc</span><span class="en">CVD steep step</span></td><td><span class="vi">sweep chủ động</span><span class="en">aggressive sweep</span></td></tr>
+</table>
+<div class="note"><span class="vi"><b>Delta mỗi nến</b> là cùng tổng có dấu nhưng reset mỗi nến (đã hiện trong footprint). <b>CVD</b> là bản cộng dồn không bao giờ reset.</span>
+<span class="en"><b>Per-bar delta</b> is the same signed sum reset each bar (already shown in the footprint). <b>CVD</b> is the never-reset cumulative version.</span></div>
+
+<h2 id="r3">3 · VWAP + <span class="vi">dải lệch chuẩn</span><span class="en">standard-deviation bands</span> <span class="st ok">✓</span></h2>
+<p><span class="vi">Đường giá trị hợp lý nội ngày được dùng nhiều nhất; dải đánh dấu trạng thái căng.</span>
+<span class="en">The most-used intraday fair-value line; bands mark stretched conditions.</span></p>
+<div class="dl"><b><span class="vi">Dữ liệu:</span><span class="en">Data:</span></b> <code>@trade</code> (price × volume) + <code>aggTrades</code> <span class="vi">để seed</span><span class="en">to seed</span>.</div>
+<p><b><span class="vi">Thuật toán</span><span class="en">Algorithm</span></b> — <span class="vi">giữ ba tổng chạy từ giờ mở phiên:</span><span class="en">keep three running sums from the session open:</span></p>
+<pre><code>ΣPV  += price*qty
+ΣV   += qty
+ΣP2V += price*price*qty
+VWAP  = ΣPV / ΣV
+var   = ΣP2V/ΣV − VWAP*VWAP          # volume-weighted variance
+σ     = sqrt(max(var, 0))
+band± = VWAP ± k*σ                    # k = 1, 2, 3 …</code></pre>
+<pre><code>let pv=0,v=0,p2v=0;
+function onTrade(d){ pv += d.p*d.q; v += d.q; p2v += d.p*d.p*d.q; }
+function vwap(){ const m = pv/v; const sd = Math.sqrt(Math.max(p2v/v - m*m, 0));
+  return { vwap:m, up1:m+sd, dn1:m-sd, up2:m+2*sd, dn2:m-2*sd }; }</code></pre>
+<div class="note"><span class="vi">Anchored VWAP = cùng công thức nhưng bắt đầu <code>Σ</code> từ một sự kiện chọn trước (mở phiên, một đỉnh/đáy swing, một nến tin) thay vì giờ mở phiên.</span>
+<span class="en">Anchored VWAP = same math but start <code>Σ</code> from a chosen event (open, a swing high/low, a news bar) instead of the session open.</span></div>
+
+<h2 id="r4">4 · Volume Profile (POC / Value Area) <span class="st ok">✓</span></h2>
+<p><span class="vi">Histogram ngang của khối lượng <b>theo giá</b> — tìm node khối lượng cao (hỗ trợ/kháng cự) và vùng giá trị.</span>
+<span class="en">Horizontal histogram of volume <b>by price</b> — finds high-volume nodes (support/resistance) and the value area.</span></p>
+<div class="dl"><b><span class="vi">Dữ liệu:</span><span class="en">Data:</span></b> <code>aggTrades</code> (<span class="vi">phiên/khoảng nhìn thấy</span><span class="en">session/visible range</span>) + <code>@trade</code> (<span class="vi">mở rộng live</span><span class="en">extend live</span>). <span class="vi">(Hoặc tổng hợp từ footprint sẵn có.)</span><span class="en">(Or aggregate an existing footprint.)</span></div>
+<p><b><span class="vi">Thuật toán</span><span class="en">Algorithm</span></b></p>
+<ol>
+<li><span class="vi">Bucket khối lượng theo giá:</span><span class="en">Bucket volume by price:</span> <code>vol[price] += q</code> <span class="vi">cho mọi trade trong khoảng.</span><span class="en">for every trade in range.</span></li>
+<li><b>POC</b> = <span class="vi">giá có <code>vol</code> lớn nhất.</span><span class="en">price with the max <code>vol</code>.</span></li>
+<li><b><span class="vi">Vùng giá trị (VA, mặc định 70%):</span><span class="en">Value Area (VA, default 70%):</span></b> <span class="vi">bắt từ POC, lặp lại việc thêm hàng <i>lớn hơn</i> trong hai hàng kề (trên/dưới span VA hiện tại) đến khi khối lượng bao gồm ≥ 70% tổng. Hai mép span là <b>VAH</b> (cao) và <b>VAL</b> (thấp).</span>
+<span class="en">start at POC, repeatedly add the <i>larger</i> of the two adjacent rows (above / below the current VA span) until the enclosed volume ≥ 70% of total. The span's edges are <b>VAH</b> (high) and <b>VAL</b> (low).</span></li>
+</ol>
+<pre><code>const vol = new Map();                                   // price -&gt; volume
+function onTrade(d){ vol.set(d.p, (vol.get(d.p)||0) + d.q); }
+function valueArea(pct=0.70){
+  const rows=[...vol.entries()].sort((a,b)=&gt;a[0]-b[0]);  // ascending price
+  const total=rows.reduce((s,r)=&gt;s+r[1],0);
+  let i=rows.reduce((mi,r,ix,a)=&gt;r[1]&gt;a[mi][1]?ix:mi,0); // POC index
+  let lo=i, hi=i, acc=rows[i][1];
+  while(acc &lt; total*pct &amp;&amp; (lo&gt;0 || hi&lt;rows.length-1)){
+    const up   = hi&lt;rows.length-1 ? rows[hi+1][1] : -1;
+    const down = lo&gt;0            ? rows[lo-1][1] : -1;
+    if(up&gt;=down){ hi++; acc+=up; } else { lo--; acc+=down; }
+  }
+  return { poc:rows[i][0], vah:rows[hi][0], val:rows[lo][0] };
+}</code></pre>
+<div class="note"><span class="vi"><b>Loại profile:</b> theo phiên = <i>Volume Profile</i>; theo khoảng nhìn thấy = <i>VPVR</i>; tách theo bracket thời gian = <i>TPO / Market Profile</i>. Cùng cách bucket, khác cách nhóm trục x.</span>
+<span class="en"><b>Profile types:</b> by session = <i>Volume Profile</i>; by visible range = <i>VPVR</i>; split by time brackets = <i>TPO / Market Profile</i>. Same bucketing, different x-grouping.</span></div>
+
+<h2 id="r5">5 · DOM — <span class="vi">thang sổ lệnh</span><span class="en">order book ladder</span> <span class="st ok">✓</span></h2>
+<p><span class="vi">Thang depth mà scalper đọc: size bid/ask nghỉ tại mỗi giá, cộng mất cân bằng.</span>
+<span class="en">The depth ladder scalpers read: resting bid/ask size at each price, plus imbalance.</span></p>
+<div class="dl"><b><span class="vi">Dữ liệu:</span><span class="en">Data:</span></b> <code>@depth</code> (<span class="vi">sổ đầy đủ</span><span class="en">full book</span>) <span class="vi">hoặc</span><span class="en">or</span> <code>@depthN</code> (<span class="vi">top N</span><span class="en">top N</span>).</div>
+<p><b><span class="vi">Thuật toán</span><span class="en">Algorithm</span></b></p>
+<ol>
+<li><span class="vi">Giữ hai map <code>bids[price]=size</code>, <code>asks[price]=size</code>; thay từ mỗi snapshot <code>@depth</code> (hoặc áp delta nếu đăng ký incremental).</span>
+<span class="en">Maintain two maps <code>bids[price]=size</code>, <code>asks[price]=size</code>; replace from each <code>@depth</code> snapshot (or apply deltas if you subscribe incremental).</span></li>
+<li><span class="vi">Vẽ thang dọc: giá giảm dần, size bid trái / size ask phải, bid/ask tốt nhất tô đậm.</span>
+<span class="en">Render a vertical ladder: price descending, bid size left / ask size right, best bid/ask highlighted.</span></li>
+<li><b><span class="vi">Mất cân bằng sổ</span><span class="en">Book imbalance</span></b> <span class="vi">ở đỉnh:</span><span class="en">at the top:</span> <code>(bidSize − askSize) / (bidSize + askSize)</code> <span class="vi">trên K mức đầu → áp lực.</span><span class="en">over the top K levels → pressure.</span></li>
+</ol>
+<pre><code>let bids=new Map(), asks=new Map();
+function onDepth(d){ bids=new Map(d.bids); asks=new Map(d.asks);
+  const bb=d.bids[0]?.[1]||0, aa=d.asks[0]?.[1]||0;
+  const imb=(bb-aa)/((bb+aa)||1);                 // −1 sell-heavy … +1 buy-heavy
+}</code></pre>
+<div class="note"><span class="vi">Size DOM là <b>thanh khoản nghỉ</b> (ý định), không phải khối lượng đã khớp. Ghép với <code>@trade</code> để thấy cái gì thực sự khớp <i>vào</i> sổ (hấp thụ / iceberg refill).</span>
+<span class="en">DOM size is <b>resting liquidity</b> (intent), not executed volume. Pair it with <code>@trade</code> to see what actually traded <i>into</i> the book (absorption / iceberg refills).</span></div>
+
+<h2 id="r6">6 · <span class="vi">Heatmap thanh khoản (kiểu Bookmap)</span><span class="en">Liquidity Heatmap (Bookmap-style)</span> <span class="st ok">✓</span></h2>
+<p><span class="vi">Thanh khoản nghỉ theo thời gian — lệnh nghỉ lớn phát sáng, cho thấy nơi giá bị hút/từ chối.</span>
+<span class="en">Resting liquidity over time — large resting orders glow, showing where price gets attracted/rejected.</span></p>
+<div class="dl"><b><span class="vi">Dữ liệu:</span><span class="en">Data:</span></b> <code>@depth</code> <span class="vi">lấy mẫu theo thời gian</span><span class="en">sampled over time</span>.</div>
+<p><b><span class="vi">Thuật toán</span><span class="en">Algorithm</span></b></p>
+<ol>
+<li><span class="vi">Theo nhịp cố định (vd mỗi 250 ms) chụp snapshot sổ.</span><span class="en">On a fixed cadence (e.g. every 250 ms) snapshot the book.</span></li>
+<li><span class="vi">Với mỗi <code>[price, size]</code>, ghi một cell <code>(timeColumn, price) = size</code>.</span><span class="en">For each <code>[price, size]</code>, write a cell <code>(timeColumn, price) = size</code>.</span></li>
+<li><span class="vi">Ánh xạ <code>size</code> → cường độ màu (thang log chạy tốt nhất); cuộn cột sang trái theo thời gian.</span><span class="en">Map <code>size</code> → color intensity (log scale works best); scroll columns left over time.</span></li>
+<li><span class="vi">Overlay print đã khớp (<code>@trade</code>) lên trên để thấy thanh khoản bị tiêu thụ vs bị rút.</span><span class="en">Overlay traded prints (<code>@trade</code>) on top to see liquidity being consumed vs pulled.</span></li>
+</ol>
+<div class="note"><span class="vi">Đây là buffer 2-D (thời gian × giá) của size nghỉ. Giữ ring buffer W cột gần nhất; tô lại màu mỗi snapshot mới. Spoofing hiện ra như thanh khoản xuất hiện rồi biến mất mà không khớp xuyên qua.</span>
+<span class="en">This is a 2-D buffer (time × price) of resting size. Keep a ring buffer of the last W columns; recolor on each new snapshot. Spoofing shows as liquidity that appears then vanishes without trading through it.</span></div>
+
+<h2 id="r7"><span class="vi">Nâng cao (lộ trình) — điểm vào API + phương pháp</span><span class="en">Advanced (roadmap) — API entry point + method</span></h2>
+<p><span class="vi">Những cái này cần một stream/endpoint còn đang wire (🛠), nhưng phương pháp đã có ở đây để mục tiêu rõ ràng.</span>
+<span class="en">These need a stream/endpoint still being wired (🛠), but the method is here so the target is clear.</span></p>
+
+<h3>7 · MBO DOM — <span class="vi">depth-by-order</span><span class="en">depth-by-order</span> <span class="st wip">🛠</span></h3>
+<div class="dl"><b><span class="vi">Dữ liệu:</span><span class="en">Data:</span></b> <code>@dbo</code> (<span class="vi">depth-by-order; queue từng lệnh, không gộp size</span><span class="en">depth-by-order; per-order queue, not aggregated size</span>). <span class="vi">Cần tài khoản được cấp quyền MBO từ sàn.</span><span class="en">Requires the account to be entitled to MBO from the exchange.</span></div>
+<p><b><span class="vi">Phương pháp:</span><span class="en">Method:</span></b> <span class="vi">giữ một queue có thứ tự các lệnh riêng lẻ tại mỗi giá; theo dõi sự kiện add / modify / cancel / trade để thấy <b>vị trí queue</b>, iceberg refill, và số lệnh thật phía sau một giá — phong phú hơn DOM gộp rất nhiều.</span>
+<span class="en">keep an ordered queue of individual orders at each price; track add / modify / cancel / trade events to see <b>queue position</b>, iceberg refills, and true order count behind a price — far richer than aggregated DOM.</span></p>
+
+<h3>8 · <span class="vi">Chuỗi quyền chọn</span><span class="en">Options chain</span> <span class="st wip">🛠</span></h3>
+<div class="dl"><b><span class="vi">Dữ liệu:</span><span class="en">Data:</span></b> <code>getOptionChain(exchange, product, expiry)</code> → <span class="vi">instrument theo từng strike; đăng ký mỗi cái để lấy quote/greeks và open interest.</span><span class="en">instruments per strike; subscribe each for quotes/greeks and open interest.</span></div>
+<p><b><span class="vi">Phương pháp:</span><span class="en">Method:</span></b> <span class="vi">dựng lưới strike × {call, put} với bid/ask, IV, OI; nền tảng cho mọi phân tích quyền chọn.</span>
+<span class="en">build a strike × {call, put} grid with bid/ask, IV, OI; foundation for any options analytics.</span></p>
+
+<h3>9 · Options GEX — <span class="vi">Gamma Exposure</span><span class="en">Gamma Exposure</span> <span class="st wip">🛠</span></h3>
+<div class="dl"><b><span class="vi">Dữ liệu:</span><span class="en">Data:</span></b> <span class="vi">open interest quyền chọn theo từng strike (từ chuỗi) + giá underlying/future.</span><span class="en">option open interest per strike (from the chain) + the underlying/future price.</span></div>
+<p><b><span class="vi">Phương pháp:</span><span class="en">Method:</span></b></p>
+<ol>
+<li><span class="vi">Với mỗi strike, tính <b>gamma</b> (Black-76 cho option futures):</span><span class="en">For each strike, compute <b>gamma</b> (Black-76 for futures options):</span></li>
+</ol>
+<pre><code>d1 = (ln(F/K) + 0.5σ²T) / (σ√T)
+Γ  = e^(−rT)·N'(d1) / (F·σ·√T)
+GEX_K = Γ · OI_K · multiplier · F² · 0.01     # notional gamma / 1% move</code></pre>
+<ol start="2">
+<li><span class="vi">Phơi nhiễm mỗi strike:</span><span class="en">Per-strike exposure:</span> <code>GEX_K = Γ · OI_K · multiplier · F² · 0.01</code> <span class="vi">(gamma danh nghĩa cho 1% di chuyển).</span><span class="en">(notional gamma per 1% move).</span></li>
+<li><span class="vi">Cộng các strike với quy ước dấu dealer (thường +calls, −puts). Mức <b>zero-gamma</b> (điểm lật) và các strike GEX lớn đóng vai trò nam châm/ghim biến động.</span>
+<span class="en">Sum across strikes with a dealer-sign convention (commonly +calls, −puts). The <b>zero-gamma</b> flip level and large-GEX strikes act as volatility magnets / pins.</span></li>
+</ol>
+<div class="note"><span class="vi">Quy ước dấu (ai long/short gamma) là lựa chọn mô hình hoá — ghi rõ trong UI.</span>
+<span class="en">The sign convention (who is long/short gamma) is a modeling choice — state it explicitly in your UI.</span></div>
+
+<h2 id="pitfalls"><span class="vi">Bẫy chung (áp cho mọi recipe)</span><span class="en">General pitfalls (apply to all recipes)</span></h2>
+<ul>
+<li><b><span class="vi">Seed từ lịch sử, rồi mới live.</span><span class="en">Seed from history, then go live.</span></b> <span class="vi">Replay <code>aggTrades</code> một lần để điền phiên đến hiện tại, rồi tiếp tục áp <code>@trade</code>. Ranh giới liền mạch — đừng đếm trùng một cửa sổ chồng lấn.</span>
+<span class="en">Replay <code>aggTrades</code> once to fill the session so far, then keep applying <code>@trade</code>. The boundary is seamless — don't double-count an overlapping window.</span></li>
+<li><b><span class="vi">Tick rule cho side rỗng.</span><span class="en">Tick rule for empty side.</span></b> <span class="vi">Ưu tiên <code>side</code> từ server; khi <code>""</code>, phân loại theo giá vs trade trước (hoặc vs bid/ask tốt nhất từ <code>@bookTicker</code>).</span>
+<span class="en">Prefer the server <code>side</code>; when <code>""</code>, classify by price vs last trade (or vs best bid/ask from <code>@bookTicker</code>).</span></li>
+<li><b><span class="vi">Ranh giới phiên.</span><span class="en">Session boundaries.</span></b> <span class="vi">Reset chỉ báo cộng dồn (CVD, VWAP, profile) tại giờ mở phiên, không thì chúng trôi qua các ngày.</span>
+<span class="en">Reset cumulative indicators (CVD, VWAP, profile) at the session open, or they drift across days.</span></li>
+<li><b><span class="vi">Nghỉ vs đã khớp.</span><span class="en">Resting vs traded.</span></b> <code>@depth</code> = <span class="vi">ý định (có thể bị rút/spoof)</span><span class="en">intent (can be pulled/spoofed)</span>; <code>@trade</code> = <span class="vi">đã xong</span><span class="en">done</span>. <span class="vi">Đọc order-flow đến từ việc kết hợp cả hai.</span><span class="en">Order-flow reads come from combining both.</span></li>
+<li><b><span class="vi">aggTrades ngoài giờ.</span><span class="en">Off-hours aggTrades.</span></b> <span class="vi">Với phiên Rithmic không còn replay được, lịch sử được phục vụ từ tick store cục bộ của gateway; nếu cả hai đều rỗng thì chợ đã đóng và không có tick ghi lại — dựng live khi mở lại.</span>
+<span class="en">For sessions Rithmic can no longer replay, history is served from the gateway's local tick store; if both are empty the market was closed with no recorded ticks — build live once it reopens.</span></li>
+</ul>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="api.html"><span class="vi">Tài liệu WebSocket API</span><span class="en">WebSocket API reference</span></a> ·
+<a class="h" href="footprint.html">Footprint</a> ·
+<a class="h" href="bigtrades.html">Big trades</a> ·
+<a class="h" href="dom.html">DOM</a> · <a class="h" href="mbo.html">MBO</a> ·
+<a class="h" href="recipes.md" target="_blank">recipes.md</a></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

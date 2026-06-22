@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fxaurum Rithmic API — Tài liệu / Docs</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e; --acc:#2f81f7; --yel:#e3b341; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--txt); font:15px/1.55 -apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+  .wrap{ max-width:980px; margin:0 auto; padding:32px 20px 60px; }
+  h1{ font-size:26px; margin:0 0 4px; }
+  .sub{ color:var(--sub); margin:0 0 22px; }
+  .ver{ display:inline-block; font-size:12px; color:var(--acc); border:1px solid var(--bd); border-radius:20px; padding:2px 10px; margin-left:8px; vertical-align:middle; }
+  .note{ background:#1c1500; border:1px solid var(--yel); color:#e8d8a8; border-radius:8px; padding:12px 14px; margin:0 0 26px; font-size:13.5px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+  a.card{ display:block; background:var(--panel); border:1px solid var(--bd); border-radius:10px; padding:16px 18px; text-decoration:none; color:var(--txt); transition:border-color .15s,transform .05s; }
+  a.card:hover{ border-color:var(--acc); transform:translateY(-1px); }
+  a.card .t{ font-size:16px; font-weight:600; color:#fff; }
+  a.card .en{ color:var(--sub); font-weight:400; font-size:13px; }
+  a.card .d{ color:var(--sub); font-size:13px; margin-top:5px; }
+  footer{ color:var(--sub); font-size:12.5px; margin-top:34px; border-top:1px solid var(--bd); padding-top:16px; }
+  code{ background:#0b0f14; border:1px solid var(--bd); border-radius:4px; padding:1px 5px; font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fxaurum Rithmic API <span class="ver">API v1.7.0</span></h1>
+  <p class="sub">Tài liệu WebSocket gateway + chỉ báo orderflow · WebSocket gateway &amp; orderflow reference</p>
+
+  <div class="note">
+    <b>Lưu ý / Note:</b> Các nút <b>Execute</b> trong <code>API</code> gọi tới <code>ws://127.0.0.1:9001</code> — chỉ chạy khi <b>app FxaurumRithmicApi đang mở trên chính máy bạn</b>. Trên trang online chúng dùng để <i>đọc tham khảo</i>; muốn thử thật thì mở app local rồi bấm.
+    <br><span style="color:var(--sub)">The <b>Execute</b> buttons call <code>ws://127.0.0.1:9001</code> and only work when the local app is running. Online they are for reference.</span>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="api.html"><div class="t">API · WebSocket <span class="en">reference</span></div><div class="d">Cổng WS, mọi RPC + stream (klines, aggTrades, options, volumeProfile, continuousInfo…).</div></a>
+    <a class="card" href="footprint.html"><div class="t">Footprint</div><div class="d">Ladder mua/bán theo giá, POC, delta — dựng từ <code>aggTrades</code> + <code>@trade</code>.</div></a>
+    <a class="card" href="volumeprofile.html"><div class="t">Volume Profile</div><div class="d">Volume-at-price, VPOC, Value Area — phiên hiện tại + gộp nhiều phiên.</div></a>
+    <a class="card" href="dom.html"><div class="t">DOM <span class="en">order book</span></div><div class="d">Sổ lệnh ladder kiểu SmartDOM từ <code>@depth</code>.</div></a>
+    <a class="card" href="heatmap.html"><div class="t">Heatmap</div><div class="d">Bản đồ nhiệt thanh khoản theo thời gian.</div></a>
+    <a class="card" href="mbo.html"><div class="t">MBO <span class="en">order-by-order</span></div><div class="d">Sổ theo từng lệnh trên Rithmic DBO (<code>@mbo</code> + <code>mboProbe</code>).</div></a>
+    <a class="card" href="bigtrades.html"><div class="t">Big Trades</div><div class="d">Phát hiện lệnh lớn / sweep gom server-side (<code>bigTrades</code>).</div></a>
+    <a class="card" href="options.html"><div class="t">Options · GEX · 0DTE</div><div class="d">Chuỗi quyền chọn, gamma exposure, Call/Put Wall, γ-flip.</div></a>
+    <a class="card" href="continuous.html"><div class="t">Continuous Contract <span class="en">rollover</span></div><div class="d">Hợp đồng liên tục back-adjusted (<code>continuousInfo</code> + <code>cont</code>).</div></a>
+    <a class="card" href="storage.html"><div class="t">Storage</div><div class="d">Kho tick/nến local, coverage, tự backfill.</div></a>
+    <a class="card" href="recipes.html"><div class="t">Recipes</div><div class="d">Công thức dựng chỉ báo từ stream/RPC.</div></a>
+  </div>
+
+  <footer>
+    Bản chụp tài liệu của Fxaurum Rithmic API. Nội dung gốc nhúng trong app; trang này phục vụ xem online.<br>
+    Each page also has a Markdown version (<code>API.md</code>, <code>FOOTPRINT.md</code>, …) in this repo.
+  </footer>
+</div>
+</body>
+</html>

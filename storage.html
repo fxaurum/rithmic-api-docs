@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Storage, caching &amp; API tuning</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --blu:#2d78dc; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  h3{font-size:18px;color:#fff;margin-top:26px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Storage &amp; tuning</h1>
+  <div class="v">Lưu trữ · cache · gọi API tối ưu</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#stores"><span class="vi">Kho trên đĩa</span><span class="en">On-disk stores</span></a>
+  <a href="#tick"><span class="vi">TickStore (theo phiên)</span><span class="en">TickStore (by session)</span></a>
+  <a href="#cache"><span class="vi">Các lớp cache</span><span class="en">Caching layers</span></a>
+  <a href="#search"><span class="vi">Search (1 lúc 1 cái)</span><span class="en">Search (single-in-flight)</span></a>
+  <a href="#depth"><span class="vi">@depth&lt;N&gt;</span><span class="en">@depth&lt;N&gt;</span></a>
+  <a href="#patterns"><span class="vi">Gọi API tối ưu</span><span class="en">Calling the API cheaply</span></a>
+  <hr>
+  <a href="storage.md" class="h" target="_blank"><span class="vi">↓ storage.md (cho AI)</span><span class="en">↓ storage.md (for AI)</span></a>
+  <a href="api.html" class="h"><span class="vi">← WebSocket API</span><span class="en">← WebSocket API</span></a>
+  <a href="heatmap.html" class="h">→ Heatmap</a>
+  <a href="dom.html" class="h">→ DOM</a>
+</nav>
+<main>
+
+<h2 id="stores" style="margin-top:0"><span class="vi">Kho trên đĩa</span><span class="en">On-disk stores</span></h2>
+<p><span class="vi">Tất cả nằm trong <code>%LOCALAPPDATA%\FxaurumRithmic\</code>. Hai ràng buộc của Rithmic định hình thiết kế: tick replay
+chỉ phục vụ <b>phiên đang mở</b>, và <b>chỉ 1 search instrument tại một thời điểm</b>.</span>
+<span class="en">All under <code>%LOCALAPPDATA%\FxaurumRithmic\</code>. Two Rithmic constraints shape the design: tick replay only serves the
+<b>currently-open session</b>, and <b>only one instrument search at a time</b>.</span></p>
+<table>
+<tr><th><span class="vi">Kho</span><span class="en">Store</span></th><th>Files</th><th><span class="vi">Chứa</span><span class="en">Holds</span></th><th><span class="vi">Chia theo</span><span class="en">Partition</span></th></tr>
+<tr><td><b>TickStore (v2)</b></td><td><code>TickDb\&lt;EXCH.SYM&gt;\&lt;yyyyMMdd&gt;.tick</code> + <code>tick.coverage</code></td><td><span class="vi">mọi tick live</span><span class="en">every live tick</span></td><td><span class="vi">phiên CME (1 file = 1 phiên)</span><span class="en">CME session (1 file = 1 session)</span></td></tr>
+<tr><td><b><span class="vi">Cache big-trade</span><span class="en">Big-trade cache</span></b></td><td><code>big_&lt;tag&gt;_&lt;min&gt;.bigcache</code></td><td><span class="vi">bóng big-trade phiên ĐÃ đóng</span><span class="en">grouped bubbles for a closed session</span></td><td><span class="vi">phiên</span><span class="en">session</span></td></tr>
+<tr><td><b><span class="vi">Kho nến</span><span class="en">Bar store</span></b></td><td><code>BarDb\&lt;EXCH.SYM&gt;\&lt;iv&gt;.bars</code> + <code>&lt;iv&gt;.coverage</code></td><td><span class="vi">klines / nến dựng từ tick</span><span class="en">klines / tick-derived candles</span></td><td><span class="vi">khung (coverage theo phiên)</span><span class="en">interval (session-tagged)</span></td></tr>
+<tr><td><b><span class="vi">Cache symbol</span><span class="en">Symbol cache</span></b></td><td><code>TickDb\symbols.json</code></td><td><span class="vi">search + instrumentInfo</span><span class="en">search + instrumentInfo</span></td><td>—</td></tr>
+</table>
+
+<h2 id="tick"><span class="vi">TickStore — chia theo phiên</span><span class="en">TickStore — partitioned by session</span></h2>
+<ul>
+<li><span class="vi"><code>.tick</code> — header <b>32 byte</b> (magic <code>FXTK</code>, version 2, recSize 29) rồi record <b>29 byte</b>: <code>time</code>(int64 ms,8) · <code>price</code>(double,8) · <code>qty</code>(int32,4) · <code>side</code>(byte,1) · <b><code>tu</code></b>(int64,8). <code>tu</code> = mốc khớp sàn (µs), giờ <b>nằm thẳng trong record</b> — bỏ sidecar <code>.fxu</code> (hết bug lệch <code>.fxt</code>/<code>.fxu</code>). Gom cumulative trade kiểu ATAS theo <code>tu</code> giống nhau. <b>Dedup live-write</b> chỉ bỏ record lặp NGAY trước trùng <b>cả <code>(ms,price,qty,side,tu)</code></b> → chặn Image-snapshot lúc (re)subscribe mà KHÔNG bỏ 2 trade thật cùng ms/price/qty/side (khác <code>tu</code>) → không hụt volume.</span>
+<span class="en"><code>.tick</code> — a <b>32-byte</b> header (magic <code>FXTK</code>, version 2, recSize 29) then <b>29-byte</b> records: <code>time</code>(int64 ms,8) · <code>price</code>(double,8) · <code>qty</code>(int32,4) · <code>side</code>(byte,1) · <b><code>tu</code></b>(int64,8). <code>tu</code> = exchange match time (µs), now <b>in-record</b> — the <code>.fxu</code> sidecar is gone (fixed the <code>.fxt</code>/<code>.fxu</code> alignment bug). Group cumulative trades like ATAS by identical <code>tu</code>. <b>Live-write dedup</b> drops only the immediately-repeated record matching on <b>all of <code>(ms,price,qty,side,tu)</code></b> → suppresses the Image-snapshot resend on (re)subscribe WITHOUT dropping two genuine same-ms/price/qty/side trades (different <code>tu</code>) → no volume undercount.</span></li>
+<li><span class="vi"><code>tick.coverage</code> — 1 file text/mã (thay mọi <code>.fxv</code>): dòng <code>&lt;tag&gt; &lt;fullUpToMs&gt; &lt;flag&gt;</code>, flag <code>D</code>=có data · <code>V</code>=đã xác minh tới hết phiên (grab sạch chạm cuối phiên — phiên đóng sớm/lễ khỏi re-sync) · <code>E</code>=rỗng-đã-kiểm · <code>P</code>=pre-liquid; thêm dòng <code>FINAL &lt;tag&gt;</code> = hợp đồng đã chốt → khỏi sync lại. Không hạ cấp (<code>V</code>&gt;<code>D</code>&gt;<code>E</code>/<code>P</code>).</span>
+<span class="en"><code>tick.coverage</code> — one text index per symbol (replaces every <code>.fxv</code>): lines <code>&lt;tag&gt; &lt;fullUpToMs&gt; &lt;flag&gt;</code>, flag <code>D</code>=has data · <code>V</code>=verified to session end (a clean grab reached the end — an early-close/holiday half-day isn't re-synced) · <code>E</code>=checked-empty · <code>P</code>=pre-liquid; plus a <code>FINAL &lt;tag&gt;</code> line = contract fully captured → never synced again. No downgrade (<code>V</code>&gt;<code>D</code>&gt;<code>E</code>/<code>P</code>).</span></li>
+<li class="note"><span class="vi"><b>Tự migrate.</b> Layout cũ (folder <code>Database</code>, 3-file <code>.fxt</code>+<code>.fxu</code>+<code>.fxv</code>, <code>.fxk</code>/<code>.fxb</code>) tự chuyển tại chỗ, <b>không mất tick</b> (<code>Database</code>→<code>TickDb</code>; <code>.fxt</code>→<code>.tick</code>; <code>.fxv</code>→<code>tick.coverage</code>; <code>.fxb</code>→<code>.bigcache</code>). Định dạng trên dây không đổi.</span>
+<span class="en"><b>Auto-migrate.</b> Old layouts (folder <code>Database</code>, 3-file <code>.fxt</code>+<code>.fxu</code>+<code>.fxv</code>, <code>.fxk</code>/<code>.fxb</code>) convert in place with <b>zero tick loss</b> (<code>Database</code>→<code>TickDb</code>; <code>.fxt</code>→<code>.tick</code>; <code>.fxv</code>→<code>tick.coverage</code>; <code>.fxb</code>→<code>.bigcache</code>). Wire format unchanged.</span></li>
+<li><span class="vi"><b>1 file = 1 phiên.</b> <code>DayKey(ms)</code> = (giờ Central − 17:00).ngày = trade-date CME (roll <b>17:00 CT</b>, theo DST). <code>Read</code> trải qua các file phiên trong khoảng; phiên không cắt giữa nửa đêm UTC.</span>
+<span class="en"><b>1 file = 1 session.</b> <code>DayKey(ms)</code> = (Central − 17:00).date = CME trade-date (roll <b>17:00 CT</b>, DST-aware). <code>Read</code> spans the session files in range; sessions never split at UTC midnight.</span></li>
+</ul>
+<p class="note"><span class="vi"><b>Đổi khung thời gian KHÔNG đụng tick store.</b> Tick là thô; 1m/5m/1h chỉ đổi cách gộp để hiển thị. Đổi khung -> chỉ ĐỌC lại kho, không ghi đè.</span>
+<span class="en"><b>Changing the timeframe does NOT touch the tick store.</b> Ticks are raw; 1m/5m/1h only changes aggregation. A timeframe change re-reads the store, never rewrites it.</span></p>
+
+<h2 id="cache"><span class="vi">Các lớp cache</span><span class="en">Caching layers</span></h2>
+<ul>
+<li><span class="vi"><b>Big-trade <code>.bigcache</code> (mỗi phiên đã đóng).</b> <code>bigTrades</code> gom tick server-side (theo <code>tu</code>) ra bóng <code>[t, side, vol, p0, p]</code>. Phiên đóng -> đọc/ghi <code>big_&lt;tag&gt;_&lt;min&gt;.bigcache</code> (tức thì). Phiên hiện tại tính live. Cache hợp lệ nếu <code>.bigcache</code> <b>mới hơn</b> <code>.tick</code> của phiên. Tham số <code>merge</code> (cửa sổ cumulative kiểu ATAS) <b>bỏ qua cache</b>, tính tươi.</span>
+<span class="en"><b>Big-trade <code>.bigcache</code> (per closed session).</b> <code>bigTrades</code> groups ticks server-side (by <code>tu</code>) into bubbles <code>[t, side, vol, p0, p]</code>. Closed sessions read/write <code>big_&lt;tag&gt;_&lt;min&gt;.bigcache</code> (instant); the current session is computed live. Cache valid only if the <code>.bigcache</code> is <b>newer</b> than the session's <code>.tick</code>. The <code>merge</code> param (ATAS cumulative window) <b>bypasses the cache</b>, computed fresh.</span></li>
+<li><span class="vi"><b>Kho nến (<code>.bars</code>+<code>.coverage</code>).</b> Klines cache theo khung; phiên ĐÓNG có tick → dựng <b>nến 1m TỪ tick</b> (verify khớp byte-for-byte với klines Rithmic), gắn cờ <code>t</code>(tick)/<code>k</code>(kline). m5/15m/1h/4h gộp từ 1m. → mở lại/đổi khung đọc local, khỏi gọi Rithmic.</span>
+<span class="en"><b>Bar store (<code>.bars</code>+<code>.coverage</code>).</b> Klines cached per interval; a <b>closed</b> session with ticks builds its <b>1m candles FROM ticks</b> (verified byte-for-byte equal to Rithmic klines), tagged <code>t</code>(tick)/<code>k</code>(kline). m5/15m/1h/4h aggregate from 1m. → reopen/timeframe-switch reads locally, no Rithmic call.</span></li>
+<li><span class="vi"><b>Cache symbol.</b> Search trả <b>cache-first</b> tức thì; nền refresh 1 lần/phiên. Search <code>ES</code> cache luôn <code>MES*</code> -> gõ <code>MES</code> sau là hit. Lọc bỏ spread (<code>-</code>) / option (dấu cách).</span>
+<span class="en"><b>Symbol cache.</b> Search returns <b>cache-first</b> instantly; a once-per-session background refresh tops it up. Searching <code>ES</code> also caches <code>MES*</code> -> typing <code>MES</code> later is a hit. Spreads (<code>-</code>) / options (space) filtered out.</span></li>
+<li><span class="vi"><b>Cache trade (RAM).</b> <code>loadTrades</code> giữ trade ngày live trong RAM; footprint/DOM/big-trade seed từ đây thay vì mỗi cái replay riêng.</span>
+<span class="en"><b>Trade cache (RAM).</b> <code>loadTrades</code> keeps the live day in memory; footprint/DOM/big-trade seed from it instead of each replaying separately.</span></li>
+</ul>
+
+<h2 id="search"><span class="vi">Search — chỉ 1 lúc 1 cái</span><span class="en">Search — single-in-flight</span></h2>
+<p><span class="vi">Rithmic chỉ cho <b>1 <code>searchInstrument</code></b> tại một thời điểm, và <b>không có API liệt kê toàn bộ</b>. Vì vậy:</span>
+<span class="en">Rithmic allows <b>one <code>searchInstrument</code></b> at a time and has <b>no list-all API</b>. So:</span></p>
+<ul>
+<li><span class="vi">Gateway <b>xếp hàng</b> search: 1 cái chạy, còn lại chờ; gõ nhanh chỉ giữ query <b>mới nhất</b>.</span><span class="en">The gateway <b>serializes</b> searches: one active, rest queued; fast typing <b>coalesces</b> to the latest.</span></li>
+<li><span class="vi">Gặp <code>in use</code> -> <b>chờ 400 ms thử lại</b> (≤ 12 lần) thay vì fail.</span><span class="en">On <code>in use</code> -> <b>wait 400 ms and retry</b> (≤ 12×) instead of failing.</span></li>
+<li><span class="vi">Web app chọn mã từ <b>cây product</b> (bung 1 product = 1 search nhắm đúng) + ô tìm — KHÔNG preload-tất-cả. Đó là lý do không có "load hết lúc connect".</span><span class="en">The web app picks from a <b>product tree</b> (expand a product = one targeted search) + a search box — never a bulk preload. Hence no "load-all-on-connect".</span></li>
+</ul>
+
+<h2 id="depth"><code>@depth&lt;N&gt;</code> — <span class="vi">độ sâu theo subscription</span><span class="en">per-subscription depth</span></h2>
+<p><span class="vi">Sổ lệnh giữ tối đa <b><code>DOM_MAX_LEVELS</code> = 1000</b> mức/bên. Mỗi lần phát bọc trong <code>DepthBox</code>; <code>Route</code> cắt cho từng client:
+<code>@depth&lt;N&gt;</code> -> <b>N mức gần giá nhất</b>, <code>@depth</code> trơn -> toàn bộ. Web app subscribe <code>@depth&lt;N&gt;</code> với <code>N</code> từ ⚙ Heatmap
+(mặc định <b>100</b>, dùng chung DOM + heatmap) -> chỉ kéo sâu đúng mức đang xem. MBP của Rithmic cấp hàng trăm mức — không cần MBO.</span>
+<span class="en">The book holds up to <b><code>DOM_MAX_LEVELS</code> = 1000</b> levels/side. Each emit is wrapped in a <code>DepthBox</code>; <code>Route</code> serves each subscriber its own slice:
+<code>@depth&lt;N&gt;</code> -> the <b>N nearest-to-price</b> levels, plain <code>@depth</code> -> all. The web app subscribes <code>@depth&lt;N&gt;</code> with <code>N</code> from the Heatmap ⚙
+(default <b>100</b>, shared by DOM + heatmap) -> you pull only as deep as you view. Rithmic MBP supplies hundreds of levels — no MBO needed.</span></p>
+
+<h2 id="patterns"><span class="vi">Gọi API tối ưu</span><span class="en">Calling the API cheaply</span></h2>
+<table>
+<tr><th><span class="vi">Muốn</span><span class="en">Want</span></th><th><span class="vi">Nên</span><span class="en">Do</span></th><th><span class="vi">Tránh</span><span class="en">Avoid</span></th></tr>
+<tr><td><span class="vi">Mở chart nhanh</span><span class="en">Open a chart fast</span></td><td><span class="vi"><b>Live-first</b>: subscribe + hiện nến ngay, rồi <b>fill ngược</b> lịch sử ở nền</span><span class="en"><b>Live-first</b>: subscribe + show klines now, then <b>backfill</b> history in the background</span></td><td><span class="vi">Chờ replay cả phiên rồi mới hiện</span><span class="en">Awaiting a full-session replay first</span></td></tr>
+<tr><td><span class="vi">Footprint / volume profile</span><span class="en">Footprint / volume profile</span></td><td><span class="vi">1 <code>aggTrades</code> (cache-first); đọc TickStore cho phiên đã đóng</span><span class="en">One <code>aggTrades</code> (cache-first); read the TickStore for closed sessions</span></td><td><span class="vi">Replay lại cùng khoảng cho từng panel</span><span class="en">Re-replaying the same range per panel</span></td></tr>
+<tr><td><span class="vi">Big-trade cả phiên</span><span class="en">Big trades for a session</span></td><td><span class="vi">Server-side <code>bigTrades</code> (trả bóng, dùng <code>.bigcache</code>)</span><span class="en">Server-side <code>bigTrades</code> (returns bubbles, uses <code>.bigcache</code>)</span></td><td><span class="vi">Kéo triệu tick về client rồi gom</span><span class="en">Pulling millions of ticks to group client-side</span></td></tr>
+<tr><td><span class="vi">Order book</span><span class="en">Order book</span></td><td><span class="vi">1 <code>@depth&lt;N&gt;</code> đúng độ sâu hiển thị; dùng chung DOM + heatmap</span><span class="en">One <code>@depth&lt;N&gt;</code> at the displayed depth; share DOM + heatmap</span></td><td><span class="vi"><code>@depth</code> sâu riêng cho mỗi panel</span><span class="en">A separate deep <code>@depth</code> per panel</span></td></tr>
+<tr><td><span class="vi">Tìm mã</span><span class="en">Find a symbol</span></td><td><span class="vi"><code>searchSymbol</code> cache-first; để nền refresh</span><span class="en"><code>searchSymbol</code> cache-first; let the background refresh</span></td><td><span class="vi">Search Rithmic mỗi phím gõ</span><span class="en">A Rithmic search per keystroke</span></td></tr>
+</table>
+<p class="note warn"><span class="vi"><b>Thứ tự subscribe quan trọng:</b> subscribe trong lúc replay sẽ <b>huỷ</b> replay -> subscribe LIVE trước, replay nền sau. <b>2 nguồn replay:</b> <code>replayTrades</code> = CHỈ phiên hiện tại (đuôi live / footprint hôm nay); <b><code>replayBars(Tick,1)</code></b> = lịch sử tick sâu, <b>replay được phiên ĐÃ ĐÓNG</b> (tới ~lúc hợp đồng niêm yết, nhưng chỉ khi CÒN niêm yết — hết hạn/delist thì rỗng; cuối tuần/bảo trì bị từ chối <code>rp=14</code>). TickStore là kho lâu dài, tích luỹ từng phiên (grab xong sống sót cả khi hợp đồng delist).</span>
+<span class="en"><b>Subscribe order matters:</b> subscribing during a replay <b>aborts</b> it -> live subscribe first, background replay after. <b>Two replay sources:</b> <code>replayTrades</code> = the CURRENT session only (today's live tail / footprint); <b><code>replayBars(Tick,1)</code></b> = the deep tick history that <b>DOES replay CLOSED sessions</b> (back to ~the contract's listing start, but only while still listed — an expired/delisted contract returns empty; weekend/maintenance rejects it with <code>rp=14</code>). The TickStore is the long-term archive, accumulating session by session (a grabbed session survives the contract's delisting).</span></p>
+
+<p class="note"><span class="vi"><b>Đồng bộ phiên đóng = gap-patch.</b> <code>SyncTicksJob</code> grab <code>(fullUpTo → cuối phiên]</code> qua <code>replayBars(Tick)</code> rồi <b>Merge</b> (đè cửa sổ) — vì <code>fullUpTo</code> là mốc verify liền-mạch-từ-đầu, <b>MỌI lỗ phía trên nó</b> (tắt/mở nhiều lần trong phiên: <code>■■ trống ■■ trống ■■</code>) được lấp một lượt, không chỉ đuôi. <code>fullUpTo</code> <b>chỉ tiến khi replay SẠCH</b> (RpCode=0); <code>NeedsSync</code> <b>kiểm chéo tick cuối thật</b> vs cuối phiên (biên halt ~90') → coverage nói-dối tự lành lần mở sau. Ghi file <b>fsync + đổi tên atomic</b>, coverage ghi sau khi data bền. <b>Archiver chỉ mã đang mở</b> (không hốt hợp đồng anh em; ⤓ Lịch sử để chộp prior). Subscription <b>linger ~6s</b> sau khi ref=0 → bớt churn sub/unsub + hết race <code>in use</code>.</span>
+<span class="en"><b>Closed-session sync = gap-patch.</b> <code>SyncTicksJob</code> grabs <code>(fullUpTo → sessionEnd]</code> via <code>replayBars(Tick)</code> and <b>Merges</b> (window-replace) — since <code>fullUpTo</code> is the contiguous-verified watermark, <b>EVERY hole above it</b> (closing/reopening the app several times in a session: <code>■■ gap ■■ gap ■■</code>) is refilled in one pass, not just the tail. <code>fullUpTo</code> <b>only advances on a CLEAN replay</b> (RpCode=0); <code>NeedsSync</code> <b>cross-checks the real last tick</b> vs session end (~90' halt margin) → an over-claimed coverage self-heals next open. Writes are <b>fsync + atomic rename</b>, coverage written after the data is durable. <b>Archiver is opened-symbol-only</b> (no sibling fan-out; ⤓ Lịch sử for prior contracts). Subscriptions <b>linger ~6s</b> after ref hits 0 → less sub/unsub churn + no <code>in use</code> race.</span></p>
+
+<p class="note"><span class="vi"><code>webapp/index.html</code> và các tài liệu này là <b>embedded resource</b> nhúng vào DLL — sửa rồi phải <b>rebuild + restart gateway</b> mới ăn (refresh trình duyệt không đủ).</span>
+<span class="en"><code>webapp/index.html</code> and these docs are <b>embedded resources</b> compiled into the DLL — edits need a <b>rebuild + gateway restart</b> (a browser refresh isn't enough).</span></p>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="api.html"><span class="vi">WebSocket API</span><span class="en">WebSocket API</span></a> ·
+<a class="h" href="heatmap.html">Heatmap</a> · <a class="h" href="dom.html">DOM</a> · <a class="h" href="mbo.html">MBO</a> ·
+<a class="h" href="bigtrades.html">Big trades</a> · <a class="h" href="storage.md" target="_blank">storage.md</a></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

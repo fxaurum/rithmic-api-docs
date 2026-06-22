@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Big Trades (ATAS parity)</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  h3{font-size:18px;color:#fff;margin-top:26px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  .dl{margin:14px 0;padding:8px 12px;background:var(--panel2);border:1px solid var(--bd);border-radius:8px;font-size:13.5px}
+  .dl b{color:#fff}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  /* status badges (parity legend) */
+  .st{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
+  .st.ok{color:var(--grn);border-color:#1f6f64;background:#10211e}
+  .st.ap{color:var(--yel);border-color:#7a601c;background:#241e0c}
+  .st.td{color:var(--sub);border-color:var(--bd);background:var(--panel2)}
+  .st.no{color:var(--red);border-color:#7a2c2c;background:#241010}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0}
+  .legend span{color:var(--sub);font-size:13px}
+  /* big-trade bubble mini-demo */
+  .demo{display:flex;gap:26px;align-items:center;flex-wrap:wrap;margin:16px 0;padding:14px;background:var(--code);border:1px solid var(--bd);border-radius:10px}
+  .bub{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#06120f;font-weight:700;font-size:12px}
+  .bub.buy{background:var(--grn)}.bub.sell{background:var(--red);color:#1a0606}
+  .swp{width:42px;border-radius:6px;color:#fff;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;text-align:center}
+  .demo .cap{color:var(--sub);font-size:12.5px;margin-top:6px;text-align:center}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Big Trades</h1>
+  <div class="v">ATAS-parity tracker</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#what"><span class="vi">Nó làm gì</span><span class="en">What it does</span></a>
+  <a href="#sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></a>
+  <a href="#data"><span class="vi">Dữ liệu nền tảng</span><span class="en">The data behind it</span></a>
+  <a href="#settings"><span class="vi">Cài đặt ⚙</span><span class="en">Settings ⚙</span></a>
+  <a href="#algo"><span class="vi">Thuật toán</span><span class="en">Algorithm</span></a>
+  <a href="#parity"><span class="vi">Bảng parity với ATAS</span><span class="en">ATAS parity matrix</span></a>
+  <a href="#roadmap"><span class="vi">Lộ trình</span><span class="en">Roadmap</span></a>
+  <hr>
+  <a href="bigtrades.md" class="h" target="_blank"><span class="vi">↓ bigtrades.md (Markdown cho AI)</span><span class="en">↓ bigtrades.md (Markdown for AI)</span></a>
+  <a href="recipes.md" class="h" target="_blank"><span class="vi">↓ recipes.md §1 (tự dựng)</span><span class="en">↓ recipes.md §1 (build it)</span></a>
+  <a href="dom.html" class="h"><span class="vi">→ DOM (order book ladder)</span><span class="en">→ DOM (order book ladder)</span></a>
+  <a href="api.html" class="h"><span class="vi">← Tài liệu WebSocket API</span><span class="en">← WebSocket API reference</span></a>
+</nav>
+<main>
+
+<h2 id="what" style="margin-top:0"><span class="vi">Big trades là gì</span><span class="en">What it does</span></h2>
+<p><span class="vi">Phát hiện <b>lệnh lớn / block / sweep</b>, mô phỏng theo <b>ATAS <i>Big trades</i></b> (tương đương bong bóng
+big-order của DeepChart). Một "big trade" là một lệnh <b>chủ động</b> lớn bất thường. Chart đánh dấu nó ngay nơi nó xảy ra:
+một <b>bong bóng</b> tại giá khớp (to nhỏ theo khối lượng, có hiệu ứng nảy), hoặc khi một lệnh <b>quét qua nhiều mức giá</b>
+thì là một <b>hộp dọc</b> trải từ giá đầu đến giá cuối. Mua = <span class="b">xanh</span>, bán = <span class="s">đỏ</span>.
+Chạy trên cả <b>lịch sử</b> (replay/seed) lẫn cập nhật <b>realtime</b>.</span>
+<span class="en">Detects <b>large orders / blocks / sweeps</b>, modelled on <b>ATAS <i>Big trades</i></b> (equivalent to
+DeepChart's big-order bubbles). A "big trade" is an unusually large <b>aggressive</b> order. The chart flags it right where
+it happened: a <b>bubble</b> at the trade price (sized by volume, with a pop animation), or — when one order <b>swept several
+price levels</b> — a <b>vertical range box</b> spanning from the first fill to the last. Buy = <span class="b">green</span>,
+sell = <span class="s">red</span>. Works on <b>history</b> (replay/seed) <i>and</i> updates <b>live</b>.</span></p>
+
+<div class="demo">
+  <div style="text-align:center"><span class="bub buy" style="width:24px;height:24px">62</span><div class="cap"><span class="vi">mua nhỏ</span><span class="en">small buy</span></div></div>
+  <div style="text-align:center"><span class="bub sell" style="width:40px;height:40px">180</span><div class="cap"><span class="vi">bán lớn</span><span class="en">large sell</span></div></div>
+  <div style="text-align:center"><span class="bub buy" style="width:54px;height:54px">410</span><div class="cap"><span class="vi">mua rất lớn</span><span class="en">huge buy</span></div></div>
+  <div style="text-align:center"><span class="swp buy" style="height:64px;background:linear-gradient(var(--grn),#0e3b34)">320<br>sweep</span><div class="cap"><span class="vi">quét 4 mức</span><span class="en">4-level sweep</span></div></div>
+</div>
+<p><span class="vi">Ý tưởng cốt lõi (giống ATAS <i>CumulativeTrades</i>): các fill của <b>cùng một lệnh chủ động</b> được gộp thành
+<b>một trade logic</b> rồi mới lọc ngưỡng — nên một lệnh đi xuyên 5 mức giá hiện <b>MỘT</b> dấu, không phải năm.</span>
+<span class="en">The core idea (same as ATAS <i>CumulativeTrades</i>): the fills of <b>one aggressor order</b> are merged into
+<b>one logical trade</b>, then thresholded — so a single order walking through five prices shows as <b>ONE</b> marker, not five.</span></p>
+
+<h2 id="sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></h2>
+<p><span class="vi">Big trades dựng hoàn toàn từ <b>các lệnh khớp riêng lẻ có kèm bên chủ động + mốc khớp µs (matching event)</b>. Bạn chỉ cần đúng
+hai nguồn từ <a class="h" href="api.html">WebSocket API</a> — một cho lịch sử, một cho realtime:</span>
+<span class="en">Big trades is built entirely from <b>individual trades that carry an aggressor side + an exchange match time (µs)</b>. You need exactly
+two data sources from the <a class="h" href="api.html">WebSocket API</a> — one for history, one for live:</span></p>
+<table>
+<tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Vì sao</span><span class="en">Why</span></th></tr>
+<tr><td><b><span class="vi">Marker nến quá khứ</span><span class="en">Markers for past candles</span></b></td><td><a class="h" href="api.html#aggtrades"><code>aggTrades</code></a> (request)</td>
+    <td><span class="vi">Replay trade lịch sử với <code>[time, price, qty, side, o, tu]</code> — back-fill marker cho nến đã qua.</span><span class="en">Replays historical trades with <code>[time, price, qty, side, o, tu]</code> — back-fills markers for past bars.</span></td></tr>
+<tr><td><b><span class="vi">Marker nến live</span><span class="en">Markers for the live bar</span></b></td><td><a class="h" href="api.html#s-trade"><code>@trade</code></a> (stream)</td>
+    <td><span class="vi">Mỗi print mới (kèm <code>tu</code>) gộp nhóm theo matching event và bắn marker theo thời gian thực.</span><span class="en">Each new print (carrying <code>tu</code>) groups by matching event and fires markers in real time.</span></td></tr>
+<tr><td><span class="vi">Vẽ OHLC (tuỳ chọn)</span><span class="en">OHLC overlay (optional)</span></td><td><code>klines</code> + <code>@kline_&lt;iv&gt;</code></td>
+    <td><span class="vi">Cho nền nến + lọc <b>PriceLocation</b> theo thân/râu (cần Open/Close/High/Low). <b>Không bắt buộc</b> để bắn marker.</span><span class="en">For the candle backdrop + the <b>PriceLocation</b> filter (needs Open/Close/High/Low). <b>Not required</b> to fire markers.</span></td></tr>
+<tr><td><span class="vi">Phân loại side (tuỳ chọn)</span><span class="en">Side classification (optional)</span></td><td><code>@bookTicker</code></td>
+    <td><span class="vi">Bid/ask tốt nhất — gán side mua/bán khi <code>side</code> rỗng (tick rule).</span><span class="en">Best bid/ask — assign buy/sell when <code>side</code> is empty (tick rule).</span></td></tr>
+</table>
+<div class="note"><span class="vi">Big trades tối thiểu = <b><a class="h" href="api.html#aggtrades">aggTrades</a></b> (lịch sử) + <b><a class="h" href="api.html#s-trade">@trade</a></b> (live, có field <code>tu</code>). Đúng hai nguồn như footprint — <b>không</b> cần MBO / depth-by-order. Còn lại chỉ là hiển thị / độ chính xác side.</span>
+<span class="en">Minimum viable big trades = <b><a class="h" href="api.html#aggtrades">aggTrades</a></b> (history) + <b><a class="h" href="api.html#s-trade">@trade</a></b> (live, with field <code>tu</code>). The same two sources as footprint — <b>no</b> MBO / depth-by-order. Everything else is presentation / side accuracy.</span></div>
+
+<h2 id="data"><span class="vi">Dữ liệu khiến parity với ATAS khả thi</span><span class="en">The data that makes ATAS parity possible</span></h2>
+<p><span class="vi">ATAS gộp fill vào một <code>CumulativeTrade</code> và định danh nó bằng <b><code>.Time</code></b> (transact time của sàn) — tức gộp theo <b>matching event</b>, không theo order id. Rithmic cấp cả hai, gateway đẩy cả hai:</span>
+<span class="en">ATAS groups fills into a <code>CumulativeTrade</code> and keys it by its <b><code>.Time</code></b> (the exchange transact time) — i.e. by the <b>matching event</b>, not the order id. Rithmic gives us both, and the gateway forwards both:</span></p>
+<ul>
+<li><span class="vi"><code>tu</code> của <code>@trade</code> / phần tử thứ 6 của <code>aggTrades</code> — mốc khớp <b>micro giây</b> (<code>SourceSsboe</code>·1e6 + <code>SourceUsecs</code>). Mọi print cùng matching event chia sẻ. <b>Khoá chính</b> — đúng cái ATAS định danh.</span>
+<span class="en"><code>@trade</code> field <code>tu</code> / 6th <code>aggTrades</code> element — exchange match time in <b>microseconds</b> (<code>SourceSsboe</code>·1e6 + <code>SourceUsecs</code>). Every print of one matching event shares it. <b>Primary key</b> — what ATAS keys on.</span></li>
+<li><span class="vi"><code>o</code> của <code>@trade</code> / phần tử thứ 5 của <code>aggTrades</code> — <code>AggressorExchOrdId</code>, id lệnh chủ động (Rithmic <i>có</i> cấp). Nhưng <b>không</b> phải khoá chính: một lệnh có thể khớp rải qua nhiều event (lệnh nằm chờ/iceberg ăn dần), gom theo <code>o</code> sẽ gộp dồn thành cụm to mà ATAS tách riêng. Chỉ là dự phòng khi thiếu <code>tu</code>.</span>
+<span class="en"><code>@trade</code> field <code>o</code> / 5th <code>aggTrades</code> element — <code>AggressorExchOrdId</code>, the aggressor order id (Rithmic <i>does</i> supply it). But <b>not</b> the primary key: one order can fill across several match events (a resting/iceberg order eaten over time), so grouping by <code>o</code> merges those into one oversized bubble ATAS shows separately. Fallback only when <code>tu</code> is missing.</span></li>
+</ul>
+<p><span class="vi">Client gộp các print liên tiếp <b>cùng <code>tu</code></b> = một cumulative trade. Thứ tự dự phòng: <code>tu</code> (matching event) → <code>o</code> (lệnh aggressor) → cửa sổ nội bộ ~50&nbsp;ms cùng phía. Đây là <b>mặc định</b> (chính xác, không ô thời gian). Tùy chọn <b><code>Cửa sổ gộp</code> (merge, ms)</b>: <code>&gt;0</code> = gộp <b>mọi lệnh cùng chiều</b> trong N ms bất kể <code>tu</code>/<code>o</code> → bóng to/ít hơn, giống ATAS cumulative; <code>0</code> giữ mặc định chính xác. Request <code>bigTrades</code> nhận cùng param <code>merge</code> (bỏ cache phiên khi &gt;0). Kho tick v2 lưu <code>tu</code> <b>thẳng trong record</b> (1 file <code>.tick</code>/phiên, bỏ sidecar <code>.fxu</code>) → lịch sử gom chính xác như live.</span>
+<span class="en">The client groups consecutive prints by <b>same <code>tu</code></b> → one cumulative trade. Fallbacks, in order: <code>tu</code> (matching event) → <code>o</code> (aggressor order) → a fixed internal ~50&nbsp;ms same-side window. This is the <b>default</b> (precise, no time field). An optional <b><code>Cửa sổ gộp</code> (merge, ms)</b>: <code>&gt;0</code> groups <b>all same-side</b> prints within N ms regardless of <code>tu</code>/<code>o</code> → fewer, larger bubbles, like ATAS cumulative; <code>0</code> keeps the precise default. The <code>bigTrades</code> request takes the same <code>merge</code> param (bypasses the session cache when &gt;0). Tick store v2 keeps <code>tu</code> <b>in-record</b> (one <code>.tick</code> file per session, the <code>.fxu</code> sidecar is gone) → history groups exactly like live.</span></p>
+<div class="note"><span class="vi">Đo trên 1 cây ESM6: bubble ATAS (69/61/56/54/50) nằm <b>giữa</b> gộp matching-event của mình (max ~51) và cửa sổ 100&nbsp;ms (max ~100) — thuật toán ATAS là đóng (proprietary), khớp tuyệt đối sẽ overfit 1 cây. Vì vậy để <b>thanh trượt</b> cho người dùng tự canh.</span>
+<span class="en">Measured on one ESM6 candle: ATAS bubbles (69/61/56/54/50) sit <b>between</b> our matching-event grouping (max ~51) and a 100&nbsp;ms window (max ~100) — ATAS's algorithm is proprietary, so an exact match would overfit one candle. Hence a <b>slider</b> the user dials to taste.</span></div>
+<div class="note"><span class="vi">Đường ms-only cũ làm mất phần khớp dưới mili giây và phải đoán bằng cửa sổ 50&nbsp;ms, cắt mất <b>đuôi sweep ở các điểm đảo chiều</b>
+(nơi cú quét xong rồi thị trường lặng) — vd ATAS 191 vs app 187. Đẩy <code>tu</code> qua là hết đoán.</span>
+<span class="en">The old ms-only path lost the sub-millisecond match time and had to guess with a 50&nbsp;ms window, which clipped the <b>tail of a sweep at
+reversals</b> (where the burst is followed by a lull) — e.g. ATAS 191 vs app 187. Passing <code>tu</code> through removes the guess.</span></div>
+
+<h2 id="settings"><span class="vi">Cài đặt (bánh răng ⚙ trên nút Big trade)</span><span class="en">Settings (gear ⚙ on the Big-trade toggle)</span></h2>
+<table>
+<tr><th><span class="vi">Cài đặt</span><span class="en">Setting</span></th><th><span class="vi">Mặc định</span><span class="en">Default</span></th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th><th>ATAS</th></tr>
+<tr><td><span class="vi">Size tối thiểu</span><span class="en">Min size</span> (<code>min</code>)</td><td>50</td><td><span class="vi">KL gộp tối thiểu để đánh dấu</span><span class="en">Minimum cumulative volume to flag</span></td><td><code>MinVol</code></td></tr>
+<tr><td><span class="vi">Size tối đa</span><span class="en">Max size</span> (<code>max</code>, 0=∞)</td><td>0</td><td><span class="vi">Trần (loại trừ); 0 = không trần</span><span class="en">Upper cap (exclusive); 0 = no cap</span></td><td><code>MaxVol</code></td></tr>
+<tr><td><span class="vi">Gộp sweep</span><span class="en">Merge sweep</span> (<code>sweep</code>)</td><td><b>on</b></td><td><span class="vi">Bật/tắt cumulative (gộp theo matching event <code>tu</code>). <b>Mặc định BẬT</b> — Rithmic là per-fill, non-sweep gần như không nổ.</span><span class="en">Cumulative on/off (group by matching event <code>tu</code>). <b>On by default</b> — Rithmic is per-fill, so non-sweep almost never fires.</span></td><td><code>CalculationMode</code></td></tr>
+<tr><td><span class="vi">Cửa sổ gộp</span><span class="en">Merge window</span> (<code>mergeMs</code>)</td><td>0</td><td><span class="vi"><code>0</code> = theo matching-event (chính xác). <code>&gt;0</code> = cửa sổ cumulative kiểu ATAS (gộp cùng chiều trong N ms) → bóng to/ít hơn. Kéo canh khớp ATAS.</span><span class="en"><code>0</code> = matching-event (precise). <code>&gt;0</code> = ATAS-style cumulative window (merge same-side within N ms) → fewer, larger bubbles. Dial to match ATAS.</span></td><td><span class="vi">(xấp xỉ merge lỏng của ATAS)</span><span class="en">(approximates ATAS's looser merge)</span></td></tr>
+<tr><td><span class="vi">Màu bóng</span><span class="en">Bubble colour</span> (<code>buyCol</code>/<code>sellCol</code>)</td><td><span class="vi">teal/đỏ</span><span class="en">teal/red</span></td><td><span class="vi">Màu bóng mua/bán — đặt khác màu nến cho dễ nhìn</span><span class="en">Buy/sell bubble colours — set distinct from candle colours</span></td><td>—</td></tr>
+<tr><td><span class="vi">Bong bóng</span><span class="en">Bubble</span> (<code>bubble</code>)</td><td>on</td><td><span class="vi">Bong bóng/hộp; tắt = mũi tên ▲/▼</span><span class="en">Bubble/range; off = ▲/▼ arrows</span></td><td><code>VisualType</code></td></tr>
+<tr><td><span class="vi">Size bóng</span><span class="en">Bubble size</span> (<code>size</code>)</td><td>10</td><td><span class="vi">Hệ số tỉ lệ kích thước</span><span class="en">Size scale factor</span></td><td><code>Size</code></td></tr>
+<tr><td>min / max px</td><td>5 / 50</td><td><span class="vi">Giới hạn cỡ bóng</span><span class="en">Bubble size clamp</span></td><td><code>MinSize</code> / <code>MaxSize</code></td></tr>
+<tr><td><span class="vi">Cố định cỡ</span><span class="en">Fixed size</span> (<code>fixed</code>)</td><td>off</td><td><span class="vi">Mọi bóng cùng cỡ, bỏ qua KL</span><span class="en">All bubbles same size, ignore volume</span></td><td><code>FixedSizes</code></td></tr>
+<tr><td><span class="vi">Bóng tròn hết</span><span class="en">All circles</span> (<code>round</code>)</td><td>off</td><td><span class="vi">Luôn vẽ tròn, kể cả lệnh quét nhiều mức (bỏ dải FirstPrice→LastPrice)</span><span class="en">Force circles even for multi-level sweeps (drop the FirstPrice→LastPrice range box)</span></td><td><span class="vi">— (app thêm; ATAS luôn vẽ dải cho sweep)</span><span class="en">— (app extra; ATAS always range-boxes a sweep)</span></td></tr>
+<tr><td><span class="vi">Vị trí giá</span><span class="en">Price location</span> (<code>priceLoc</code>)</td><td>Any</td><td><span class="vi">Chỉ hiện ở một vị trí trên nến</span><span class="en">Restrict to a candle location</span></td><td><code>PriceLocation</code></td></tr>
+</table>
+<p><span class="vi"><b>Lọc khối lượng</b> (y hệt ATAS): giữ một trade khi <code>vol ≥ min</code> <b>và</b> (<code>max ≤ 0</code> <b>hoặc</b>
+<code>vol &lt; max</code>).</span>
+<span class="en"><b>Volume filter</b> (identical to ATAS): keep a trade when <code>vol ≥ min</code> <b>and</b> (<code>max ≤ 0</code>
+<b>or</b> <code>vol &lt; max</code>).</span></p>
+<p><span class="vi"><b>Công thức cỡ</b> (y hệt ATAS): <code>px = size × vol / min</code>, rồi <code>FixedSizes ⇒ px = size</code>, rồi kẹp về
+<code>[minPx, maxPx]</code>.</span>
+<span class="en"><b>Size formula</b> (identical to ATAS): <code>px = size × vol / min</code>, then <code>FixedSizes ⇒ px = size</code>, then
+clamp to <code>[minPx, maxPx]</code>.</span></p>
+
+<h3><span class="vi">PriceLocation — 7 chế độ</span><span class="en">PriceLocation — 7 modes</span></h3>
+<p><span class="vi">Dùng dải giá <code>[lo, hi]</code> của cumulative trade (= min/max của FirstPrice &amp; LastPrice) và thân nến
+<code>[bodyLo, bodyHi]</code> (= min/max của Open &amp; Close):</span>
+<span class="en">Using the cumulative trade's price span <code>[lo, hi]</code> (= min/max of FirstPrice &amp; LastPrice) and the candle body
+<code>[bodyLo, bodyHi]</code> (= min/max of Open &amp; Close):</span></p>
+<table>
+<tr><th><span class="vi">Chế độ</span><span class="en">Mode</span></th><th><span class="vi">Hiện khi</span><span class="en">Shows when</span></th></tr>
+<tr><td><span class="vi">Bất kỳ</span><span class="en">Any</span></td><td><span class="vi">luôn luôn</span><span class="en">always</span></td></tr>
+<tr><td><span class="vi">Đỉnh nến</span><span class="en">AtHigh</span></td><td><code>hi == candle.High</code></td></tr>
+<tr><td><span class="vi">Đáy nến</span><span class="en">AtLow</span></td><td><code>lo == candle.Low</code></td></tr>
+<tr><td><span class="vi">Đỉnh hoặc đáy</span><span class="en">AtHighOrLow</span></td><td><code>hi == High</code> <span class="vi">hoặc</span><span class="en">or</span> <code>lo == Low</code></td></tr>
+<tr><td><span class="vi">Trong thân</span><span class="en">Body</span></td><td><code>hi ≤ bodyHi</code> <span class="vi">và</span><span class="en">and</span> <code>lo ≥ bodyLo</code></td></tr>
+<tr><td><span class="vi">Râu trên</span><span class="en">UpperWick</span></td><td><code>lo &gt; bodyHi</code> <span class="vi">hoặc</span><span class="en">or</span> <code>hi ≥ bodyHi</code></td></tr>
+<tr><td><span class="vi">Râu dưới</span><span class="en">LowerWick</span></td><td><code>hi &lt; bodyLo</code> <span class="vi">hoặc</span><span class="en">or</span> <code>lo ≤ bodyLo</code></td></tr>
+</table>
+
+<h2 id="algo"><span class="vi">Thuật toán (cumulative)</span><span class="en">Algorithm (cumulative)</span></h2>
+<ol>
+<li><span class="vi">Duyệt các trade theo thời gian với một nhóm hiện hành <code>{side, vol, o, firstPrice, lastPrice, tLast}</code>.</span>
+<span class="en">Walk trades in time order with a current group <code>{side, vol, tu, o, firstPrice, lastPrice, tLast, tArr}</code>.</span></li>
+<li><span class="vi"><b>Cùng nhóm</b> nếu print có <code>tu</code> bằng <code>tu</code> của nhóm (cùng matching event); hoặc cùng <code>o</code> (cùng lệnh aggressor, dự phòng); nếu không (chỉ có ms) thì cùng side và
+trong <code>sweepMs</code> kể từ <code>tLast</code>. Khớp → <code>vol += q</code>, <code>lastPrice = p</code>. Ngược lại <b>chốt</b>
+nhóm và mở nhóm mới.</span>
+<span class="en"><b>Same group</b> if the print's <code>tu</code> equals the group's <code>tu</code> (same matching event); else equal <code>o</code> (same aggressor order, fallback); else (ms only) same side
+and within <code>sweepMs</code> of <code>tLast</code>. Match → <code>vol += q</code>, <code>lastPrice = p</code>. Otherwise
+<b>flush</b> the group and start a new one.</span></li>
+<li><span class="vi">Khi chốt, phát ra nếu qua được lọc khối lượng (và, lúc vẽ, lọc PriceLocation).</span>
+<span class="en">On flush, emit if it passes the volume filter (and, at render, the PriceLocation filter).</span></li>
+<li><span class="vi">Vẽ: nếu <code>firstPrice == lastPrice</code> → <b>bong bóng</b> tại giá đó; ngược lại → <b>hộp dải</b> trải
+<code>[min, max]</code> của giá đầu/cuối — đúng kiểu sweep nhiều mức của ATAS. Nhãn = tổng khối lượng.</span>
+<span class="en">Render: if <code>firstPrice == lastPrice</code> → a <b>bubble</b> at that price; else a <b>range box</b> spanning
+<code>[min, max]</code> of first/last price — the ATAS multi-level sweep look. Label = total volume.</span></li>
+<li><span class="vi">Live: print của event khác tiếp theo sẽ chốt nhóm trước; một timer chốt nhóm cuối sau khoảng hở
+<code>sweepMs</code> tính theo <b>mốc tới máy</b> (không phải timestamp sàn) — để độ trễ feed không chốt non và cắt đuôi sweep ở điểm đảo chiều.</span>
+<span class="en">Live: the next print of a different event flushes the previous group; a timer flushes the final group after a
+<code>sweepMs</code> gap measured from <b>arrival time</b> (not the exchange timestamp) — so feed latency can't close a group early and clip a sweep's tail at a reversal.</span></li>
+</ol>
+<div class="note"><span class="vi">Cùng một hàm chạy trên mảng lịch sử <code>aggTrades</code> lẫn stream live <code>@trade</code>, nên big trades vừa
+xem lại được trong lịch sử vừa cập nhật live liền mạch. Code mẫu đầy đủ: <a class="h" href="recipes.md" target="_blank">recipes.md §1</a>.</span>
+<span class="en">The same function runs over the <code>aggTrades</code> history array and the live <code>@trade</code> stream, so big trades
+are reviewable in history and update live seamlessly. Full sample code: <a class="h" href="recipes.md" target="_blank">recipes.md §1</a>.</span></div>
+
+<h2 id="parity"><span class="vi">Bảng parity với ATAS</span><span class="en">ATAS parity matrix</span></h2>
+<div class="legend">
+  <span><span class="st ok">✓</span> <span class="vi">khớp ATAS</span><span class="en">matches ATAS</span></span>
+  <span><span class="st ap">≈</span> <span class="vi">xấp xỉ (gần, không y hệt)</span><span class="en">approximated (close, not identical)</span></span>
+  <span><span class="st td">○</span> <span class="vi">chưa làm</span><span class="en">not built yet</span></span>
+  <span><span class="st no">✕</span> <span class="vi">không thể khớp y hệt</span><span class="en">cannot be matched exactly</span></span>
+</div>
+<table>
+<tr><th><span class="vi">Khả năng của ATAS</span><span class="en">ATAS capability</span></th><th><span class="vi">Trạng thái</span><span class="en">Status</span></th><th><span class="vi">Ghi chú</span><span class="en">Notes</span></th></tr>
+<tr><td><span class="vi">Gộp CumulativeTrades (theo matching event)</span><span class="en">CumulativeTrades grouping (by matching event)</span></td><td><span class="st ok">✓</span></td><td><span class="vi">gộp theo</span><span class="en">grouped on</span> <code>tu</code> (µs, = <code>CumulativeTrade.Time</code> của ATAS); <code>o</code> <span class="vi">rồi cửa sổ ms là dự phòng</span><span class="en">then ms-window as fallbacks</span></td></tr>
+<tr><td><span class="vi">Chế độ SeparateTrades</span><span class="en">SeparateTrades mode</span></td><td><span class="st ok">✓</span></td><td><code>sweep</code> off → <span class="vi">lọc ngưỡng từng print</span><span class="en">threshold each print</span></td></tr>
+<tr><td><span class="vi">Lọc MinVol / MaxVol</span><span class="en">MinVol / MaxVol filter</span></td><td><span class="st ok">✓</span></td><td><span class="vi">cùng điều kiện</span><span class="en">identical predicate</span></td></tr>
+<tr><td>Size = <code>vol×Size/MinVol</code>, clamp Min/Max</td><td><span class="st ok">✓</span></td><td><span class="vi">cùng công thức</span><span class="en">identical formula</span></td></tr>
+<tr><td>FixedSizes</td><td><span class="st ok">✓</span></td><td></td></tr>
+<tr><td><span class="vi">Sweep FirstPrice→LastPrice, vẽ dạng hộp</span><span class="en">FirstPrice→LastPrice sweep, drawn as a range</span></td><td><span class="st ok">✓</span></td><td><span class="vi">hộp dải cho đa mức; bong bóng cho đơn mức</span><span class="en">range box for multi-level; bubble for single</span></td></tr>
+<tr><td>PriceLocation (7 <span class="vi">chế độ</span><span class="en">modes</span>)</td><td><span class="st ok">✓</span></td><td><span class="vi">cùng logic</span><span class="en">identical logic</span></td></tr>
+<tr><td><span class="vi">Màu Buy/Sell/Between, nhãn khối lượng</span><span class="en">Buy/Sell/Between colours, volume label</span></td><td><span class="st ok">✓</span></td><td><span class="b">buy green</span> · <span class="s">sell red</span></td></tr>
+<tr><td><span class="vi">Nạp lịch sử + cập nhật live</span><span class="en">History back-fill + live update</span></td><td><span class="st ok">✓</span></td><td><span class="vi">replay/store seed, rồi</span><span class="en">replay/store seed, then</span> <code>@trade</code></td></tr>
+<tr><td><span class="vi">Lọc theo giờ trong ngày (TimeFrom/TimeTo)</span><span class="en">Time-of-day filter (TimeFrom/TimeTo)</span></td><td><span class="st td">○</span></td><td><span class="vi">lộ trình</span><span class="en">roadmap</span></td></tr>
+<tr><td><span class="vi">Cảnh báo (âm thanh + popup)</span><span class="en">Alerts (sound + popup)</span></td><td><span class="st td">○</span></td><td><span class="vi">lộ trình</span><span class="en">roadmap</span></td></tr>
+<tr><td><span class="vi">AutoFilter (tự tính ngưỡng)</span><span class="en">AutoFilter (auto threshold)</span></td><td><span class="st no">✕</span>→<span class="st ap">≈</span></td><td><span class="vi">ATAS tính nó <b>phía server</b> (yêu cầu cumulative trades với min/max = −1; engine của họ trả về một tập "big" đã chọn lọc). Không tái tạo 1:1 từ feed công khai. Dự kiến <b>xấp xỉ</b>: percentile trượt (đánh dấu trên percentile thứ N của N cumulative trade gần nhất). Sẽ ghi rõ là ước lượng.</span>
+<span class="en">ATAS computes it <b>server-side</b> (requests cumulative trades with min/max = −1; their engine returns a curated "big" set). Not reproducible 1:1 from the public feed. Planned <b>approximation</b>: rolling percentile (flag above the Nth percentile of the last N cumulative trades). Will be labelled as an estimate.</span></td></tr>
+<tr><td><span class="vi">VisualType các hình, thanh trượt độ trong suốt</span><span class="en">VisualType shapes, transparency trackbars</span></td><td><span class="st td">○</span></td><td><span class="vi">thẩm mỹ; bong bóng/hộp + mũi tên đã đủ ca thường gặp</span><span class="en">cosmetic; bubble/range + arrows cover the common cases</span></td></tr>
+<tr><td><span class="vi">KL NewBid/NewAsk trong tooltip</span><span class="en">NewBid/NewAsk volumes in tooltip</span></td><td><span class="st td">○</span></td><td><span class="vi">cần ngữ cảnh sổ lệnh từng trade</span><span class="en">needs per-trade book context</span></td></tr>
+</table>
+
+<h2 id="roadmap"><span class="vi">Lộ trình</span><span class="en">Roadmap</span></h2>
+<ol>
+<li><b><span class="vi">Lọc theo giờ</span><span class="en">Time filter</span></b> — <code>TimeFrom</code>/<code>TimeTo</code>
+<span class="vi">(theo timezone của mã), như ATAS. <i>Dễ.</i></span><span class="en">(instrument-timezone aware), like ATAS. <i>Easy.</i></span></li>
+<li><b><span class="vi">Cảnh báo</span><span class="en">Alerts</span></b> — <span class="vi">âm thanh + popup trên chart khi một trade được đánh dấu nổ. <i>Trung bình.</i></span><span class="en">sound + on-chart popup when a flagged trade fires. <i>Medium.</i></span></li>
+<li><b>AutoFilter (<span class="vi">xấp xỉ</span><span class="en">approx</span>)</b> — <span class="vi">ngưỡng tự động bằng percentile trượt; tắt <code>min</code> thủ công. <i>Trung bình.</i> (Xem dòng</span><span class="en">rolling-percentile auto threshold; disables manual <code>min</code>. <i>Medium.</i> (See the</span> <span class="st no">✕</span>→<span class="st ap">≈</span> <span class="vi">ở trên về lý do không bit-identical với ATAS.)</span><span class="en">row above for why it won't be bit-identical to ATAS.)</span></li>
+<li><b>VisualType / <span class="vi">độ trong suốt</span><span class="en">transparency</span></b> — <span class="vi">thêm hình và điều khiển độ mờ. <i>Thẩm mỹ.</i></span><span class="en">extra shapes and opacity controls. <i>Cosmetic.</i></span></li>
+</ol>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="api.html"><span class="vi">Tài liệu WebSocket API</span><span class="en">WebSocket API reference</span></a> ·
+<a class="h" href="footprint.html">Footprint</a> ·
+<a class="h" href="recipes.html">Recipes</a> ·
+<a class="h" href="dom.html">DOM</a> · <a class="h" href="mbo.html">MBO</a> ·
+<a class="h" href="bigtrades.md" target="_blank">bigtrades.md</a>
+<span class="vi"> — bản Markdown cho AI/dev (có changelog).</span><span class="en"> — Markdown for AI/dev (with changelog).</span></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Options · GEX · 0DTE</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --blu:#2d78dc; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  h3{font-size:18px;color:#fff;margin-top:26px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Options · GEX · 0DTE</h1>
+  <div class="v">Gamma exposure · chuỗi quyền chọn</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#what"><span class="vi">Nó là gì</span><span class="en">What it is</span></a>
+  <a href="#sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></a>
+  <a href="#popup"><span class="vi">Popup Options</span><span class="en">Options popup</span></a>
+  <a href="#calc"><span class="vi">Cách tính GEX</span><span class="en">How GEX is computed</span></a>
+  <a href="#levels"><span class="vi">Wall &amp; Gamma flip</span><span class="en">Walls &amp; Gamma flip</span></a>
+  <a href="#profile"><span class="vi">Profile trên chart</span><span class="en">The profile</span></a>
+  <a href="#dte"><span class="vi">0DTE &amp; cửa sổ DTE</span><span class="en">0DTE &amp; DTE modes</span></a>
+  <a href="#settings"><span class="vi">Cài đặt ⚙</span><span class="en">Settings ⚙</span></a>
+  <a href="#caveats"><span class="vi">Giả định &amp; lưu ý</span><span class="en">Assumptions &amp; caveats</span></a>
+  <hr>
+  <a href="OPTIONS.md" class="h" target="_blank"><span class="vi">↓ OPTIONS.md (cho AI)</span><span class="en">↓ OPTIONS.md (for AI)</span></a>
+  <a href="api.html" class="h"><span class="vi">← WebSocket API</span><span class="en">← WebSocket API</span></a>
+  <a href="storage.html" class="h"><span class="vi">→ Lưu trữ</span><span class="en">→ Storage</span></a>
+</nav>
+<main>
+
+<h2 id="what" style="margin-top:0"><span class="vi">Nó là gì</span><span class="en">What it is</span></h2>
+<p><span class="vi">Hai tính năng dựa trên <b>chuỗi quyền chọn</b> của hợp đồng future đang xem:</span>
+<span class="en">Two features built on the <b>options chain</b> of the futures contract you're viewing:</span></p>
+<ul>
+<li><span class="vi"><b>Popup Options</b> — lưới CALL · Strike · PUT live (bid/ask/last/vol/OI từng strike, từng kỳ hạn).</span>
+<span class="en"><b>Options popup</b> — the live CALL · Strike · PUT grid (bid/ask/last/vol/OI per strike, per expiry).</span></li>
+<li><span class="vi"><b>GEX</b> (Gamma Exposure) — gamma của dealer theo từng strike, vẽ lên chart thành line <b>Gamma-flip / Call Wall / Put Wall / Spot</b> + <b>profile</b> cố định; gộp các kỳ hạn trong một <b>cửa sổ DTE</b> (gồm <b>0DTE</b>).</span>
+<span class="en"><b>GEX</b> (Gamma Exposure) — dealer gamma per strike, drawn as <b>Gamma-flip / Call Wall / Put Wall / Spot</b> lines + a fixed <b>profile panel</b>; aggregated across expiries in a <b>DTE window</b> (incl. <b>0DTE</b>).</span></li>
+</ul>
+<p class="note"><span class="vi">Cả hai lấy chuỗi qua <code>getInstrumentByUnderlying</code> (future là underlying) → nhất quán spot, cần <b>quyền dữ liệu options</b>.</span>
+<span class="en">Both pull the chain via <code>getInstrumentByUnderlying</code> (the future is the underlying) → spot-consistent, needs the <b>options-data entitlement</b>.</span></p>
+
+<h2 id="sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></h2>
+<p><span class="vi">Không replay lịch sử — chỉ liệt kê chuỗi + quét OI/quote 1 lần rồi recompute live.</span>
+<span class="en">No history replay — chain discovery + a one-off OI/quote sweep, then live recompute.</span></p>
+<table>
+<tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Vì sao</span><span class="en">Why</span></th></tr>
+<tr><td><b><span class="vi">Liệt kê kỳ hạn</span><span class="en">Discover expiries</span></b></td><td><code>instrumentByUnderlying {expiration:""}</code></td>
+  <td><span class="vi">1 call → danh sách <b>ngày đáo hạn (CCYYMMDD)</b> của future (weekly/daily/monthly).</span><span class="en">1 call → list of option <b>expiry dates (CCYYMMDD)</b> for the future.</span></td></tr>
+<tr><td><b><span class="vi">Strike của 1 kỳ hạn</span><span class="en">Strikes of one expiry</span></b></td><td><code>instrumentByUnderlying {expiration:&lt;date&gt;}</code></td>
+  <td><span class="vi">Drill 1 ngày → các mã option (symbol, strike, C/P, product).</span><span class="en">Drill a date → the option instruments.</span></td></tr>
+<tr><td><b><span class="vi">OI + bid/ask mỗi strike</span><span class="en">OI + bid/ask per strike</span></b></td><td><a class="h" href="api.html#s-bookticker"><code>@bookTicker</code></a></td>
+  <td><span class="vi">Nguồn DUY NHẤT của <b>open interest</b> (<code>oi</code>) + best bid/ask; GEX <b>quét lô</b> mọi strike ±dải rồi hủy.</span><span class="en">The only source of <b>open interest</b> + best bid/ask; GEX <b>batch-sweeps</b> all strikes ±band, then unsubscribes.</span></td></tr>
+<tr><td><b><span class="vi">Last (popup)</span><span class="en">Last (popup)</span></b></td><td><a class="h" href="api.html#s-book"><code>@bookTicker</code></a> (<code>l</code>) + <a class="h" href="api.html#s-trade"><code>@trade</code></a></td>
+  <td><span class="vi"><code>@bookTicker.l</code> mang giá khớp cuối <b>kể cả ảnh chụp lúc subscribe</b> → strike ít khớp vẫn có Last ngay; <code>@trade</code> cập nhật live.</span><span class="en"><code>@bookTicker.l</code> carries the last trade <b>incl. the subscribe snapshot</b> → an illiquid strike shows a Last immediately; <code>@trade</code> updates it live.</span></td></tr>
+<tr><td><b>Spot (GEX)</b></td><td><span class="vi">future <code>@trade</code> (chart đã sub)</span><span class="en">future <code>@trade</code> (already on)</span></td>
+  <td><span class="vi"><code>F</code> = giá future live; GEX recompute mỗi 2.5 s theo nó.</span><span class="en"><code>F</code> = live future price; GEX recomputes every 2.5 s.</span></td></tr>
+</table>
+<p class="note warn"><span class="vi"><b>Luôn lọc Event Contracts</b> (<code>/^EC/</code> — option sự kiện theo giờ như <code>ECES</code>): không phải option chuẩn của future, và EC vàng báo <b>strike ×10</b>.</span>
+<span class="en"><b>Always filter Event Contracts</b> (<code>/^EC/</code> — hourly event options like <code>ECES</code>): not standard options, and gold EC report a <b>10× strike</b>.</span></p>
+<p class="note"><span class="vi"><b><code>subscribeByUnderlying</code> (đã wire qua <code>chainSub</code>):</b> sweep OI + popup giờ sub <b>cả chuỗi 1 kỳ hạn trong 1 call</b> (<code>chainSub</code> → Rithmic <code>subscribeByUnderlying</code>) thay cho sub từng strike — server bỏ sub lẻ các mã được phủ; quote/OI/last vẫn về qua <code>@bookTicker</code> từng strike. Ít call hơn hẳn (né storm/"in use"). Đánh đổi: Rithmic stream mọi strike của kỳ hạn về gateway. Xem <a class="h" href="api.html">API → chainSub</a>.</span>
+<span class="en"><b><code>subscribeByUnderlying</code> (wired via <code>chainSub</code>):</b> the OI sweep + popup now bulk-subscribe a whole expiry's chain in <b>one call</b> instead of per-strike — the gateway skips the per-strike subscribe for covered symbols; quotes/OI/last still route via each strike's <code>@bookTicker</code>. Far fewer calls (dodges the storm / "in use"). Trade-off: Rithmic streams every strike of the expiry to the gateway. See <a class="h" href="api.html">API → chainSub</a>.</span></p>
+
+<h2 id="popup"><span class="vi">Popup Options</span><span class="en">Options popup</span></h2>
+<ul>
+<li><span class="vi"><b>1 call IBU</b> liệt kê <b>tất cả ngày đáo hạn</b>, giới hạn tới <b>HSD của chính future</b> (vd ESU6 → tới Sep, không lấn future khác). Dropdown: <code>dd-mm-yyyy (Nd)</code>.</span>
+<span class="en"><b>One IBU call</b> lists <b>all expiry dates</b>, capped at the <b>future's own expiration</b> (e.g. ESU6 → up to Sep). Dropdown: <code>dd-mm-yyyy (Nd)</code>.</span></li>
+<li><span class="vi"><b>Lazy drill</b>: chỉ kỳ hạn <b>đang chọn</b> mới tải strike + subscribe. Mở popup vẫn nhanh dù 30+ kỳ hạn; ngày đã xem được cache.</span>
+<span class="en"><b>Lazy drill</b>: only the <b>selected</b> expiry is fetched + subscribed. Opening stays fast with 30+ expiries; seen dates are cached.</span></li>
+<li><span class="vi">Ngày <b>rỗng (chỉ Event Contract)</b> tự bị bỏ khỏi dropdown + nhảy sang ngày hợp lệ kế.</span>
+<span class="en"><b>Empty (EC-only) dates auto-prune</b> and the next valid date is shown.</span></li>
+<li><span class="vi"><b>Sub theo viewport</b>: lưới hiện full nhưng chỉ ~20 dòng đang nhìn được subscribe. Hàng <b>ATM</b> (vàng) + tô nền <b>ITM</b> bám giá live (CALL ITM = strike &lt; giá, PUT ITM = strike &gt; giá).</span>
+<span class="en"><b>Viewport subscribe</b>: grid renders full, only ~20 visible rows subscribed. <b>ATM</b> row (yellow) + <b>ITM</b> shading follow live price (CALL ITM = strike &lt; spot, PUT ITM = strike &gt; spot).</span></li>
+</ul>
+
+<h2 id="calc"><span class="vi">Cách tính GEX</span><span class="en">How GEX is computed</span></h2>
+<p><span class="vi">Với mỗi strike <code>K</code>, cộng qua MỌI kỳ hạn trong cửa sổ DTE:</span>
+<span class="en">Per strike <code>K</code>, summed across every expiry in the DTE window:</span></p>
+<pre><code>GEX(K) = Σ_kỳ-hạn [ Γ(K,exp)·W_call(K) − Γ(K,exp)·W_put(K) ]  × mult × F² × 0.01</code></pre>
+<p><span class="vi"><code>W</code> = <b>trọng số positioning</b>, chọn ở ⚙: <b>OI</b> (mặc định) / <b>Volume</b> / <b>Net</b>.</span><span class="en"><code>W</code> = <b>positioning weight</b>, chosen in ⚙: <b>OI</b> (default) / <b>Volume</b> / <b>Net</b>.</span></p>
+<ul>
+<li><span class="vi"><b>Black-76</b> (option trên future), tính client-side. <b>IV giải ngược từ giá mid</b> (Newton + bisection) vì feed không cho greeks.</span>
+<span class="en"><b>Black-76</b> (options on futures), client-side. <b>IV solved from the option mid</b> — the feed gives no greeks.</span></li>
+<li><span class="vi"><b>Một gamma/strike, lấy IV phía OTM</b> (put khi K≤spot, call khi K&gt;spot), kẹp <b>[2%,300%]</b>. (IV giải từ giá deep-ITM ≈ nội tại → σ rác → gamma nổ → <b>wall giả</b>. Dùng IV OTM + kẹp diệt lỗi này.)</span>
+<span class="en"><b>One gamma per strike, from the OTM-side IV</b> (put when K≤spot, call when K&gt;spot), clamped <b>[2%,300%]</b>. (IV from a deep-ITM price → garbage σ → gamma explodes → <b>false walls</b>; OTM IV + clamp fixes it.)</span></li>
+<li><span class="vi"><b>Mỗi kỳ hạn dùng T riêng</b> (theo giờ, sàn ~2h) → 0DTE gamma to nhưng không vô hạn, kỳ xa gamma nhỏ ⇒ tổng mỗi strike <b>chủ yếu do kỳ gần</b>.</span>
+<span class="en"><b>Each expiry uses its own T</b> (hours-aware, floored ~2h) → 0DTE gamma large but finite, far expiries small ⇒ each strike's sum is <b>dominated by near expiries</b>.</span></li>
+<li><span class="vi"><b>Quy ước dấu (SqueezeMetrics/SpotGamma)</b>: dealer <b>long call, short put</b> → call <b>+</b>, put <b>−</b>. Là <i>giả định</i>.</span>
+<span class="en"><b>Sign (SqueezeMetrics/SpotGamma)</b>: dealers <b>long calls, short puts</b> → call <b>+</b>, put <b>−</b>. An <i>assumption</i>.</span></li>
+<li><span class="vi"><b>Multiplier</b> (ES=50…) chỉ scale độ lớn $; <b>vị trí flip/wall độc lập với nó</b>. <code>r=4%</code>.</span>
+<span class="en"><b>Multiplier</b> (ES=50…) scales the $ magnitude only; <b>flip/wall locations are independent of it</b>. <code>r=4%</code>.</span></li>
+</ul>
+<p class="note"><span class="vi"><b>Chia việc</b>: OI tĩnh trong phiên → <b>quét 1 lần</b> (cache). Giá GEX đổi theo spot/thời gian → <b>recompute mỗi 2.5 s</b> (không gọi feed). Re-sweep OI mỗi <b>50 s</b>; <b>liệt kê lại chuỗi mỗi 15 phút</b> → tự cuộn qua ngày/phiên/kỳ hạn (set-and-forget).</span>
+<span class="en"><b>Work split</b>: OI is static intraday → <b>sweep once</b> (cache). GEX moves with spot/time → <b>recompute every 2.5 s</b> (no feed calls). Re-sweep OI every <b>50 s</b>; <b>re-enumerate every 15 min</b> → self-rolls across days/sessions/expiries.</span></p>
+<table>
+<tr><th><span class="vi">Trọng số</span><span class="en">Weighting</span></th><th><code>W</code> =</th><th>Realtime?</th><th><span class="vi">Dùng cho</span><span class="en">When</span></th></tr>
+<tr><td><b>OI</b> <span class="vi">(mặc định)</span><span class="en">(default)</span></td><td>Open Interest</td><td><span class="vi">❌ EOD — CME công bố 1 lần/sáng; trong phiên ĐỨNG YÊN (kể cả 0DTE)</span><span class="en">❌ EOD — published once each morning; static intraday (incl. 0DTE)</span></td><td><span class="vi">đa-DTE / swing</span><span class="en">multi-DTE / swing</span></td></tr>
+<tr><td><b>Volume</b></td><td><span class="vi">volume GỘP phiên</span><span class="en">session gross volume</span> (<code>v</code>)</td><td>✅</td><td>0DTE / intraday</td></tr>
+<tr><td><b>Net</b></td><td><span class="vi">buy − sell theo aggressor (CÓ DẤU)</span><span class="en">buy − sell by aggressor (signed)</span> (<code>nv</code>)</td><td>✅</td><td><span class="vi">flow direction — hợp 0DTE thanh khoản (ES)</span><span class="en">flow direction — liquid 0DTE (ES)</span></td></tr>
+</table>
+<p class="note"><span class="vi"><b>OI lag trong phiên</b> (0DTE hôm nay chưa vào OI tới mai). Volume/Net là proxy LIVE. <b>Net có dấu + nhỏ + nhiễu</b> → trên chuỗi mỏng (gold) wall nhấp nháy/mất; net hợp 0DTE thanh khoản. <b>Vol/Net giữ chuỗi sub SỐNG</b> (<code>chainSub</code>) → live, KHÔNG re-sweep; <b>net seed cả phiên 1 lần</b> từ <code>aggTrades</code>, cache <code>gexnetseed:</code> theo phiên (bật lại khỏi gọi Rithmic). <code>net = seed + (nv_live − baseline)</code>.</span>
+<span class="en"><b>OI lags intraday</b> (today's 0DTE not in OI until tomorrow). Volume/Net are the LIVE proxies. <b>Net is signed + small + noisy</b> → on thin chains (gold) the walls flicker/vanish; net shines on liquid 0DTE. <b>Vol/Net keep the chain subscribed LIVE</b> (<code>chainSub</code>) → no re-sweep; <b>net is session-seeded once</b> from <code>aggTrades</code>, cached per session in <code>gexnetseed:</code> (re-toggle doesn't re-hit Rithmic). <code>net = seed + (nv_live − baseline)</code>.</span></p>
+
+<h2 id="levels"><span class="vi">Wall &amp; Gamma flip</span><span class="en">Walls &amp; Gamma flip</span></h2>
+<table>
+<tr><th><span class="vi">Mức</span><span class="en">Level</span></th><th><span class="vi">Định nghĩa</span><span class="en">Definition</span></th><th><span class="vi">Đọc khi trade</span><span class="en">Trading read</span></th></tr>
+<tr><td class="b">Call Wall</td><td><span class="vi">strike <b>net GEX dương lớn nhất</b> (call áp đảo)</span><span class="en">strike with <b>largest positive net GEX</b></span></td><td><span class="vi">kháng cự / nam châm trên; giá hay khựng tại đó</span><span class="en">resistance / upside magnet</span></td></tr>
+<tr><td class="s">Put Wall</td><td><span class="vi">strike <b>net GEX âm lớn nhất</b> (put áp đảo)</span><span class="en">strike with <b>largest negative net GEX</b></span></td><td><span class="vi">hỗ trợ / nam châm dưới</span><span class="en">support / downside magnet</span></td></tr>
+<tr><td style="color:var(--yel);font-weight:600">Gamma flip</td><td><span class="vi">mức giá mà <b>tổng net GEX = 0</b></span><span class="en">spot price where <b>total net GEX = 0</b></span></td><td><span class="vi"><b>trên</b> → dealer long gamma → vol bị dập, giá ghim/mean-revert; <b>dưới</b> → short gamma → move khuếch đại, trend/squeeze</span><span class="en"><b>above</b> → dealers long gamma → vol dampened, pinned; <b>below</b> → short gamma → moves amplified, trendy/squeeze</span></td></tr>
+<tr><td><span class="vi">Top-N line</span><span class="en">Top-N lines</span></td><td><span class="vi">N strike net <b>+</b> (xanh) &amp; N strike net <b>−</b> (đỏ) lớn nhất</span><span class="en">N largest <b>+</b>(green) / <b>−</b>(red) net strikes</span></td><td><span class="vi">nam châm/level phụ</span><span class="en">secondary magnets</span></td></tr>
+</table>
+<p class="note"><span class="vi">Wall tính theo <b>NET GEX</b> (không phải max OI thô): strike vừa nhiều call vừa nhiều put là net trung tính, không phải wall. Top-N <b>bỏ qua</b> strike đã là wall (khỏi đè line).</span>
+<span class="en">Walls use <b>NET GEX</b> (not raw max OI): a strike heavy in both call &amp; put is net-neutral, not a wall. Top-N <b>skips</b> strikes already drawn as walls.</span></p>
+
+<h2 id="profile"><span class="vi">Profile trên chart</span><span class="en">The profile</span></h2>
+<ul>
+<li><span class="vi"><b>Panel cố định sát mép phải</b> (khoảng cách trục + bề rộng là setting), có <b>đường tâm</b>: <b class="b">GEX+ → phải</b>, <b class="s">GEX− → trái</b> (net). Hoặc <b>chế độ Call-Put</b>: Call→phải xanh, Put→trái đỏ riêng.</span>
+<span class="en"><b>Fixed panel at the right edge</b> (gap + width are settings), with a <b>centre line</b>: <b class="b">GEX+ → right</b>, <b class="s">GEX− → left</b> (net). Or <b>Call-Put mode</b>: Call→right green, Put→left red separately.</span></li>
+<li><span class="vi"><b>Scale theo các strike ĐANG HIỆN trong vùng giá</b> (cái lớn nhất trên màn = đầy bề rộng) → luôn đọc được ở mọi zoom; strike khổng lồ cuộn ra ngoài màn không còn ép mọi thanh tí xíu.</span>
+<span class="en"><b>Scaled to the strikes currently in view</b> (the largest on-screen bar fills the panel) → always readable at any zoom; a giant strike scrolled off-screen no longer shrinks everything.</span></li>
+<li><span class="vi"><b>GEX KHÔNG rescale chart</b> (không auto-fit) — kéo trục Y thoải mái; tắt GEX giữ nguyên scale.</span>
+<span class="en"><b>GEX does NOT rescale the chart</b> — Y-drag free; turning off leaves the scale untouched.</span></li>
+<li><span class="vi"><b>Legend góc trái-trên</b> (đậm, cỡ chữ chỉnh được): tag DTE, net GEX, Call GEX (xanh)/Put GEX (đỏ), rồi flip / CW / PW. Tag: <code>[0DTE]</code> (vàng = đang dùng kỳ hôm nay) hoặc <code>[1d…Xd×N]</code> (xám) = gần nhất…xa nhất × số kỳ hạn gộp.</span>
+<span class="en"><b>Top-left legend</b> (bold, sizeable): DTE tag, net GEX, Call GEX (green)/Put GEX (red), then flip / CW / PW. Tag: <code>[0DTE]</code> (yellow = today's expiry) or <code>[1d…Xd×N]</code> (gray) = nearest…farthest × #expiries.</span></li>
+</ul>
+
+<h2 id="dte"><span class="vi">0DTE &amp; cửa sổ DTE</span><span class="en">0DTE &amp; DTE modes</span></h2>
+<table>
+<tr><th><span class="vi">Chế độ (⚙)</span><span class="en">Mode (⚙)</span></th><th><span class="vi">Gồm</span><span class="en">Includes</span></th><th><span class="vi">Dùng cho</span><span class="en">Use for</span></th></tr>
+<tr><td><b>DTE = 0</b></td><td><span class="vi">chỉ kỳ hạn <b>hôm nay</b> (thuần <b>0DTE</b>)</span><span class="en">only <b>today's</b> expiry (pure <b>0DTE</b>)</span></td><td><span class="vi">ghim trong ngày; tín hiệu intraday sắc nhất</span><span class="en">same-day pinning; sharpest intraday</span></td></tr>
+<tr><td><b>DTE = 2–3</b> <span class="vi">(khuyến nghị scalping)</span><span class="en">(recommended)</span></td><td><span class="vi">0DTE + 2–3 ngày tới</span><span class="en">0DTE + next 2–3 days</span></td><td><span class="vi">set-and-forget; luôn có data kể cả khi không có kỳ hôm nay</span><span class="en">set-and-forget; always populated</span></td></tr>
+<tr><td><b>DTE = N</b></td><td><span class="vi">mọi kỳ hạn ≤ N ngày</span><span class="en">all expiries ≤ N days</span></td><td><span class="vi">bối cảnh rộng hơn</span><span class="en">wider context</span></td></tr>
+<tr><td><span class="vi"><b>Tất cả đến đáo hạn HĐ</b></span><span class="en"><b>All to contract expiry</b></span></td><td><span class="vi">mọi kỳ tới <b>HSD của future</b> (ESU6 → 18-9); re-sweep mỗi <b>10 phút</b></span><span class="en">every expiry to the <b>future's expiry</b>; re-sweeps every <b>10 min</b></span></td><td><span class="vi">bề mặt gamma <b>tổng</b>; per-symbol</span><span class="en">the <b>total</b> gamma surface; per-symbol</span></td></tr>
+</table>
+<p class="note"><span class="vi"><b>Vì sao near-term quan trọng nhất</b>: gamma ∝ 1/√T → 0DTE ATM gamma <i>khổng lồ</i>, kỳ 90 ngày gamma <i>tí xíu</i>. Cửa sổ nhỏ cô lập gamma đang ghim giá hôm nay; "tất cả đến đáo hạn" cũng hợp lệ (kỳ xa tự yếu vì gamma thấp). <b>Đừng</b> chỉ lấy mỗi kỳ terminal/quý cho intraday — gamma thấp nhất, bỏ lỡ near-term.</span>
+<span class="en"><b>Why near-term matters most</b>: gamma ∝ 1/√T → 0DTE ATM gamma <i>huge</i>, a 90-day strike <i>tiny</i>. Small windows isolate the gamma driving today; "all to expiration" is valid too (far expiries self-attenuate). <b>Don't</b> use only the terminal/quarterly expiry for intraday — lowest gamma, misses the near-term pin.</span></p>
+<p><span class="vi"><b>Qua phiên</b>: ~17:00 CT liệt kê lại tự bắt kỳ gần nhất mới. Không có kỳ 0DTE thì rơi về kỳ gần nhất, tag chuyển <code>[1d]</code> xám thay vì <code>[0DTE]</code> vàng (wall/flip vẫn đúng ở 1–2 DTE; chỉ mất hiệu ứng ghim cùng ngày).</span>
+<span class="en"><b>Session roll</b>: ~17:00 CT re-enumeration picks the new nearest expiry. No 0DTE → falls back to nearest, tag goes gray <code>[1d]</code> instead of yellow <code>[0DTE]</code> (walls/flip still valid at 1–2 DTE; only the same-day pin is missing).</span></p>
+
+<h2 id="settings"><span class="vi">Cài đặt ⚙ (đều theo từng symbol)</span><span class="en">Settings ⚙ (all per-symbol)</span></h2>
+<table>
+<tr><th><span class="vi">Cài đặt</span><span class="en">Setting</span></th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th><th><span class="vi">Mặc định</span><span class="en">Default</span></th></tr>
+<tr><td><span class="vi">Cách trục giá</span><span class="en">Gap from axis</span></td><td><span class="vi">khoảng cách panel tới trục giá, px</span><span class="en">panel gap from price axis, px</span></td><td>10</td></tr>
+<tr><td><span class="vi">Bề rộng (chia +/−)</span><span class="en">Width (split +/−)</span></td><td><span class="vi">tổng bề rộng panel, px (mỗi bên = nửa)</span><span class="en">total width, px (each side = half)</span></td><td>150</td></tr>
+<tr><td><span class="vi">Cửa sổ DTE</span><span class="en">DTE window</span></td><td><span class="vi">gộp kỳ hạn ≤ số ngày này (<b>0 = thuần 0DTE</b>)</span><span class="en">aggregate expiries ≤ N days (<b>0 = pure 0DTE</b>)</span></td><td>7</td></tr>
+<tr><td><span class="vi">Tất cả đến đáo hạn HĐ</span><span class="en">All to contract expiry</span></td><td><span class="vi">gộp mọi kỳ tới HSD future (bỏ qua cửa sổ; cập nhật 10')</span><span class="en">every expiry to the future's expiry (ignores window; 10-min)</span></td><td>off</td></tr>
+<tr><td><span class="vi">Trọng số theo VOLUME</span><span class="en">Weight by VOLUME</span></td><td><span class="vi">cân theo <b>volume gộp</b> phiên (live) thay OI — cho 0DTE/intraday</span><span class="en">weight by session <b>gross volume</b> (live) instead of OI — for 0DTE/intraday</span></td><td>off (OI)</td></tr>
+<tr><td><span class="vi">└ dùng NET (buy−sell)</span><span class="en">└ use NET (buy−sell)</span></td><td><span class="vi">phụ của Volume: cân theo <b>net = buy−sell</b> aggressor (có dấu, live, seed cả phiên)</span><span class="en">sub-option of Volume: weight by <b>net = buy−sell</b> aggressor (signed, live, session-seeded)</span></td><td>off</td></tr>
+<tr><td><span class="vi">🗑 Xoá cache &amp; tính lại</span><span class="en">🗑 Clear cache &amp; recompute</span></td><td><span class="vi">xoá cache GEX (<code>gexcache:</code> OI + <code>gexnetseed:</code> net, mọi mã) rồi quét lại từ đầu (Rithmic mới)</span><span class="en">wipe GEX caches (<code>gexcache:</code> OI + <code>gexnetseed:</code> net, all symbols) and re-sweep fresh (new Rithmic)</span></td><td>—</td></tr>
+<tr><td><span class="vi">Cỡ chữ label</span><span class="en">Label font size</span></td><td><span class="vi">cỡ chữ legend, px</span><span class="en">legend font size, px</span></td><td>14</td></tr>
+<tr><td><span class="vi">Top N line GEX</span><span class="en">Top-N lines</span></td><td><span class="vi">vẽ N strike net +(xanh)/−(đỏ) lớn nhất thành line</span><span class="en">draw N largest +(green)/−(red) net strikes</span></td><td>0</td></tr>
+<tr><td><span class="vi">Profile tách Call/Put</span><span class="en">Call/Put profile</span></td><td><span class="vi">Call→phải / Put→trái thay vì Net</span><span class="en">Call→right / Put→left instead of Net</span></td><td>off</td></tr>
+<tr><td><span class="vi">Line CW / PW / flip / Spot</span><span class="en">CW / PW / flip / Spot lines</span></td><td><span class="vi">bật/tắt từng line giá</span><span class="en">toggle each price line</span></td><td>on</td></tr>
+</table>
+<p style="color:var(--sub);font-size:13px"><span class="vi">Mỗi symbol nhớ cấu hình GEX riêng (và footprint/heatmap/DOM/khung TF); mở mã nào nạp lại cấu hình mã đó.</span>
+<span class="en">Each symbol remembers its own GEX config (and footprint/heatmap/DOM/timeframe); opening a symbol restores it.</span></p>
+
+<h2 id="caveats"><span class="vi">Giả định &amp; lưu ý (đọc trước khi trade)</span><span class="en">Assumptions &amp; caveats (read before trading)</span></h2>
+<ul>
+<li><span class="vi"><b>Dữ liệu thật</b>: strike, OI, kỳ hạn, bid/ask lấy thẳng từ Rithmic.</span>
+<span class="en"><b>Real data</b>: strikes, OI, expiries, bid/ask straight from Rithmic.</span></li>
+<li><span class="vi"><b>Mô hình (diễn giải, không phải chân lý)</b>: quy ước dấu <b>long-call/short-put</b>, <b>IV từ mid snapshot</b>, <b>r=4%</b>, multiplier (chỉ scale $). Flip/wall/profile là <b>diễn giải positioning</b>.</span>
+<span class="en"><b>Model (interpretation, not fact)</b>: the <b>long-call/short-put</b> sign, <b>IV from a mid snapshot</b>, <b>r=4%</b>, multiplier (scales $ only). Flip/wall/profile are <b>positioning interpretation</b>.</span></li>
+<li><span class="vi"><b>Bẫy thang strike</b>: Event Contracts báo strike <b>×10</b> (vd <code>44650</code> cho 4465) — đã lọc (<code>/^EC/</code>), nhưng xác nhận 1 lần là strike giữ lại ≈ spot trước khi trade.</span>
+<span class="en"><b>Strike-scale gotcha</b>: Event Contracts report a <b>10×</b> strike — filtered (<code>/^EC/</code>), but confirm once that kept strikes ≈ spot before trading.</span></li>
+<li><span class="vi"><b>Carry</b>: gộp các kỳ hạn settle vào <i>cùng</i> future (vd mọi option ES tới kỳ quý Sep → ESU6) là nhất quán spot. Cửa sổ quá rộng vượt roll future thì trộn spot — ưu tiên <b>front future + cửa sổ trong block của nó</b>.</span>
+<span class="en"><b>Carry</b>: aggregating expiries that settle into the <i>same</i> future (all ES options up to Sep → ESU6) is spot-consistent. A window crossing a futures roll mixes spot references — prefer <b>front future + a window within its block</b>.</span></li>
+</ul>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="api.html"><span class="vi">WebSocket API</span><span class="en">WebSocket API</span></a> ·
+<a class="h" href="storage.html"><span class="vi">Lưu trữ</span><span class="en">Storage</span></a> ·
+<a class="h" href="footprint.html">Footprint</a> · <a class="h" href="heatmap.html">Heatmap</a> ·
+<a class="h" href="OPTIONS.md" target="_blank">OPTIONS.md</a></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>
