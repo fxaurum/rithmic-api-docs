@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Raw R|API+ passthrough</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --blu:#2d78dc; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  h3{font-size:18px;color:#fff;margin-top:26px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:20px;border:1px solid var(--bd)}
+  .tag.s{color:var(--grn);border-color:#1f6f64;background:#10211e}
+  .tag.g{color:var(--yel);border-color:#6b5a18;background:#221c0c}
+  .cb{font-family:Consolas,Menlo,monospace;font-size:13px;color:#e6edf3}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Raw R|API+</h1>
+  <div class="v">Mọi callback rapiplus &rarr; socket (1-1)</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#what"><span class="vi">Nó là gì</span><span class="en">What it is</span></a>
+  <a href="#stream"><span class="vi">Dạng stream (push)</span><span class="en">Stream form (push)</span></a>
+  <a href="#glossary"><span class="vi">Glossary field</span><span class="en">Field glossary</span></a>
+  <a href="#catalog"><span class="vi">Danh mục theo cụm</span><span class="en">Catalog by cluster</span></a>
+  <a href="#call"><span class="vi">Dạng call (pull)</span><span class="en">Call form (pull)</span></a>
+  <a href="#order"><span class="vi">Order entry (đặt lệnh)</span><span class="en">Order entry</span></a>
+  <a href="#notes"><span class="vi">Lưu ý</span><span class="en">Notes</span></a>
+  <a href="examples.html" style="color:var(--acc);margin-top:8px"><span class="vi">⌨ Code 9 ngôn ngữ</span><span class="en">⌨ Code (9 languages)</span></a>
+</nav>
+<main>
+
+<h2 id="what"><span class="vi">Nó là gì</span><span class="en">What it is</span></h2>
+<p><span class="vi">Phơi <b>MỌI</b> callback Rithmic R|API+ ra WebSocket theo kiểu <b>1-1</b>. Các stream curated (<code>@trade</code>, <code>@depth</code>, <code>@mbo</code>, <code>@kline</code>, <code>@bookticker</code>, <code>@mboraw</code>…) là bản đã biến đổi nằm <b>trên</b> lớp này — dùng chúng để vẽ chart. Dùng raw bus khi cần event Rithmic <b>thô, đủ field</b>.</span>
+<span class="en">Exposes <b>every</b> Rithmic R|API+ callback over the socket <b>1-to-1</b>. The curated streams (<code>@trade</code>, <code>@depth</code>, <code>@mbo</code>, <code>@kline</code>, <code>@bookticker</code>, <code>@mboraw</code>…) are transforms built <b>on top</b> — use those for charting. Use the raw bus when you want the untouched Rithmic event with all its fields.</span></p>
+<table>
+<tr><th>rapiplus</th><th>socket</th></tr>
+<tr><td><span class="vi">callback push (data chảy liên tục)</span><span class="en">push callback (continuous)</span></td><td><span class="vi"><b>stream</b> <code>&lt;exch&gt;.&lt;sym&gt;@&lt;TenCallback&gt;</code></span><span class="en"><b>stream</b> <code>&lt;exch&gt;.&lt;sym&gt;@&lt;CallbackName&gt;</code></span></td></tr>
+<tr><td><span class="vi">push KHÔNG gắn symbol (account/order/exchange list/user…)</span><span class="en">push without a symbol</span></td><td><span class="vi"><b>stream toàn cục</b> <code>*.*@&lt;TenCallback&gt;</code></span><span class="en"><b>global stream</b> <code>*.*@&lt;CallbackName&gt;</code></span></td></tr>
+<tr><td><span class="vi">method pull/query (hỏi &rarr; 1 đáp)</span><span class="en">pull / query method</span></td><td><span class="vi"><b>RPC</b> call</span><span class="en"><b>RPC</b> call</span></td></tr>
+</table>
+
+<h2 id="stream"><span class="vi">Dạng stream (push &rarr; stream)</span><span class="en">Stream form (push &rarr; stream)</span></h2>
+<p><span class="vi">Subscribe <code>&lt;exch&gt;.&lt;sym&gt;@&lt;TenCallback&gt;</code> (không phân biệt hoa thường). Tên là đúng tên callback R|API+:</span>
+<span class="en">Subscribe <code>&lt;exch&gt;.&lt;sym&gt;@&lt;CallbackName&gt;</code> (case-insensitive). The name is exactly the R|API+ callback:</span></p>
+<pre><code>SUBSCRIBE  cme.esu6@onsettlementprice
+SUBSCRIBE  cme.esu6@onmarketmode
+SUBSCRIBE  cme.esu6@onopeninterest
+SUBSCRIBE  *.*@onpnlupdate          // toan cuc / global
+SUBSCRIBE  *.*@onfillreport</code></pre>
+<p><span class="vi">Mỗi message = struct Info phản chiếu sang JSON — <code>e</code> = tên callback, rồi <b>tất cả</b> field public:</span>
+<span class="en">Each message = the Info struct reflected to JSON — <code>e</code> = callback name, then <b>all</b> public fields:</span></p>
+<pre><code>{ "stream":"cme.esu6@onsettlementprice",
+  "data":{ "e":"OnSettlementPrice", "Exchange":"CME", "Symbol":"ESU6",
+           "SettlementPrice":7611.50, "SettlementDate":"20260626", "Ssboe":1718000000 } }</code></pre>
+<h3><span class="vi">Bật feed thế nào</span><span class="en">What turns the feed on</span></h3>
+<ul>
+<li><span class="vi">Stream theo <b>symbol</b> tự gọi <code>Subscribe(All)</code> &rarr; có ngay mọi callback L1 / giá / settlement / limit / market-mode / OI / volume / indicator / reference.</span>
+<span class="en">A <b>symbol</b> raw stream calls <code>Subscribe(All)</code> &rarr; you immediately get every L1 / price / settlement / limit / market-mode / OI / volume / indicator / reference callback.</span></li>
+<li><span class="vi">Callback <b>book / depth-by-order / bar</b> (<code>OnLimitOrderBook</code>, <code>OnBidQuote</code>, <code>OnAskQuote</code>, <code>OnDbo</code>, <code>OnBar</code>…) cần feed riêng — sub kèm stream curated bật nó: <code>@depth</code> (book), <code>@mbo</code>/<code>@mboraw</code> (DBO), <code>@kline</code> (bar). Raw bus sẽ chuyển tiếp event của chúng.</span>
+<span class="en"><b>Book / depth-by-order / bar</b> callbacks need their own feed — subscribe the curated stream that activates it <b>alongside</b>: <code>@depth</code> (book), <code>@mbo</code>/<code>@mboraw</code> (DBO), <code>@kline</code> (bars). The raw bus then passes their events through.</span></li>
+<li><span class="vi">Callback <b>query-response</b> (<code>OnOrderReplay</code>, <code>OnExecutionReplay</code>, <code>OnOptionList</code>, <code>OnRefData</code>…) KHÔNG tự đẩy — phải <b>gọi 1 method để kích</b>. Raw bus tự gọi giùm khi bạn sub (xem bảng <code>trigOf</code>). Lưu ý: <b>tên method ≠ tên callback</b> — đây là cặp request/response của R|API+: bạn gọi <code>REngine.replayX()</code>, Rithmic bắn lại callback <code>XReplay</code>. Phần lớn khớp (<code>replayOpenOrders</code>→<code>OnOpenOrderReplay</code>) NHƯNG có chỗ lệch — <code>replayAllOrders()</code> → <code>OnOrderReplay</code> (method có "All", callback không) — nên <b>không suy ra được</b> bằng quy tắc chuỗi, phải tra <code>trigOf</code>. Tiền tố <code>On</code> + viết-thường là quy ước stream của gateway này; R|API+ gốc gọi callback là <code>OrderReplay</code> (không "On").</span>
+<span class="en"><b>Query-response</b> callbacks (<code>OnOrderReplay</code>, <code>OnExecutionReplay</code>, <code>OnOptionList</code>, <code>OnRefData</code>…) do NOT self-push — a <b>method must trigger</b> them. The raw bus calls it for you on subscribe (see the <code>trigOf</code> table). Note: <b>method name ≠ callback name</b> — it's R|API+'s request/response pair: you call <code>REngine.replayX()</code>, Rithmic fires back the <code>XReplay</code> callback. Most line up (<code>replayOpenOrders</code>→<code>OnOpenOrderReplay</code>) BUT some don't — <code>replayAllOrders()</code> → <code>OnOrderReplay</code> (method has "All", callback doesn't) — so it can't be derived by a string rule, you must look it up in <code>trigOf</code>. The <code>On</code>-prefix + lowercasing is this gateway's stream convention; raw R|API+ names the callback <code>OrderReplay</code> (no "On").</span></li>
+<li><span class="vi">Stream <b>toàn cục</b> tự chảy sau login — không cần bật.</span><span class="en"><b>Global</b> streams flow automatically after login.</span></li>
+</ul>
+<div class="note"><span class="vi"><b>Chi phí:</b> passthrough chỉ chạy khi có client giữ event đó (ref-count); không ai sub thì 0 việc. Callback tần suất cao (<code>OnQuote</code>, <code>OnBidQuote</code>, <code>OnAskQuote</code>) nặng — chỉ sub cái bạn xử lý.</span>
+<span class="en"><b>Cost:</b> the passthrough runs only while a client holds that event (ref-counted); nobody subscribed = zero work. High-frequency callbacks (<code>OnQuote</code>, <code>OnBidQuote</code>, <code>OnAskQuote</code>) are heavy — subscribe only what you consume.</span></div>
+
+<h2 id="glossary"><span class="vi">Glossary field (chung)</span><span class="en">Field glossary (shared)</span></h2>
+<p style="color:var(--sub)"><span class="vi">Field lặp ở nhiều callback — giải thích 1 lần ở đây (field đặc thù ghi tại từng callback).</span><span class="en">Fields shared by many callbacks — explained once.</span></p>
+<table>
+<tr><th>Field</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>e</code></td><td><span class="vi">tên callback (gateway thêm, vd <code>"OnBidQuote"</code>)</span><span class="en">callback name (added by gateway)</span></td></tr>
+<tr><td><code>CallbackType</code></td><td><b>enum</b>: <code>Image</code> (snapshot lúc (re)subscribe) · <code>Update</code> (<span class="vi">cập nhật live</span><span class="en">live update</span>) · <code>History</code> (<span class="vi">từ replay</span><span class="en">from replay</span>) · <code>Undefined</code></td></tr>
+<tr><td><code>UpdateType</code></td><td><b>enum</b> (quote/book): <code>Solo</code> (<span class="vi">1 mức đơn</span><span class="en">single level</span>) · <code>Begin</code>/<code>Middle</code>/<code>End</code> (<span class="vi">batch nhiều mức</span><span class="en">multi-level batch</span>) · <code>Clear</code> (<span class="vi">xoá mức</span><span class="en">clear level</span>) · <code>Aggregated</code> · <code>Undefined</code></td></tr>
+<tr><td><code>Exchange</code> / <code>Symbol</code></td><td><span class="vi">sàn / mã</span><span class="en">exchange / symbol</span></td></tr>
+<tr><td><code>Price</code> / <code>Size</code></td><td><span class="vi">giá / khối lượng tại mức</span><span class="en">price / size at that level</span></td></tr>
+<tr><td><code>NumOrders</code></td><td><span class="vi">số lệnh tại mức giá</span><span class="en">order count at the level</span></td></tr>
+<tr><td><code>ImpliedSize</code></td><td><span class="vi">size suy ra từ spread/strategy (implied)</span><span class="en">implied liquidity from spreads</span></td></tr>
+<tr><td><code>LeanPrice</code></td><td><span class="vi">giá tham chiếu nội bộ Rithmic (~fair/mid)</span><span class="en">Rithmic internal reference price (~fair/mid)</span></td></tr>
+<tr><td><code>Ssboe</code> / <code>Usecs</code></td><td><span class="vi">mốc SÀN: giây-epoch + micro-giây. <code>ms = Ssboe*1000 + Usecs/1000</code></span><span class="en">exchange time: epoch-seconds + microseconds</span></td></tr>
+<tr><td><code>SourceSsboe</code>/<code>Usecs</code>/<code>Nsecs</code></td><td><span class="vi">mốc tại NGUỒN (sàn): giây / micro / nano-giây</span><span class="en">source (exchange) time: sec / µs / ns</span></td></tr>
+<tr><td><code>JopSsboe</code>/<code>JopNsecs</code></td><td><span class="vi">mốc tại Rithmic <b>JOP</b> (join-order-plant): giây / nano-giây</span><span class="en">Rithmic JOP time: sec / ns</span></td></tr>
+<tr><td><code>AggressorSide</code></td><td><span class="vi"><code>B</code>/<code>S</code> — bên chủ động (taker) mua/bán</span><span class="en"><code>B</code>/<code>S</code> — aggressor (taker) side</span></td></tr>
+<tr><td><code>AggressorExchOrdId</code> / <code>ExchOrdId</code></td><td><span class="vi">mã lệnh <b>aggressor</b> / mã lệnh <b>khớp</b> (resting) của sàn</span><span class="en">aggressor / resting order id</span></td></tr>
+<tr><td><code>Condition</code></td><td><span class="vi">cờ điều kiện trade (rỗng = trade thường)</span><span class="en">trade condition flag (empty = normal)</span></td></tr>
+<tr><td><code>Date</code> <span style="color:var(--sub)">(settlement)</span></td><td><span class="vi">ngày settlement, định dạng <code>CCYYMMDD</code></span><span class="en">settlement date, <code>CCYYMMDD</code></span></td></tr>
+<tr><td><code>PriceType</code> <span style="color:var(--sub)">(settlement)</span></td><td><b>enum</b>: <code>final</code> · <code>preliminary</code></td></tr>
+<tr><td><code>MarketMode</code> <span style="color:var(--sub)">(OnMarketMode)</span></td><td><span class="vi">trạng thái phiên: <code>Open</code> · <code>Closed</code> · <code>Pre-Open</code> · <code>Pause</code> · <code>Halt</code> · <code>Auction</code> …</span><span class="en">session state</span></td></tr>
+<tr><td><code>Event</code> / <code>Reason</code> <span style="color:var(--sub)">(OnMarketMode)</span></td><td><span class="vi">sự kiện (<code>No Event</code>…) / lý do (<code>Group Schedule</code> = theo lịch nhóm)</span><span class="en">event / reason</span></td></tr>
+<tr><td><code>VolumeFlag</code> / <code>Volume</code></td><td><span class="vi">có khối lượng hợp lệ / khối lượng (vd OnOpeningIndicator)</span><span class="en">volume valid flag / volume</span></td></tr>
+<tr><td><code>QuantityFlag</code> / <code>Quantity</code> <span style="color:var(--sub)">(OI)</span></td><td><span class="vi">OI hợp lệ / số hợp đồng đang mở</span><span class="en">open interest valid / contracts open</span></td></tr>
+<tr><td><code>Side</code></td><td><code>B</code> = bid/mua · <code>S</code> = ask/bán</td></tr>
+<tr><td><code>Priority</code> <span style="color:var(--sub)">(OnDbo)</span></td><td><span class="vi">thứ tự ưu tiên FIFO của lệnh tại mức giá</span><span class="en">FIFO priority of the order</span></td></tr>
+<tr><td><code>SizeFlag</code> / <code>PreviousPrice</code> <span style="color:var(--sub)">(OnDbo)</span></td><td><span class="vi">size lệnh hợp lệ / giá cũ khi lệnh đổi giá (NaN nếu không đổi)</span><span class="en">size valid / prev price on move</span></td></tr>
+<tr><td><code>RpCode</code></td><td><span class="vi">mã kết quả Rithmic, <code>0</code> = OK (book/VP/refdata)</span><span class="en">Rithmic result code, <code>0</code> = OK</span></td></tr>
+<tr><td><code>Vwap</code> / <code>NumTrades</code> <span style="color:var(--sub)">(OnBar)</span></td><td><span class="vi">VWAP phiên / số lệnh khớp trong nến</span><span class="en">session VWAP / trades in bar</span></td></tr>
+<tr><td><code>BuyerAsAggressorVolume</code> / <code>SellerAsAggressorVolume</code></td><td><span class="vi">KL mua / bán chủ động (delta footprint)</span><span class="en">buy / sell aggressor volume (delta)</span></td></tr>
+<tr><td><code>Prices[]</code> / <code>Volumes[]</code> <span style="color:var(--sub)">(VAP)</span></td><td><span class="vi">hai mảng <b>song song</b> (cùng index) = volume profile theo giá</span><span class="en">parallel arrays = volume-at-price</span></td></tr>
+<tr><td><code>SinglePointValue</code> <span style="color:var(--sub)">(refdata)</span></td><td><span class="vi">giá trị 1 điểm (vd $20/điểm NQ)</span><span class="en">value per point</span></td></tr>
+<tr><td><code>ProductCode</code> / <code>InstrumentType</code></td><td><span class="vi">mã sản phẩm / <code>Future</code>·<code>Future Strategy</code>·<code>Future Option</code></span><span class="en">product / instrument type</span></td></tr>
+<tr><td><code>PutCallIndicator</code> / <code>StrikePrice</code> / <code>Underlying</code> <span style="color:var(--sub)">(option)</span></td><td><span class="vi"><code>Call</code>/<code>Put</code> · giá thực hiện · mã cơ sở</span><span class="en">option fields</span></td></tr>
+<tr><td><code>StrategyType</code> / <code>Legs</code> <span style="color:var(--sub)">(strategy)</span></td><td><span class="vi">loại spread (Iron Condor…) / các chân spread</span><span class="en">spread type / legs</span></td></tr>
+<tr><td><code>FcmId</code> / <code>IbId</code> / <code>TradeRoute</code> / <code>Status</code></td><td><span class="vi">FCM · IB · tên route · <code>UP</code>/<code>DOWN</code> (route đặt lệnh)</span><span class="en">order-routing fields</span></td></tr>
+<tr><td><code>AccountId</code> / <code>AccountName</code></td><td><span class="vi">mã / tên tài khoản (PnL/order) — <i>ví dụ trong doc đã ẩn</i></span><span class="en">account id / name (redacted)</span></td></tr>
+<tr><td><b>state-wrapper</b> <code>{Ignore,Clear,Use,State,Value}</code></td><td><span class="vi">field PnL/account: đọc <code>Value</code> chỉ khi <code>State:"Use"</code> (<code>Clear</code>→null · <code>Ignore</code>→bỏ qua)</span><span class="en">read Value only when State=Use</span></td></tr>
+<tr><td><code>AccountBalance</code>/<code>OpenPnl</code>/<code>ClosedPnl</code>/<code>Position</code></td><td><span class="vi">số dư · lãi/lỗ mở · chốt · vị thế ròng (state-wrapper)</span><span class="en">balance · open/closed PnL · net position</span></td></tr>
+<tr><td><code>RmsInfo</code> / <code>Algorithm</code> <span style="color:var(--sub)">(RMS)</span></td><td><span class="vi">cấu hình rủi ro tài khoản / thuật toán RMS (<code>SMAC</code>…)</span><span class="en">account risk config / RMS algo</span></td></tr>
+<tr><td><code>Orders[]</code> / <code>Executions[]</code> <span style="color:var(--sub)">(replay)</span></td><td><span class="vi">lệnh (OrderInfo) / fills lịch sử — rỗng khi chưa giao dịch</span><span class="en">orders / historical fills</span></td></tr>
+<tr><td><code>Dates[]</code> <span style="color:var(--sub)">(OrderHistoryDates)</span></td><td><span class="vi">các ngày <code>CCYYMMDD</code> có lịch sử lệnh</span><span class="en">days with order history</span></td></tr>
+<tr><td><code>RpCode ≠ 0</code></td><td><span class="vi"><b>lỗi / không có data</b> cho query (vd OnOptionList=7)</span><span class="en">query error / no data</span></td></tr>
+<tr><td><code>Expiration</code> / <code>ExpirationTime</code></td><td><span class="vi">hết hạn <code>CCYYMMDD</code> / epoch-giây</span><span class="en">expiry CCYYMMDD / epoch</span></td></tr>
+<tr><td><code>SettlementMethod</code> / <code>UnitOfMeasure</code></td><td><span class="vi"><code>cash</code>/<code>physical</code> / đơn vị đo hợp đồng</span><span class="en">settlement / unit of measure</span></td></tr>
+<tr><td><code>Rows[]</code> <span style="color:var(--sub)">(PriceIncr)</span></td><td><span class="vi">bảng bước giá: <code>PriceIncr</code>(tick) · <code>Precision</code> · <code>FirstPrice</code>/<code>LastPrice</code>(0/0=mọi giá)</span><span class="en">tick-size table</span></td></tr>
+<tr><td><code>Price:"NaN"</code></td><td><span class="vi">field có nhưng <b>chưa có giá trị</b> (band/indicator chưa công bố)</span><span class="en">field present but no value yet</span></td></tr>
+<tr><td><code>Context</code></td><td><span class="vi">object client gắn kèm request (gateway để <code>null</code>)</span><span class="en">client-attached request context (gateway sends <code>null</code>)</span></td></tr>
+<tr><td><code>DboUpdateType</code> <span style="color:var(--sub)">(OnDbo)</span></td><td><b>enum</b>: <code>Image</code> · <code>New</code> · <code>Change</code> · <code>Delete</code> · <code>Undefined</code></td></tr>
+<tr><td><code>Type</code> <span style="color:var(--sub)">(OnBar)</span></td><td><b>BarType enum</b>: <code>Minute</code> · <code>Daily</code> · <code>Tick</code> · <code>Volume</code> · <code>Second</code> · <code>Range</code> · <code>Weekly</code></td></tr>
+<tr><td><code>{Current,Peak,Max}{MarketData,Orders,Pnl,History,Repository}SessionCount</code> <span style="color:var(--sub)">(UserProfile)</span></td><td><span class="vi">đếm phiên mỗi plant: <code>Current</code>=đang mở · <code>Peak</code>=đỉnh · <code>Max</code>=<b>trần phiên đồng thời / 1 user</b> (<code>0</code>=không đặt). MaxMarketData=1 → 1 user chỉ 1 phiên data</span><span class="en">per-plant session counts; Max = concurrent cap per user (0=unset)</span></td></tr>
+</table>
+
+<h2 id="catalog"><span class="vi">Danh mục stream theo cụm</span><span class="en">Stream catalog by cluster</span></h2>
+<p><span class="tag s">S</span> = <span class="vi">theo symbol</span><span class="en">symbol-scoped</span> (<code>exch.sym@…</code>) &nbsp; <span class="tag g">G</span> = <span class="vi">toàn cục</span><span class="en">global</span> (<code>*.*@…</code>)</p>
+<div id="rwbar" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:9px 11px;margin:10px 0">
+  <span style="color:var(--sub)"><span class="vi">Bấm tên callback bất kỳ để <b>thử</b> — subscribe ~4s, hiện event sống.</span><span class="en">Click any callback to <b>try</b> it — subscribes ~4s, shows live events.</span></span>
+  <label style="color:var(--sub);margin-left:auto">exch <input id="rwExch" value="CME" style="width:62px;background:var(--code);border:1px solid var(--bd);border-radius:5px;color:#e6edf3;padding:4px 6px;font:13px Consolas"></label>
+  <!-- mặc định NQU6 (KHÁC mã mặc định của chart = ESU6) -> mã này chart không giữ -> "Thử" luôn subscribe MỚI TINH -> snapshot Open/Close ra liền. Đừng để trùng mã đang mở trên chart. -->
+  <label style="color:var(--sub)">sym <input id="rwSym" value="NQU6" style="width:90px;background:var(--code);border:1px solid var(--bd);border-radius:5px;color:#e6edf3;padding:4px 6px;font:13px Consolas"></label>
+  <span id="rwState" style="color:var(--sub);font-size:12px">chưa nối</span>
+</div>
+<div class="note"><span class="vi">Bấm <b>Thử</b>/<b>Execute</b> từng dòng. Cột <b>Note</b> gõ trực tiếp được, <b>tự lưu trên trình duyệt</b> (không mất khi reload).</span><span class="en">Click <b>Try</b>/<b>Execute</b> per row. The <b>Note</b> cell is editable, <b>auto-saved in your browser</b>.</span></div>
+<h3><span class="vi">Stream (push callback) — 1 dòng / callback</span><span class="en">Streams — one row per callback</span></h3>
+<p style="color:var(--sub);font-size:13px"><span class="vi">Đã bỏ nhóm <b>Kết nối / phiên</b> (<code>OnAlert</code>, <code>OnLoginCompleted</code>, <code>OnEnvironment</code>, <code>OnEnvironmentList</code>, <code>OnPing</code>) — nội bộ login, không dùng khai thác data; trạng thái login xem RPC <code>connections</code> (gateway — ở <a class="h" href="api.html">api.html</a>, không phải rapiplus).</span>
+<span class="en">Dropped the <b>Connection / session</b> cluster (<code>OnAlert</code>, <code>OnLoginCompleted</code>, <code>OnEnvironment</code>, <code>OnEnvironmentList</code>, <code>OnPing</code>) — login internals, not for data; for login status use the <code>connections</code> RPC (gateway — see <a class="h" href="api.html">api.html</a>, not rapiplus).</span></p>
+<table id="rwcat"><thead><tr><th><span class="vi">Cụm</span><span class="en">Cluster</span></th><th></th><th>Callback (<code>@&lt;ten&gt;</code>)</th><th><span class="vi">Thử</span><span class="en">Try</span></th><th>Response <span style="color:var(--sub);font-weight:400">(dán Copy)</span></th><th><span class="vi">Note (mô tả)</span><span class="en">Note (desc)</span></th></tr></thead><tbody></tbody></table>
+<div class="note warn"><span class="vi">⚠ Cụm account / order / PnL / RMS / user cần entitlement trading + lộ dữ liệu tài khoản — chỉ local/tin cậy.</span><span class="en">⚠ account / order / PnL / RMS / user clusters need trading entitlement + expose account data — local/trusted only.</span></div>
+
+<h3 id="call"><span class="vi">Call (pull → RPC) — 1 dòng / RPC</span><span class="en">Calls (pull → RPC)</span></h3>
+<div class="note warn"><span class="vi">Đây chỉ là RPC <b>chỉ-đọc / subscribe / replay</b>. Lệnh <b>ĐẶT/SỬA/HUỶ tiền thật</b> liệt kê riêng ở mục <a class="h" href="#order">Order entry</a> ngay dưới (cố ý <b>không có Execute</b> để tránh bấm nhầm) — params đầy đủ ở </span><span class="en">These are <b>read-only / subscribe / replay</b> RPCs only. <b>Real-money order entry</b> is listed separately in <a class="h" href="#order">Order entry</a> below (intentionally <b>no Execute</b>) — full params in </span><a class="h" href="RAW.md" target="_blank"><b>RAW.md §3④</b></a>.</div>
+<table id="rwpull"><thead><tr><th>RPC</th><th>→ <span class="vi">callback / kết quả</span><span class="en">result</span></th><th>Execute</th><th>Response <span style="color:var(--sub);font-weight:400">(dán Copy)</span></th><th>Note</th></tr></thead><tbody></tbody></table>
+
+<h3 id="order"><span class="vi">Order entry (write — TIỀN THẬT, composite → REngine)</span><span class="en">Order entry (write — real money, composite → REngine)</span></h3>
+<div class="note danger"><span class="vi">⚠ Lệnh ĐẶT/SỬA/HUỶ <b>tiền thật</b>: RPC composite (build param từ JSON friendly) gọi xuống raw <code>REngine</code> write. <b>Không có Execute ở đây</b> (tránh bấm nhầm). Kết quả về qua stream <code>@OnStatusReport</code>/<code>@OnFillReport</code>/<code>@OnRejectReport</code> (cụm Lệnh ở trên). Params đầy đủ + value-map: <a class="h" href="RAW.md" target="_blank">RAW.md §3④</a>.</span>
+<span class="en">⚠ Real-money place/modify/cancel: composite RPCs (build params from friendly JSON) call raw <code>REngine</code> write methods. <b>No Execute here</b>. Outcomes arrive on <code>@OnStatusReport</code>/<code>@OnFillReport</code>/<code>@OnRejectReport</code>. Full params + value maps: <a class="h" href="RAW.md" target="_blank">RAW.md §3④</a>.</span></div>
+<table>
+<thead><tr><th>RPC (composite)</th><th>→ REngine (raw)</th><th><span class="vi">params (tóm tắt)</span><span class="en">params</span></th></tr></thead>
+<tbody>
+<tr><td><code>placeOrder</code></td><td><code>sendOrder</code> <span style="color:var(--sub)">(dựng <code>*OrderParams</code>)</span></td><td><code>side</code> · <code>type</code> (market/limit/stop/stoplimit) · <code>qty</code> · <code>price</code> · <code>triggerPrice</code> · <code>duration</code> · <code>tradeRoute?</code></td></tr>
+<tr><td><code>modifyOrder</code></td><td><code>modifyOrder</code></td><td><code>orderNum</code> · <code>type</code> · <code>qty?</code> · <code>price?</code> · <code>triggerPrice?</code></td></tr>
+<tr><td><code>cancelOrder</code></td><td><code>cancelOrder</code></td><td><code>orderNum</code></td></tr>
+<tr><td><code>cancelAllOrders</code></td><td><code>cancelAllOrders</code></td><td><code>accountId?</code></td></tr>
+<tr><td><code>exitPosition</code> / <code>flatten</code></td><td><code>exitPosition</code></td><td><code>exchange</code> · <code>symbol</code> <span style="color:var(--sub)">(flatten market)</span></td></tr>
+<tr><td><code>bracketOrder</code></td><td><code>sendBracketOrder</code> <span style="color:var(--sub)">(dựng <code>BracketParams</code>)</span></td><td>entry + <code>targets[]</code> / <code>stops[]</code> (ticks) — OCO</td></tr>
+<tr><td><code>subscribeOrders</code></td><td><code>subscribeOrder</code> + <code>subscribeBracket</code></td><td><span class="vi">1 lần/account — bật report + nạp trade route</span><span class="en">once/account — reports + routes</span></td></tr>
+<tr><td><code>tradeRoutes</code> <span style="color:var(--sub)">(= <code>listTradeRoutes</code>)</span></td><td><code>listTradeRoutes</code></td><td>—<span style="color:var(--sub)"> (route đặt lệnh / sàn)</span></td></tr>
+</tbody></table>
+<div class="note"><span class="vi"><b>Batch / niche</b> (sendOrderList/OcaList/cancelOrderList/modifyOrderList/linkOrders/modifyBracketTier…) <b>chưa expose</b> — xem bảng dưới. Reply của các RPC trên = <b>ack nhận lệnh</b>; kết quả thật theo stream report.</span>
+<span class="en"><b>Batch / niche</b> write methods are not exposed yet — see the table below. Each RPC reply is an <b>accept ack</b>; the real outcome arrives on the report streams.</span></div>
+
+<h3><span class="vi">REngine CHƯA expose (cố ý) — lý do ở Note</span><span class="en">REngine NOT exposed (intentional)</span></h3>
+<p style="color:var(--sub)"><span class="vi">Để tham khảo; tương lai có thể cần. Không có Execute.</span><span class="en">For reference; may be needed later. No Execute.</span></p>
+<table id="rwnoexp"><thead><tr><th>REngine method</th><th></th><th><span class="vi">Lý do / Note</span><span class="en">Reason / Note</span></th></tr></thead><tbody></tbody></table>
+
+<h2 id="notes"><span class="vi">Lưu ý</span><span class="en">Notes</span></h2>
+<ul>
+<li><span class="vi">Tên/kiểu field đúng như SDK R|API+ (không đổi tên). Enum &rarr; string; mảng pass-through (cap 512).</span><span class="en">Field names/types are exactly as the R|API+ SDK exposes (no renaming). Enums &rarr; string; arrays passed through (capped at 512).</span></li>
+<li><span class="vi">Callback không sub thì không tốn gì. Unsub để dừng passthrough (và với stream theo symbol, thả ref market-data).</span><span class="en">A callback you don't subscribe costs nothing. Unsubscribe to stop the passthrough (and, for symbol streams, release the market-data ref).</span></li>
+<li><span class="vi">Hoàn toàn bổ sung — không đụng stream curated nào.</span><span class="en">Purely additive — it doesn't change any curated stream.</span></li>
+</ul>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="mbo.html">MBO</a> ·
+<a class="h" href="dom.html">DOM</a> ·
+<a class="h" href="api.html"><span class="vi">WebSocket API</span><span class="en">WebSocket API</span></a> ·
+<a class="h" href="examples.html"><span class="vi">Code 9 ngôn ngữ</span><span class="en">Code (9 langs)</span></a> ·
+<a class="h" href="RAW.md" target="_blank">RAW.md</a></p>
+
+</main>
+</div>
+<script>
+// RUNNER: biến mỗi callback trong danh mục thành chip bấm-để-thử (subscribe ~4s -> hiện event sống).
+(function(){
+  let ws=null, idc=1; const scb=new Map(), pend=new Map();
+  function setState(t){ const e=document.getElementById("rwState"); if(e) e.textContent=t; }
+  function conn(){ return new Promise((res,rej)=>{
+    if(ws&&ws.readyState===1) return res(ws);
+    if(ws&&ws.readyState===0){ ws.addEventListener("open",()=>res(ws),{once:true}); return; }
+    ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+(location.host||"127.0.0.1:9001")+"/");
+    ws.onmessage=(ev)=>{ let m; try{m=JSON.parse(ev.data)}catch(e){return}
+      if(m.stream){ const cb=scb.get(String(m.stream).toLowerCase()); if(cb) cb(m.data); return; }
+      if(m.id!=null && pend.has(m.id)){ const p=pend.get(m.id); pend.delete(m.id); (m.error||(m.status&&m.status>=400))?p.rej(new Error(m.error||("status "+m.status))):p.res(m.result); } };
+    ws.onopen=()=>{ setState("đã nối :9001"); res(ws); }; ws.onerror=()=>{ setState("không nối được :9001"); rej(new Error("no gateway")); };
+    ws.onclose=()=>setState("mất kết nối");
+  });}
+  const panel=document.createElement("div");
+  panel.style.cssText="display:none;position:fixed;right:14px;bottom:14px;z-index:9998;width:440px;max-width:94vw;background:#0e1116;border:1px solid #283041;border-radius:10px;box-shadow:0 8px 30px #000a;font:13px Segoe UI;color:#c9d1d9";
+  panel.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;border-bottom:1px solid #283041"><b id="rwTitle" style="color:#fff">—</b><span id="rwInfo" style="color:#8b949e;font-size:12px;margin-left:auto"></span><button id="rwCopy" title="Copy response JSON" style="background:#16324a;border:1px solid #5a6fb0;color:#9ecbff;cursor:pointer;font-size:12px;border-radius:5px;padding:2px 8px">📋 Copy</button><button id="rwClose" style="background:none;border:0;color:#8b949e;cursor:pointer;font-size:16px">✕</button></div><pre id="rwOut" style="margin:0;max-height:52vh;overflow:auto;background:#0b0f14;border-radius:0 0 10px 10px;padding:11px;font:12px Consolas;color:#aeb6bf;white-space:pre-wrap"></pre>';
+  document.body.appendChild(panel);
+  document.getElementById("rwClose").onclick=()=>panel.style.display="none";
+  let curKey=null, curComp=null, lastRaw=null, curTimer=null;
+  document.getElementById("rwCopy").onclick=()=>{
+    const t = lastRaw ? JSON.stringify(lastRaw,null,2) : document.getElementById("rwOut").textContent;
+    try{ navigator.clipboard.writeText(t); }
+    catch(e){ const ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(_){} ta.remove(); }
+    const b=document.getElementById("rwCopy"), o=b.textContent; b.textContent="✓ đã copy"; setTimeout(()=>b.textContent=o,1000);
+  };
+  // callback cần feed riêng -> tự subscribe kèm khi thử
+  const COMP={onlimitorderbook:"@depth",onbidquote:"@depth",onaskquote:"@depth",onendquote:"@depth",ondbo:"@mbo",ondbobookrebuild:"@mbo",onbar:"@kline_1m",onbarreplay:"@kline_1m"};
+  // callback "theo SỰ KIỆN" (hiếm) — chỉ bắn khi settlement / lập đỉnh-đáy / đổi market-mode / trade có điều kiện…, KHÔNG liên tục
+  const RARE=new Set(["onbestbidaskquote","ontradecondition","onaggregator","onopeningindicator","onclosingindicator","onhighpricelimit","onlowpricelimit","onmarketmode","onsettlementprice","onprojectedsettlementprice","onopenprice","oncloseprice","onhighprice","onlowprice","onhighbidprice","onlowaskprice","onmidprice","onclosemidprice","onopeninterest",
+   "onpnlreplay","onorderreplay","onopenorderreplay","onexecutionreplay","onbracketreplay","onsingleorderreplay","onquotereplay","onorderhistorydates"]);   // replay/history qua plant History/Orders -> round-trip biến thiên, cần cửa sổ 20s
+  // callback KẾT NỐI/phiên — bắn lúc khởi động (trước khi subscribe), không liên quan account
+  const CONN=new Set(["onalert","onlogincompleted","onenvironment","onping"]);
+  // Note mặc định (kết quả đã xác nhận). User gõ đè -> localStorage thắng.
+  const DESC={
+   onbidquote:"cập nhật 1 mức BID (book L2 per-level)", onaskquote:"cập nhật 1 mức ASK",
+   onbestbidquote:"best bid (giá/size mua tốt nhất)", onbestaskquote:"best ask (bán tốt nhất)",
+   onbestbidaskquote:"best bid+ask GỘP (bắn khi 2 bên đổi CÙNG lúc — không thường xuyên, ~20s); payload {BidInfo,AskInfo}",
+   onquote:"quote tổng hợp — Rithmic dùng callback RIÊNG (Bid/Ask/Best) nên OnQuote thường IM",
+   onquotereport:"snapshot quote — không bắn cho future CME ở chế độ sub này (thường IM)", onendquote:"kết thúc chuỗi quote — hiếm/điều kiện (thường IM)",
+   ontradeprint:"mỗi lệnh khớp (giá/size/side, ns)", ontradecondition:"trade có điều kiện (block/spread/oos)",
+   ontradevolume:"tổng volume phiên (luỹ kế)", onaggregator:"thông tin feed aggregator (gộp sàn)",
+   onopenprice:"giá MỞ phiên", onhighprice:"ĐỈNH phiên", onlowprice:"ĐÁY phiên", oncloseprice:"giá ĐÓNG phiên",
+   onhighbidprice:"bid cao nhất phiên", onlowaskprice:"ask thấp nhất phiên",
+   onmidprice:"giá mid (giữa bid/ask)", onclosemidprice:"mid lúc đóng",
+   onsettlementprice:"giá settlement CHÍNH THỨC", onprojectedsettlementprice:"settlement dự kiến (trong phiên)",
+   onhighpricelimit:"trần giá (limit up)", onlowpricelimit:"sàn giá (limit down)",
+   onmarketmode:"trạng thái chợ (open/closed/halt/auction)", onopeningindicator:"chỉ báo phiên MỞ (auction)",
+   onclosingindicator:"chỉ báo phiên ĐÓNG", onopeninterest:"open interest (hợp đồng mở)",
+   onlimitorderbook:"snapshot TOÀN sổ (Bids[]/Asks[])", ondbo:"depth-by-order (từng lệnh / mức giá)",
+   ondbobookrebuild:"rebuild sổ DBO", onbar:"nến (đóng) realtime", onbarreplay:"cờ hoàn tất replay nến lịch sử",
+   onvolumeatprice:"volume-at-price native (Prices[]/Volumes[])",
+   onrefdata:"ref data (mô tả/point value/HSD…)", onauxrefdata:"ref data phụ", onpriceincrupdate:"tick size + số lẻ giá",
+   onexchangelist:"danh sách sàn", oninstrumentsearch:"kết quả tìm mã", oninstrumentbyunderlying:"mọi option của 1 underlying",
+   onoptionlist:"chuỗi option (series/strike)", onstrategy:"thông tin 1 strategy/spread", onstrategylist:"danh sách strategy",
+   onequityoptionstrategylist:"strategy option cổ phiếu", onbinarycontractlist:"hợp đồng binary",
+   onuserdefinedspreadcreate:"kết quả tạo spread tự định nghĩa", oneasytoborrow:"easy-to-borrow (short cổ phiếu)",
+   oneasytoborrowlist:"danh sách ETB", ontraderoute:"1 trade route", ontraderoutelist:"danh sách trade route (để đặt lệnh)",
+   onaccountupdate:"cập nhật account (balance…)", onpnlupdate:"PnL realtime",
+   onpnlreplay:"PnL lịch sử (replay)", onpositionexit:"thoát vị thế", onproductrmslist:"hạn mức RMS theo product",
+   onautoliquidate:"thông tin auto-liquidate", onsodupdate:"start-of-day (số dư đầu ngày)",
+   onorderreplay:"replay lệnh (lịch sử)", onopenorderreplay:"lệnh đang mở", onsingleorderreplay:"1 lệnh cụ thể",
+   onexecutionreplay:"fills lịch sử", onorderhistorydates:"các ngày có lịch sử lệnh", onlineupdate:"cập nhật dòng lệnh",
+   onbracketreplay:"replay bracket", onbracketupdate:"cập nhật bracket (SL/TP)", onbrackettiermodify:"sửa tầng bracket",
+   onfillreport:"báo cáo KHỚP lệnh", onstatusreport:"trạng thái lệnh (working…)", onmodifyreport:"báo cáo SỬA lệnh",
+   oncancelreport:"báo cáo HUỶ lệnh", onbustreport:"lệnh bị bust (huỷ khớp)", onfailurereport:"lệnh LỖI",
+   onrejectreport:"lệnh bị TỪ CHỐI", onnotcancelledreport:"huỷ KHÔNG thành", onnotmodifiedreport:"sửa KHÔNG thành",
+   ontradecorrectreport:"sửa trade (correction)", ontriggerreport:"lệnh trigger (stop kích hoạt)", ontriggerpulledreport:"trigger bị rút",
+   onotherreport:"báo cáo khác",
+   onuser:"thông tin user", onuserlist:"danh sách user", onuserprofile:"hồ sơ user", onassigneduserlist:"user được gán",
+   oniblist:"danh sách IB", onagreementlist:"thoả thuận (đã/chưa ký)", onpasswordchange:"kết quả đổi mật khẩu"
+  };
+  // RESPONSE đã xác nhận (tôi điền từ kết quả bạn gửi). User gõ đè -> localStorage thắng.
+  const RESP={
+   onbidquote:'{"e":"OnBidQuote","CallbackType":"Update","Exchange":"CME","ImpliedSize":0,"LeanPrice":0,"NumOrders":13,"Price":7419,"Size":15,"Symbol":"ESU6","UpdateType":"Solo","Ssboe":1782485821,"Usecs":152653,"Context":null}',
+   onaskquote:'{"e":"OnAskQuote","CallbackType":"Update","Exchange":"CME","ImpliedSize":0,"LeanPrice":0,"NumOrders":16,"Price":7421.75,"Size":18,"Symbol":"ESU6","UpdateType":"End","Ssboe":1782485831,"Usecs":375238,"Context":null}',
+   onbestbidquote:'{"e":"OnBestBidQuote","CallbackType":"Update","Exchange":"CME","ImpliedSize":0,"LeanPrice":7420.921875,"NumOrders":10,"Price":7420.75,"Size":11,"Symbol":"ESU6","UpdateType":"Undefined","Ssboe":1782485849,"Usecs":757339,"Context":null}',
+   onbestaskquote:'{"e":"OnBestAskQuote","CallbackType":"Update","Exchange":"CME","ImpliedSize":0,"LeanPrice":7419.375,"NumOrders":8,"Price":7419.5,"Size":17,"Symbol":"ESU6","UpdateType":"Undefined","Ssboe":1782485874,"Usecs":119639,"Context":null}',
+   onbestbidaskquote:'{"e":"OnBestBidAskQuote","BidInfo":{"e":"BidInfo","CallbackType":"Update","Exchange":"CME","ImpliedSize":0,"LeanPrice":7412.26315789474,"NumOrders":1,"Price":7412.25,"Size":1,"Symbol":"ESU6","UpdateType":"Undefined","Ssboe":1782486953,"Usecs":172230,"Context":null},"AskInfo":{"e":"AskInfo","CallbackType":"Update","Exchange":"CME","ImpliedSize":0,"LeanPrice":7412.26315789474,"NumOrders":17,"Price":7412.5,"Size":18,"Symbol":"ESU6","UpdateType":"Undefined","Ssboe":1782486953,"Usecs":172230,"Context":null}}', onquote:"null trên future CME (Rithmic dùng Bid/Ask/Best riêng) — CHƯA kiểm option/spread/sàn khác",
+   onquotereport:"null trên future CME — CHƯA kiểm instrument khác", onendquote:"null trên future CME — hiếm/điều kiện, CHƯA kiểm mã khác",
+   ontradeprint:'{"e":"OnTradePrint","CallbackType":"Update","Exchange":"CME","Symbol":"ESU6","Price":7436.25,"Size":1,"NetChange":13,"PercentChange":0.18,"Vwap":7400.75,"VwapLong":7400.83995214,"AggressorSide":"S","VolumeBought":0,"VolumeSold":334241,"AggressorExchOrdId":"6417249122632","ExchOrdId":"6417249122302","Condition":"","SourceSsboe":1782487746,"SourceUsecs":213239,"SourceNsecs":213239655,"JopSsboe":1782487746,"JopNsecs":213505540,"Ssboe":1782487746,"Usecs":213594,"Context":null}',
+   ontradevolume:'{"e":"OnTradeVolume","CallbackType":"Update","Exchange":"CME","Symbol":"ESU6","TotalVolumeFlag":true,"TotalVolume":670242,"SourceSsboe":1782487789,"SourceUsecs":524030,"SourceNsecs":524030925,"JopSsboe":1782487789,"JopNsecs":524237794,"Ssboe":1782487789,"Usecs":524260,"Context":null}',
+   ontradecondition:"null trên future CME — chỉ bắn cho trade có cờ điều kiện (block/spread/oos), hiếm", onaggregator:"null trên future CME — info feed aggregator, hiếm",
+   onopenprice:'{"e":"OnOpenPrice","CallbackType":"Image","Exchange":"CME","Price":29742,"Symbol":"NQU6","Ssboe":1782491270,"Usecs":0,"Context":null}',
+   onlowprice:'{"e":"OnLowPrice","CallbackType":"Image","Exchange":"CME","Price":29160.5,"Symbol":"NQU6","Ssboe":1782491308,"Usecs":0,"Context":null}',
+   onhighbidprice:'{"e":"OnHighBidPrice","CallbackType":"Image","Exchange":"CME","Price":29892.25,"Symbol":"NQU6","Ssboe":1782491354,"Usecs":0,"Context":null}',
+   onmidprice:'{"e":"OnMidPrice","CallbackType":"Image","Exchange":"CME","Symbol":"NQU6","LastPrice":"NaN","OpenPrice":"NaN","HighPrice":"NaN","LowPrice":"NaN","NetChange":"NaN","PercentChange":"NaN","Ssboe":1782491394,"Usecs":0,"Context":null}',
+   onhighprice:'{"e":"OnHighPrice","CallbackType":"Image","Exchange":"CME","Price":29892.75,"Symbol":"NQU6","Ssboe":1782493440,"Usecs":0,"Context":null}',
+   oncloseprice:'{"e":"OnClosePrice","CallbackType":"Image","Exchange":"CME","Price":29759.25,"Symbol":"NQU6","Ssboe":1782493440,"Usecs":0,"Context":null}',
+   onlowaskprice:'{"e":"OnLowAskPrice","CallbackType":"Image","Exchange":"CME","Price":29163.75,"Symbol":"NQU6","Ssboe":1782493440,"Usecs":0,"Context":null}',
+   onclosemidprice:"null trên futures CME — chỉ dành cho instrument có bid/ask lúc đóng (cổ phiếu/option).",
+   onsettlementprice:'{"e":"OnSettlementPrice","CallbackType":"Image","Date":"20260625","Exchange":"CME","Price":29724.75,"PriceType":"final","Symbol":"NQU6","Ssboe":1782494266,"Usecs":0,"Context":null}',
+   onprojectedsettlementprice:"null — CME chỉ phát settlement DỰ KIẾN trong cửa sổ gần giờ ĐÓNG phiên; ngoài khung đó chưa có gì để bắn. Quanh giờ settlement sẽ ra (đã trong cache whitelist).",
+   onhighpricelimit:'{"e":"OnHighPriceLimit","CallbackType":"Image","Exchange":"CME","Price":"NaN","Symbol":"NQU6","Ssboe":1782494595,"Usecs":0,"Context":null}',
+   onlowpricelimit:'{"e":"OnLowPriceLimit","CallbackType":"Image","Exchange":"CME","Price":27663.75,"Symbol":"NQU6","Ssboe":1782494595,"Usecs":0,"Context":null}',
+   onmarketmode:'{"e":"OnMarketMode","CallbackType":"Image","Exchange":"CME","Symbol":"NQU6","MarketMode":"Open","Event":"No Event","Reason":"Group Schedule","SourceSsboe":1782494595,"SourceUsecs":0,"SourceNsecs":0,"JopSsboe":1782494595,"JopNsecs":0,"Ssboe":1782494595,"Usecs":0,"Context":null}',
+   onopeningindicator:'{"e":"OnOpeningIndicator","CallbackType":"Image","Exchange":"CME","Symbol":"NQU6","Price":"NaN","VolumeFlag":false,"Volume":0,"Ssboe":1782494595,"Usecs":0,"Context":null}',
+   onclosingindicator:"null ngoài cửa sổ đóng cửa — OnClosingIndicator chỉ bắn trong phiên đấu giá ĐÓNG cửa (như OpeningIndicator nhưng cho lúc đóng). Quanh giờ đóng sẽ ra.",
+   onopeninterest:'{"e":"OnOpenInterest","CallbackType":"Image","Exchange":"CME","Symbol":"NQU6","QuantityFlag":true,"Quantity":269932,"Ssboe":1782494927,"Usecs":0,"Context":null}',
+   onlimitorderbook:'{"e":"OnLimitOrderBook","CallbackType":"Image","Exchange":"CME","Symbol":"NQU6","RpCode":0,"Bids":[{"Price":29646,"Size":1,"NumOrders":1,"ImpliedSize":0,"LeanPrice":0,"UpdateType":"Undefined","Ssboe":1782494975,"Usecs":707094},{"Price":29645.5,"Size":3,"NumOrders":3,"UpdateType":"Undefined"}],"Asks":[{"Price":29646.75,"Size":1,"NumOrders":1,"UpdateType":"Undefined"},{"Price":29647,"Size":2,"NumOrders":2,"UpdateType":"Undefined"}],"_note":"RÚT GỌN — Bids/Asks thật ~700+ mức MỖI BÊN (toàn bộ MBP). NumOrders=số lệnh/mức; ImpliedSize=size implied từ spread; LeanPrice=giá tham chiếu Rithmic; RpCode=0 OK. Đây là nguồn của @depth (DOM)."}',
+   ondbo:'{"e":"OnDbo","CallbackType":"Update","Exchange":"CME","Symbol":"NQU6","ExchOrdId":"6878892898854","DboUpdateType":"Delete","Priority":"107428920692","Side":"S","Price":29651.5,"SizeFlag":true,"Size":1,"PreviousPrice":"NaN","SourceSsboe":1782495009,"SourceUsecs":18321,"SourceNsecs":18321297,"JopSsboe":1782495009,"JopNsecs":18879416,"Ssboe":1782495009,"Usecs":18898,"Context":null}',
+   ondbobookrebuild:"null bình thường — OnDboBookRebuild chỉ bắn khi sổ DBO cần DỰNG LẠI toàn bộ (recovery/reset sau gap feed). Lúc chạy ổn định không có.",
+   onbar:'{"e":"OnBar","Exchange":"CME","Symbol":"NQU6","Type":"Minute","SpecifiedMinutes":1,"OpenPrice":29634.25,"HighPrice":29646,"LowPrice":29615.75,"ClosePrice":29620.75,"Vwap":29486.5,"VwapLong":29486.4095737,"SettlementPrice":"NaN","StartSsboe":1782495240,"StartUsecs":0,"EndSsboe":1782495300,"EndUsecs":0,"Volume":487,"NumTrades":464,"BuyerAsAggressorVolumeFlag":true,"BuyerAsAggressorVolume":250,"SellerAsAggressorVolumeFlag":true,"SellerAsAggressorVolume":237,"ProfilePrices":[],"ProfileBuyerAsAggressorVolumes":[],"ProfileSellerAsAggressorVolumes":[],"CustomSession":false,"Context":null,"_note":"Nến ĐÓNG. Type=khung (Minute/Tick/Volume/Second/Daily…). BuyerAsAggressorVolume/SellerAsAggressorVolume = delta footprint (mua/bán chủ động). Profile* = footprint theo TỪNG GIÁ (rỗng ở @kline thường; có khi replayBars(Tick)). Vwap=VWAP phiên."}',
+   onbarreplay:"null — cờ HOÀN TẤT replayBars (nến lịch sử). Chỉ bắn khi gọi replayBars/klines lịch sử xong; @kline LIVE không kích. Không phải lỗi.",
+   onvolumeatprice:'{"e":"OnVolumeAtPrice","Exchange":"CME","Symbol":"NQU6","RpCode":0,"Prices":[30263.75,30263.5,30263,30135.25],"Volumes":[0,0,0,0],"Ssboe":1782495403,"Usecs":606470,"Context":"vp-9de0b2e6131542648b4fb046a0b6852e","_note":"Volume Profile NATIVE (getVolumeAtPrice). Prices[] & Volumes[] SONG SONG (cùng index). RÚT GỌN — thật ~500+ mức. Volumes=0 ở mẫu (cửa sổ chưa có volume khớp). Context = id query echo lại."}',
+   onrefdata:'{"e":"OnRefData","CallbackType":"Image","Exchange":"CME","Symbol":"NQU6","Description":"E-Mini Nasdaq-100","Expiration":"20260918","ProductCode":"NQ","InstrumentType":"Future","SinglePointValue":20,"Currency":"USD","MaxPriceVariation":30,"ExpirationTime":"1789738200","StrikePrice":"NaN","PutCallIndicator":null,"Underlying":null,"BinaryContractType":null,"MinSizeIncrement":0,"Ssboe":1782495421,"RpCode":0,"Context":null}',
+   onauxrefdata:'{"e":"OnAuxRefData","CallbackType":"Image","Exchange":"CME","Symbol":"NQU6","FirstTradingDate":"20250321","LastTradingDate":"20260918","FirstNoticeDate":null,"LastNoticeDate":null,"SettlementMethod":"cash","UnitOfMeasure":"IPNT","UnitOfMeasureQty":20,"Ssboe":1782495434,"RpCode":0,"Context":null}',
+   onpriceincrupdate:'{"e":"OnPriceIncrUpdate","Exchange":"CME","Symbol":"NQU6","RpCode":0,"Rows":[{"FirstPrice":0,"LastPrice":0,"PriceIncr":0.25,"FirstOperator":"None","LastOperator":"None","Precision":2}],"Context":null,"_note":"Bảng BƯỚC GIÁ. Rows[]: PriceIncr=tick (0.25 NQ); Precision=số chữ số lẻ; FirstPrice/LastPrice=khoảng giá áp dụng (0/0 = mọi giá); First/LastOperator=ràng buộc biên. Sản phẩm tick BIẾN THIÊN có nhiều Row. Gateway tự gọi getPriceIncrInfo khi subscribe (bỏ qua dedup instrumentInfo)."}',
+   onexchangelist:'{"e":"OnExchangeList","Exchanges":["COMEX","NYMEX","CBOT","CME"],"RpCode":0,"Context":null}',
+   oninstrumentsearch:'{"e":"OnInstrumentSearch","Exchange":"CME","Terms":[{"Field":"Symbol","Operator":"Contains","Term":"NQ","CaseSensitive":false}],"Instruments":[{"Symbol":"NQU6","Description":"E-Mini Nasdaq-100","Expiration":"20260918","ProductCode":"NQ","InstrumentType":"Future","SinglePointValue":20,"Currency":"USD"},{"Symbol":"NQM9 C25000","Description":"E-Mini Nasdaq-100","Expiration":"20290615","ProductCode":"NQ","InstrumentType":"Future Option","PutCallIndicator":"Call","StrikePrice":25000,"Underlying":"NQM9","SinglePointValue":20}],"RpCode":0,"Context":"search-<id>","_note":"RÚT GỌN — Instruments[] thật ~HÀNG NGHÌN mã khớp tìm kiếm. Mỗi phần tử = shape OnRefData. Terms[] = tiêu chí tìm (Field/Operator/Term). InstrumentType: Future / Future Strategy / Future Option. Option có PutCallIndicator/StrikePrice/Underlying. Mã liên tục NQ có TradingSymbol=NQU6."}',
+   oninstrumentbyunderlying:'{"e":"OnInstrumentByUnderlying","Exchanges":["CME"],"Underlyings":["NQU6"],"Expirations":["20260624","20260625","20260630","20260707","20260918"],"Instruments":[],"RpCode":0,"Context":"ibu-<id>","_note":"RÚT GỌN Expirations[]. Trả danh sách kỳ hạn option của 1 underlying. Instruments[] rỗng nếu chưa lọc theo kỳ hạn cụ thể."}',
+   onoptionlist:'{"e":"OnOptionList","Exchanges":[],"Products":[],"Expirations":[],"Instruments":[{"Symbol":"NQU6 C29000","StrikePrice":29000,"PutCallIndicator":"Call","Underlying":"NQU6","Expiration":"20260918","InstrumentType":"Future Option","ProductCode":"NQ","SinglePointValue":20},{"Symbol":"NQU6 P29000","StrikePrice":29000,"PutCallIndicator":"Put","Underlying":"NQU6","Expiration":"20260918","InstrumentType":"Future Option","ProductCode":"NQ"}],"RpCode":0,"Context":"opt-<id>","_note":"ĐÃ FIX (trigOf suy 202609 từ NQU6) → RpCode 0 + chuỗi option đầy đủ (~hàng TRĂM strike Call+Put). RÚT GỌN. RpCode 7 trước đó là do query nhầm tháng 6 (option đã hết hạn). RpCode: 0=OK · 7=NO_DATA · -1=timeout."}',
+   onstrategylist:'{"e":"OnStrategyList","Exchanges":["CME"],"Products":["NQ"],"StrategyTypes":["Futures Calendar","3-Way","CV:FO","1 x 3 ratio","Options Diagonal","Xmas Tree","1 x 2 ratio","Iron Condor","Options Straddle","Options Butterfly","Risk Reversal","Options Horizontal","Options Vertical","Generic","Options Strangle"],"Expirations":[],"Symbols":[],"RpCode":0,"Context":null,"_note":"Danh sách LOẠI spread/strategy hỗ trợ cho product. Dùng StrategyType này làm tham số cho strategyInfo (OnStrategy)."}',
+   onstrategy:"RpCode 7 (NO_DATA) — strategyInfo cần product + strategyType + cấu trúc legs cụ thể; chỉ truyền {exchange,symbol} thì rỗng (ProductCode null, Legs []). Lấy StrategyType từ OnStrategyList rồi mô tả legs.",
+   onequityoptionstrategylist:"RpCode 7 (NO_DATA) — strategy option CỔ PHIẾU (equity option). NQU6 là future CME, không phải option cổ phiếu → rỗng. Chỉ có data khi underlying là cổ phiếu/ETF có chuỗi option.",
+   onbinarycontractlist:"RpCode 7 (NO_DATA) — NQ KHÔNG có hợp đồng binary. Binary/event contracts nằm ở product riêng (vd ECNQ — Event Options). Thử binaryContracts với product=ECNQ.",
+   onuserdefinedspreadcreate:"null — callback kết quả khi TẠO spread tự định nghĩa (UDS). Chỉ bắn khi gọi lệnh tạo UDS; Thử (chỉ subscribe) không kích. Là write-action, không phải query.",
+   oneasytoborrow:"null — Easy-To-Borrow là của CỔ PHIẾU (short-sell locate). Future CME không có ETB → không bắn.",
+   oneasytoborrowlist:'{"e":"OnEasyToBorrowList","RpCode":0,"Context":null,"_note":"RpCode 0 nhưng RỖNG — tài khoản future không có danh sách ETB (ETB chỉ cho cổ phiếu)."}',
+   ontraderoute:"null — OnTradeRoute (push 1 route) chỉ bắn khi subscribeTradeRoute có cập nhật trạng thái route. Danh sách đầy đủ xem OnTradeRouteList.",
+   ontraderoutelist:'{"e":"OnTradeRouteList","TradeRoutes":[{"CallbackType":"Image","Default":"Y","Exchange":"CME","FcmId":"CarstenTech","IbId":"Optimus","Status":"UP","TradeRoute":"simulator","Context":null}],"RpCode":0,"Context":null,"_note":"RÚT GỌN — 1 route/sàn (CBOT/COMEX/NYMEX/CME). QUAN TRỌNG để ĐẶT LỆNH: FcmId+IbId+TradeRoute định tuyến order. Status UP=khả dụng; Default Y=route mặc định. TradeRoute simulator = tài khoản demo/paper."}',
+   onpnlreplay:'{"e":"OnPnlReplay","RpCode":0,"Account":{"FcmId":"CarstenTech","IbId":"Optimus","AccountId":"sample@abc.com","AccountName":"Demo Account","RmsInfo":{"Algorithm":"SMAC","Currency":"USD","Status":"active","LossLimit":"NaN","MaxOrderQty":0}},"PnlInfoList":[{"Exchange":null,"Symbol":null,"AccountBalance":{"State":"Use","Value":100070},"CashOnHand":{"State":"Use","Value":100070},"MarginBalance":{"State":"Use","Value":100070},"OpenPnl":{"State":"Use","Value":0},"ClosedPnl":{"State":"Use","Value":0},"Position":{"State":"Use","Value":0},"AvailableBuyingPower":{"State":"Clear","Value":null},"Ssboe":1782524499,"PossOutOfOrder":true}],"Context":null,"_note":"Snapshot PnL (replayPnl). PnlInfoList: 1 dòng TỔNG account (Exchange/Symbol null) + 1 dòng/mã có vị thế. MỖI field tiền là STATE-WRAPPER {Ignore,Clear,Use,State,Value}: Value chỉ dùng khi State=Use (Clear=đã xoá→null, Ignore=bỏ qua). RÚT GỌN (lược Ignore/Clear/Use + nhiều field BuyQty/SellQty/Exposure…). AccountId ĐÃ ẨN."}',
+   onproductrmslist:'{"e":"OnProductRmsList","RpCode":0,"Products":[{"Account":{"FcmId":"CarstenTech","IbId":"Optimus","AccountId":"sample@abc.com"},"ProductCode":"GC","BuyLimitFlag":false,"BuyLimit":0,"SellLimitFlag":false,"SellLimit":0,"LossLimit":"NaN","MaxOrderQtyFlag":false,"MaxOrderQty":0,"CommissionFillRate":"NaN","BuyLongMarginRate":"NaN","SellShortMarginRate":"NaN"}],"Context":null,"_note":"Hạn mức RMS theo PRODUCT: BuyLimit/SellLimit (giới hạn vị thế), MaxOrderQty (size tối đa/lệnh), LossLimit, margin rate. *Flag=false → hạn mức đó KHÔNG áp. AccountId ĐÃ ẨN."}',
+   onaccountupdate:"null — cập nhật account (balance…) chỉ khi subscribeOrders + có HOẠT ĐỘNG. Không tự bắn lúc subscribe.",
+   onpnlupdate:"null — PnL realtime, cần subscribePnl + có vị thế/biến động. Snapshot tĩnh xem OnPnlReplay.",
+   onpositionexit:"null — kết quả THOÁT vị thế (exitPosition/flatten). Write-action, chỉ bắn khi gọi.",
+   onautoliquidate:"null — thông tin auto-liquidate, chỉ bắn khi có SỰ KIỆN auto-liq (vượt ngưỡng RMS). Bình thường không có.",
+   onsodupdate:"null — số dư ĐẦU NGÀY (start-of-day), chỉ bắn lúc SOD.",
+   onorderreplay:'{"e":"OnOrderReplay","RpCode":0,"Date":"","Account":{"FcmId":"CarstenTech","IbId":"Optimus","AccountId":"sample@abc.com","AccountName":"Demo Account","RmsInfo":{"Algorithm":"SMAC","Currency":"USD","Status":"active"}},"Orders":[],"Context":null,"_note":"Replay lệnh lịch sử theo khoảng (replayAllOrders start/end, mặc định 7 ngày). Orders[] = OrderInfo[]. Account block giống OnPnlReplay. AccountId ĐÃ ẨN. ⚠️ Null INTERMITTENT khi account RỖNG lệnh: request gửi đúng (orders auto-subscribed lúc login, account resolved — đã ra RpCode 0 1 lần) nhưng Rithmic KHÔNG phải lúc nào cũng bắn replay RỖNG (best-effort). Có lệnh THẬT → bắn ổn định. KHÔNG phải lỗi gateway/window."}',
+   onopenorderreplay:'{"e":"OnOpenOrderReplay","RpCode":0,"Account":{"AccountId":"sample@abc.com","AccountName":"Demo Account"},"Orders":[],"Context":null,"_note":"Lệnh ĐANG MỞ (working). Orders[] rỗng = không có lệnh treo. Có lệnh thì mỗi phần tử là OrderInfo (giá/size/side/trạng thái). AccountId ĐÃ ẨN."}',
+   onsingleorderreplay:"null — replaySingleOrder cần truyền orderNum CỤ THỂ (1 lệnh). Không có orderNum → rỗng. Lấy orderNum từ OnOrderReplay/report.",
+   onexecutionreplay:'{"e":"OnExecutionReplay","RpCode":7,"Account":{"AccountId":"sample@abc.com","AccountName":"Demo Account"},"Executions":[],"Context":null,"_note":"RpCode 7 (NO_DATA) — fills lịch sử trong khoảng query; rỗng vì demo chưa khớp lệnh. Có fill thì Executions[] mang giá/size/thời điểm khớp. AccountId ĐÃ ẨN."}',
+   onorderhistorydates:'{"e":"OnOrderHistoryDates","RpCode":0,"Dates":["20111001","20111002","20120720","20130304"],"Context":null,"_note":"Các NGÀY (CCYYMMDD) có lịch sử lệnh cho account. RÚT GỌN — thật ~hàng TRĂM ngày (demo có data 2011→2013). Dùng 1 ngày làm tham số replayHistoricalOrders."}',
+   onlineupdate:"null — OnLineUpdate = cập nhật 1 DÒNG lệnh (line) realtime. Chỉ bắn khi có lệnh đang hoạt động thay đổi (subscribeOrders + đặt lệnh). Không có lệnh → null.",
+   onbracketreplay:"null — replayBrackets (query-response): các bracket (OCO/SL+TP) lịch sử của account. RỖNG vì demo chưa đặt bracket nào. Có bracket THẬT → Brackets[] mang tier giá SL/TP.",
+   onbracketupdate:"null — event cập nhật 1 bracket đang hoạt động (SL/TP dời, 1 chân khớp…). Chỉ bắn khi có bracket order LIVE thay đổi. Demo chưa đặt → im.",
+   onbrackettiermodify:"null — event sửa TIER của bracket (đổi mức/khoảng SL/TP từng tầng). Chỉ bắn khi modify bracket THẬT. Demo chưa có → im.",
+   onfillreport:"null — event báo cáo KHỚP lệnh (1 fill: giá/size/route/exec-id). Chỉ bắn khi lệnh THẬT khớp (route simulator). Demo chưa đặt lệnh → im. ĐẶT 1 lệnh sim để thấy.",
+   onstatusreport:"null — event TRẠNG THÁI lệnh (working/complete…). Chỉ bắn theo vòng đời lệnh THẬT. Demo chưa đặt lệnh → im.",
+   onmodifyreport:"null — event xác nhận SỬA lệnh (đổi giá/size). Chỉ bắn khi modify lệnh đang treo. Demo chưa có lệnh → im.",
+   oncancelreport:"null — event xác nhận HUỶ lệnh. Chỉ bắn khi huỷ lệnh đang treo. Demo chưa có lệnh → im.",
+   onbustreport:"null — event trade bị BUST (sàn huỷ 1 khớp đã có). Hiếm; chỉ bắn khi có fill rồi bị bust. Demo chưa khớp → im.",
+   onfailurereport:"null — event lệnh LỖI (gửi tới sàn thất bại). Chỉ bắn khi 1 lệnh THẬT fail. Demo chưa đặt → im.",
+   onrejectreport:"null — event lệnh bị TỪ CHỐI (sàn/RMS reject). Chỉ bắn khi 1 lệnh THẬT bị từ chối. Demo chưa đặt → im.",
+   onnotcancelledreport:"null — event huỷ KHÔNG thành (cancel bị reject — lệnh vẫn sống). Chỉ bắn khi cancel 1 lệnh THẬT thất bại. Demo chưa có lệnh → im.",
+   onnotmodifiedreport:"null — event sửa KHÔNG thành (modify bị reject). Chỉ bắn khi modify 1 lệnh THẬT thất bại. Demo chưa có lệnh → im.",
+   ontradecorrectreport:"null — event sàn SỬA 1 trade đã khớp (correction giá/size sau khớp). Hiếm; cần có fill trước. Demo chưa khớp → im.",
+   ontriggerreport:"null — event lệnh TRIGGER kích hoạt (stop chạm giá → thành lệnh active). Chỉ bắn khi có stop/trigger THẬT bị chạm. Demo chưa đặt → im.",
+   ontriggerpulledreport:"null — event trigger bị RÚT (stop bị huỷ/gỡ trước khi chạm). Chỉ bắn khi có trigger THẬT bị rút. Demo chưa đặt → im.",
+   onotherreport:"null — event báo cáo KHÁC (catch-all không khớp loại report nào ở trên). Chỉ bắn khi có hoạt động lệnh THẬT sinh report lạ. Demo → im.",
+   onuser:"null — OnUser = push thông tin 1 user qua subscribeUser(ibId). Chỉ bắn khi tài khoản là IB + có sự kiện user. Tài khoản thường → null.",
+   onuserlist:"null — listUsers(ibId,userType): danh sách user DƯỚI 1 IB. Tài khoản KHÔNG phải IB-admin (hoặc ibId rỗng) → rỗng/null.",
+   onuserprofile:'{"e":"OnUserProfile","User":"sample@abc.com","UserType":"3","FirstName":"Sample","LastName":"User","Address1":"*** (đã ẩn)","Address2":"","City":"***","StateProvinceRegion":null,"PostalCode":"***","Country":"**","ResidencePhone":"","WorkPhone":"","MobilePhone":"","FaxPhone":"","Email":"sample@abc.com","CurrentHistorySessionCount":1,"CurrentMarketDataSessionCount":1,"CurrentOrdersSessionCount":2,"CurrentPnlSessionCount":1,"CurrentRepositorySessionCount":0,"PeakHistorySessionCount":1,"PeakMarketDataSessionCount":1,"PeakOrdersSessionCount":2,"PeakPnlSessionCount":2,"PeakRepositorySessionCount":1,"MaxHistorySessionCount":0,"MaxMarketDataSessionCount":1,"MaxOrdersSessionCount":4,"MaxPnlSessionCount":0,"MaxRepositorySessionCount":0,"RpCode":0,"ConnId":"TradingSystem","Context":null,"_note":"Hồ sơ user (userProfile). ⚠️ PII ĐÃ ẨN (User/tên/địa chỉ/điện thoại/email → sample/***). Giá trị tài liệu = ĐẾM SỐ PHIÊN mỗi plant: Current/Peak/Max của {History,MarketData,Orders,Pnl,Repository}. Max = GIỚI HẠN phiên đồng thời / 1 USER (MaxMarketData=1 → mỗi user CHỈ 1 phiên market-data; MaxOrders=4; Max=0 = không đặt/không giới hạn). Current = đang mở (Orders=2: app này + R Trader Pro chạy song song). 👉 Đa-login: mỗi USER có hạn phiên RIÊNG -> 2 user khác nhau OK; cùng 1 user thì đụng trần (nhất là MarketData=1)."}',
+   onassigneduserlist:"null — assignedUsers(account): user được GÁN vào 1 account (tính năng IB/giám sát). Tài khoản demo không có → rỗng/null.",
+   oniblist:"null — listIbs: danh sách IB con dưới login. Tài khoản thường (không phải IB-master) → rỗng/null.",
+   onagreementlist:'{"e":"OnAgreementList","Accepted":false,"Agreements":[],"RpCode":0,"Context":null,"_note":"listAgreements(accepted): thoả thuận theo trạng thái. Accepted=false + Agreements rỗng = KHÔNG còn thoả thuận CHƯA ký (đã ký hết). Gọi accepted=true để liệt kê các thoả thuận ĐÃ ký. (Liên quan: login fail vì chưa ký -> OnUnsignedAgreement ở LoginForm.)"}',
+   onpasswordchange:"null VĨNH VIỄN (by design) — callback PasswordChange chỉ fire khi gọi REngine.changePassword(old,new). Trigger đó CỐ Ý KHÔNG expose (xem mục REngine CHƯA expose: đổi mật khẩu KHÔNG qua socket vì bảo mật) → gateway không bao giờ kích → stream luôn null. Tồn tại chỉ do raw bus phản chiếu MỌI callback (OnAny). PasswordChangeInfo chỉ mang RpCode.",
+   "r:listExchanges":'{"Exchanges":["CME","CBOT","NYMEX","COMEX"],"Context":null,"RpCode":0,"_note":"Danh sách sàn ĐANG đăng nhập (= callback OnExchangeList trả thẳng). Dùng để biết entitlement sàn nào."}',
+   "r:getAccounts":'{"Accounts":[{"FcmId":"CarstenTech","IbId":"Optimus","AccountId":"sample@abc.com","AccountName":"Demo Account","CreationSsboe":1743045601,"CreationUsecs":857273,"AutoLiquidateInfo":{"Account":{"FcmId":"CarstenTech","IbId":"Optimus","AccountId":"sample@abc.com","AccountName":null,"AutoLiquidateInfo":null,"RmsInfo":null},"AutoLiquidateThresholdCurrentValue":null,"AutoLiquidateThresholdCurrentValueSsboe":"1782597466","CallbackType":"Image"},"RmsInfo":{"Algorithm":"SMAC","Currency":"USD","Status":"active","CheckMinAccountBalance":false,"LossLimit":null,"MinAccountBalance":0,"MinMarginBalance":0,"BuyLimit":0,"SellLimit":0,"MaxOrderQty":0}}],"RpCode":0,"_note":"Danh sách account (OnAccountList — gateway CACHE sau login). KHÓA định tuyến lệnh/PnL = FcmId+IbId+AccountId. RmsInfo = cấu hình rủi ro (Algorithm SMAC / Currency / Status / các *Limit / MaxOrderQty). AutoLiquidateInfo = ngưỡng auto-liquidate. ⚠️ AccountId ĐÃ ẨN (sample@abc.com). RÚT GỌN vài field RmsInfo luôn null."}',
+   "r:instrumentInfo":'{"symbol":"NQU6","exchange":"CME","tickSize":0.25,"priceDecimals":2,"expiration":"20260918","expirationTime":"1789738200","pointValue":20,"currency":"USD","description":"E-Mini Nasdaq-100","productCode":"NQ","instrumentType":"Future","t":1782576955009,"_note":"⭐ GỘP CURATED của gateway: merge 2 callback OnRefData (hết hạn/pointValue/mô tả/productCode) + OnPriceIncrUpdate (tickSize/priceDecimals) thành 1 OBJECT PHẲNG tiện dùng + cache. KHÁC shape thô của stream @OnRefData/@OnPriceIncrUpdate. t = mốc ms gateway trả. Đây là điểm khác chính giữa PULL (gói gọn) và STREAM (thô)."}',
+   "r:searchInstrument":'{"_shape":"result = MẢNG instrument [ {...}, ... ]","_count":"~45 mã (rút gọn còn 4 mẫu)","sample":[{"symbol":"NQU6","exchange":"CME","tickSize":0.25,"priceDecimals":2,"expiration":"20260918","pointValue":20,"currency":"USD","description":"E-Mini Nasdaq-100","productCode":"NQ","instrumentType":"Future"},{"symbol":"NQZ6","exchange":"CME","description":"E-Mini Nasdaq-100","expiration":"20261218","productCode":"NQ","instrumentType":"Future"},{"symbol":"NQ","exchange":"CME","description":"Front Month for NQ - NQU6.CME","expiration":"20260918","productCode":"NQ","instrumentType":"Future"},{"symbol":"NQZ2","exchange":"CME"}],"_note":"searchInstrument → MẢNG instrument khớp từ khoá (gateway gộp NHIỀU sàn tuần tự + cache). Mã KHỚP CHÍNH XÁC (NQU6) có ĐỦ field (tickSize/pointValue/…); mã khác chỉ field NHẸ (symbol/exchange/description/expiration/productCode); mã chưa nạp ref chỉ symbol/exchange (vd NQZ2). Nhiều productCode = biến thể: NQ (chuẩn) · NQT (BTIC) · NQQ (TACO) · NQX (TMAC). Mã NQ (không tháng) = alias FRONT-MONTH."}',
+   "r:getOptionList":'{"expirations":["20260918"],"products":[],"rp":0,"rows":[["NQU6 P29500",29500,"P","20260918","NQ"],["NQU6 C29500",29500,"C","20260918","NQ"],["NQU6 P36000",36000,"P","20260918","NQ"],["NQU6 C36000",36000,"C","20260918","NQ"],"…RÚT GỌN ~230 dòng"],"_note":"✅ getOptionList với expiration ĐÚNG (client suy NQU6→202609; Rithmic trả option kỳ 20260918). rp=0. rows=[[symbol, strike, P/C, expirationDate, productCode]] — ~115 strike (5000→43000, bước 250/500) × Put+Call ≈ 230 dòng. expirations[]=ngày hết hạn option thực. (Trước fix: expiration 202606 → rp=7 rỗng do trúng tháng đã hết hạn.)"}',
+   "r:getInstrumentByUnderlying":'{"expirations":["20260626","20260625","20260630","20260629","20260918","20260821","20260724","…"],"products":[],"rp":0,"rows":[],"_note":"getInstrumentByUnderlying(underlying): MỌI option settle vào 1 future — 1 call. rp=0. expirations[] = các NGÀY hết hạn option (daily/weekly/monthly, ~21 ngày, RÚT GỌN). products/rows rỗng ở call mặc định (expiration trống); truyền 1 expiration cụ thể để liệt kê instrument/strike. KHÁC optionChain ở chỗ phủ theo UNDERLYING (1 future) thay vì product+kỳ."}',
+   "r:getVolumeAtPrice":'{"rows":[[29160.5,1],[29200,348],[29350,676],[29500,1106],[29892.75,1],"…RÚT GỌN ~2600 mức [price,volume]"],"total":573217,"vpoc":29500,"rp":0,"_note":"getVolumeAtPrice NATIVE Rithmic → volume-at-price phiên hiện tại. rows=[[price,volume]] từng tick (RÚT GỌN ~2600 mức → 5 mẫu). total = tổng volume (573217). vpoc = 29500 = Volume Point Of Control (giá có volume LỚN NHẤT, ở đây 1106). rp=0. Dùng vẽ Volume Profile / VPOC / value-area."}',
+   "r:listTradeRoutes":'{"e":"OnTradeRouteList","TradeRoutes":[{"CallbackType":"Image","Default":"Y","Exchange":"CME","FcmId":"CarstenTech","IbId":"Optimus","Status":"UP","TradeRoute":"simulator","Context":null}],"RpCode":0,"_note":"listTradeRoutes — 1 route/sàn (CBOT/COMEX/NYMEX/CME; RÚT GỌN còn CME). ĐẶT LỆNH cần FcmId+IbId+TradeRoute. Status UP=khả dụng · Default Y=mặc định · simulator=demo/paper."}',
+   "r:getProductRmsInfo":'{"e":"OnProductRmsList","Products":[{"Account":{"FcmId":"CarstenTech","IbId":"Optimus","AccountId":"sample@abc.com","AccountName":null,"RmsInfo":null},"ProductCode":"GC","BuyLimitFlag":false,"BuyLimit":0,"SellLimitFlag":false,"SellLimit":0,"LossLimit":"NaN","MaxOrderQtyFlag":false,"MaxOrderQty":0,"CommissionFillRate":"NaN","BuyLongMarginRate":"NaN","SellShortMarginRate":"NaN"}],"RpCode":0,"_note":"getProductRmsInfo — hạn mức RMS theo PRODUCT (vd GC): BuyLimit/SellLimit (vị thế), MaxOrderQty (size/lệnh), LossLimit, margin rate. *Flag=false → hạn mức KHÔNG áp. ⚠️ AccountId ĐÃ ẨN."}',
+   "r:getStrategyList":'{"e":"OnStrategyList","Exchanges":["CME"],"Products":["NQ"],"StrategyTypes":["Futures Calendar","3-Way","CV:FO","1 x 3 ratio","Options Diagonal","Xmas Tree","1 x 2 ratio","Iron Condor","Options Straddle","Options Butterfly","Risk Reversal","Options Horizontal","Options Vertical","Generic","Options Strangle"],"Expirations":[],"Symbols":[],"RpCode":0,"_note":"getStrategyList — các LOẠI spread/strategy khả dụng cho product (NQ): calendar, ratio, iron condor, straddle, butterfly… Truyền strategyType+expiration để liệt kê Symbols cụ thể."}',
+   "r:getStrategyInfo":"rp=7 (NO_DATA) — getStrategyInfo(exchange,symbol) cho 1 mã SPREAD cụ thể. NQU6 là FUTURE thường (không phải spread) → ProductCode/StrategyType null, Legs rỗng. Truyền mã spread thật mới có Legs.",
+   "r:getEquityOptionStrategyList":"rp=7 (NO_DATA) — getEquityOptionStrategyList(underlying). NQU6 là index-future, không có equity-option strategy. Exchanges/Underlyings chỉ echo tham số.",
+   "r:listBinaryContracts":"rp=7 (NO_DATA) — listBinaryContracts(exchange,product). NQ không có binary/event contract (chỉ vài product có). Types/Periods/Instruments rỗng.",
+   "r:getEasyToBorrowList":'{"e":"OnEasyToBorrowList","RpCode":0,"_note":"getEasyToBorrowList — chứng khoán dễ vay để short. RpCode 0 nhưng RỖNG: tài khoản future không có ETB (chỉ cho cổ phiếu)."}',
+   "r:getAuxRefData":'{"e":"OnAuxRefData","CallbackType":"Image","Exchange":"CME","Symbol":"NQU6","FirstTradingDate":"20250321","LastTradingDate":"20260918","FirstNoticeDate":null,"LastNoticeDate":null,"SettlementMethod":"cash","UnitOfMeasure":"IPNT","UnitOfMeasureQty":20,"Ssboe":1782509975,"RpCode":0,"_note":"getAuxRefData — ref data PHỤ: ngày giao dịch đầu/cuối, notice/delivery date (null cho cash-settled), SettlementMethod (cash/physical), UnitOfMeasure (IPNT=index point) + qty (=pointValue 20). Bổ trợ instrumentInfo."}',
+   "r:environment":"null — getEnvironment(key) cần KEY cụ thể; key rỗng → null. Lấy danh sách key bằng listEnvironments trước.",
+   "r:listEnvironments":'{"e":"OnEnvironmentList","Environments":["system"],"_note":"listEnvironments — các môi trường engine khả dụng (thường chỉ \\"system\\"). Dùng làm key cho getEnvironment."}',
+   "r:listIbs":"null — listIbs: danh sách IB con dưới login. Tài khoản thường (không phải IB-master) → null/rỗng.",
+   "r:listUsers":"null — listUsers(ibId,userType): user dưới 1 IB. Không phải IB-admin / ibId rỗng → null.",
+   "r:getUserProfile":'{"e":"OnUserProfile","User":"sample@abc.com","UserType":"3","FirstName":"Sample","LastName":"User","Email":"sample@abc.com","CurrentMarketDataSessionCount":1,"CurrentOrdersSessionCount":2,"CurrentPnlSessionCount":1,"CurrentHistorySessionCount":1,"MaxMarketDataSessionCount":1,"MaxOrdersSessionCount":4,"MaxHistorySessionCount":0,"MaxPnlSessionCount":0,"RpCode":0,"ConnId":"TradingSystem","_note":"⚠️ PII ĐÃ ẨN (User/tên/địa chỉ/điện thoại/email → sample/***). Giá trị tài liệu = ĐẾM PHIÊN mỗi plant Current/Peak/Max. Max = trần phiên đồng thời / 1 USER (MarketData=1 → 1 user chỉ 1 phiên data; Orders=4; 0=không giới hạn). 👉 đa-login: mỗi user pool RIÊNG."}',
+   "r:listAgreements":'{"e":"OnAgreementList","Accepted":true,"Agreements":[{"Title":"Rithmic, LLC Market Data Self-Certification","Status":"active","Mandatory":true,"EndUserAcceptanceStatus":"Self-certified","MarketDataUsageCapacity":"Non-Professional"},{"Title":"Rithmic, LLC Market Data Subscription Agreement","Status":"active","Mandatory":true,"EndUserAcceptanceStatus":"Agreed","MarketDataUsageCapacity":null}],"RpCode":0,"_note":"listAgreements(accepted=true) — thoả thuận ĐÃ KÝ. MarketDataUsageCapacity Non-Professional/Professional = phân loại PHÍ data (ảnh hưởng giá market-data). Mandatory=true bắt buộc; chưa ký → login fail (OnUnsignedAgreement). RÚT GỌN field ngày ssboe."}',
+   "r:assignedUsers":"null — assignedUsers(account): user được GÁN vào 1 account (tính năng IB/giám sát). Tài khoản demo → null.",
+   "r:listOrderHistoryDates":'{"e":"OnOrderHistoryDates","Dates":["20111001","20111002","20111003","…","20130303","20130304"],"RpCode":0,"_note":"orderHistoryDates — các NGÀY (CCYYMMDD) có lịch sử lệnh cho account. RÚT GỌN ~480 ngày (demo: 2011-10 → 2013-03). Dùng 1 ngày làm tham số replayHistoricalOrders. (Lưu ý: thứ tự ngày Rithmic trả KHÔNG sắp xếp.)"}',
+   "r:replayPnl":"ACK {ok, account, note} — KHÔNG trả data inline. Kích replayPnl → snapshot PnL/số dư về qua STREAM @OnPnlReplay. (AccountId trong ack ĐÃ ẨN)",
+   "r:replayOpenOrders":"ACK — kích replayOpenOrders → lệnh ĐANG MỞ về qua STREAM @OnOpenOrderReplay. Không trả inline.",
+   "r:replayAllOrders":"ACK — kích replayAllOrders(startTime/endTime) → lệnh lịch sử về qua STREAM @OnOrderReplay. Không trả inline.",
+   "r:replayExecutions":"ACK — kích replayExecutions(startTime/endTime) → fills lịch sử về qua STREAM @OnExecutionReplay. Không trả inline.",
+   "r:replaySingleOrder":"ACK — CẦN orderNum cụ thể; kích replaySingleOrder({orderNum}) → 1 lệnh đó về qua STREAM @OnSingleOrderReplay. orderNum lấy từ @OnOrderReplay / report. Không trả inline.",
+   "r:replaySingleHistoricalOrder":"ACK — CẦN orderNum + date (CCYYMMDD); kích → 1 lệnh đó của NGÀY đó về qua STREAM @OnSingleOrderReplay. Giống replaySingleOrder nhưng KÈM date lịch sử (cùng gọi singleOrderHistory). Không trả inline.",
+   "r:replayHistoricalOrders":"ACK — CẦN date (CCYYMMDD, lấy từ orderHistoryDates) → lệnh lịch sử NGÀY đó về qua STREAM @OnOrderReplay. Khác replayAllOrders (theo khoảng start/end). Không trả inline.",
+   "r:replayBrackets":"ACK — kích replayBrackets → bracket lịch sử về qua STREAM @OnBracketReplay. Không trả inline.",
+   "r:replayQuotes":"ACK — kích replayQuotes → quote replay về qua STREAM @OnQuoteReplay. Không trả inline.",
+   "r:subscribePnl":"null — PnL đã AUTO-subscribe lúc login (gọi lại = no-op, không trả ack). PnL realtime về qua STREAM @OnPnlUpdate.",
+   "r:subscribeOrders":"null — order/bracket đã AUTO-subscribe lúc login. Report về qua các STREAM @On*Report (@OnFillReport / @OnStatusReport / @OnCancelReport…).",
+   "r:subscribeAutoLiquidate":"ACK — kích subscribeAutoLiquidate → thông tin auto-liquidate về qua STREAM @OnAutoLiquidate. Không trả inline."
+  };
+  // callback TRẢ LỜI cho 1 query (không tự đẩy) -> tự gọi RPC kích hoạt để bắt event
+  function trigOf(lc, exch, sym){
+    const r=sym.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||sym;
+    // suy expiration YYYYMM từ mã (NQU6 -> 202609) cho optionChain; mặc định tháng-này hay trúng option ĐÃ HẾT HẠN -> NO_DATA
+    const _mc=sym.match(/([FGHJKMNQUVXZ])(\d{1,2})$/);
+    const expYM=_mc?(""+(_mc[2].length===1?2020+ +_mc[2]:2000+ +_mc[2])+String({F:1,G:2,H:3,J:4,K:5,M:6,N:7,Q:8,U:9,V:10,X:11,Z:12}[_mc[1]]).padStart(2,"0")):"";
+    const M={
+      onexchangelist:["listExchanges",{}], ontraderoutelist:["listTradeRoutes",{}], oniblist:["listIbs",{}],
+      onuserprofile:["getUserProfile",{}], onagreementlist:["listAgreements",{}], onorderhistorydates:["listOrderHistoryDates",{}],
+      oneasytoborrowlist:["getEasyToBorrowList",{}], onenvironmentlist:["listEnvironments",{}], onenvironment:["getEnvironment",{key:""}],
+      onproductrmslist:["getProductRmsInfo",{}], onassigneduserlist:["assignedUsers",{}],
+      onstrategylist:["getStrategyList",{exchange:exch,product:r}], onstrategy:["getStrategyInfo",{exchange:exch,symbol:sym}],
+      onbinarycontractlist:["listBinaryContracts",{exchange:exch,product:r}], onauxrefdata:["getAuxRefData",{exchange:exch,symbol:sym}],
+      onoptionlist:["getOptionList",{exchange:exch,product:r,expiration:expYM}], oninstrumentsearch:["searchInstrument",{query:r,exchange:exch}],
+      oninstrumentbyunderlying:["getInstrumentByUnderlying",{underlying:sym,exchange:exch,expiration:""}],
+      onrefdata:["instrumentInfo",{exchange:exch,symbol:sym}], onpriceincrupdate:["instrumentInfo",{exchange:exch,symbol:sym}],
+      onvolumeatprice:["getVolumeAtPrice",{exchange:exch,symbol:sym}],
+      onuserlist:["listUsers",{ibId:"",userType:""}], onquotereplay:["replayQuotes",{}],
+      onequityoptionstrategylist:["getEquityOptionStrategyList",{exchange:exch,underlying:sym,strategyType:"",expiration:""}],
+      onpnlupdate:["subscribePnl",{}], onpnlreplay:["replayPnl",{}],
+      onorderreplay:["replayAllOrders",{startTime:Date.now()-6048e5,endTime:Date.now()}], onopenorderreplay:["replayOpenOrders",{}], onexecutionreplay:["replayExecutions",{startTime:Date.now()-6048e5,endTime:Date.now()}], onbracketreplay:["replayBrackets",{}],
+      onaccountupdate:["subscribeOrders",{}], onstatusreport:["subscribeOrders",{}], onfillreport:["subscribeOrders",{}],
+      onpositionexit:["subscribeOrders",{}], onautoliquidate:["subscribeAutoLiquidate",{}]
+    };
+    return M[lc]||null;
+  }
+  async function tryCb(cb, global){
+    const exch=(document.getElementById("rwExch").value||"CME").trim().toUpperCase();
+    const sym=(document.getElementById("rwSym").value||"NQU6").trim().toUpperCase();
+    const base= global? "*.*" : (exch+"."+sym).toLowerCase();
+    const name= base+"@"+cb.toLowerCase();
+    panel.style.display="block";
+    document.getElementById("rwTitle").textContent=cb;
+    document.getElementById("rwInfo").textContent= global? "*.* toàn cục" : (exch+"."+sym);
+    const out=document.getElementById("rwOut");
+    const lc=cb.toLowerCase(), isBar=(lc==="onbar"||lc==="onbarreplay"), isRare=RARE.has(lc), winMs=isBar?65000:(isRare?20000:4000);
+    const comp=(!global && COMP[lc]) ? base+COMP[lc] : null;   // feed kèm (book/dbo/bar)
+    const tg=trigOf(lc, exch, sym);                            // RPC kích hoạt (callback trả-lời-query)
+    out.textContent="⏳ subscribe "+name+(comp?" (+"+comp.split("@")[1]+")":"")+(tg?" → gọi "+tg[0]+"()":"")+" … ("+(winMs/1000)+"s)"+(isBar?"\nOnBar chỉ bắn lúc nến ĐÓNG — chờ tới mốc phút kế.":"");
+    let w; try{ w=await conn(); }catch(e){ out.textContent="Lỗi: "+e.message+"\n(mở trang này TỪ http://127.0.0.1:9001/raw.html, không phải file://)"; return; }
+    if(curTimer){ clearTimeout(curTimer); curTimer=null; }   // huỷ timer cũ -> KHÔNG để unsub trễ của lần Thử trước chồng lên lần này (gây dư MdRelease -> race refcount -> mất re-image)
+    if(curKey){ try{ scb.delete(curKey); w.send(JSON.stringify({method:"UNSUBSCRIBE",params:[curKey],id:idc++})); }catch(e){} }
+    if(curComp){ try{ w.send(JSON.stringify({method:"UNSUBSCRIBE",params:[curComp],id:idc++})); }catch(e){} curComp=null; }
+    const key=name; curKey=key; const got=[]; lastRaw={stream:name,sample:null};   // reset -> Copy không ra dữ liệu callback CŨ nếu cái này không có event
+    function rend(){ if(!got.length) return; const last=got[0];
+      let s="▼ "+name+"   ("+got.length+" event)\n— field mới nhất —\n";
+      s+=Object.keys(last).filter(k=>k!=="e").map(k=>"  "+k+": "+JSON.stringify(last[k])).join("\n");
+      s+="\n\n— "+Math.min(got.length,6)+" event gần nhất —\n"+got.slice(0,6).map(x=>JSON.stringify(x)).join("\n");
+      out.textContent=s; }
+    scb.set(key,(d)=>{ lastRaw={stream:name,sample:d}; got.unshift(d); if(got.length>30) got.length=30; rend(); });
+    if(comp){ curComp=comp; try{ w.send(JSON.stringify({method:"SUBSCRIBE",params:[comp],id:idc++})); }catch(e){} }   // bật feed kèm để callback có data
+    w.send(JSON.stringify({method:"SUBSCRIBE",params:[key],id:idc++}));
+    if(tg){ try{ w.send(JSON.stringify({method:tg[0],params:tg[1],id:idc++})); }catch(e){} }   // kích hoạt callback trả-lời-query
+    curTimer=setTimeout(()=>{ curTimer=null; try{ scb.delete(key); w.send(JSON.stringify({method:"UNSUBSCRIBE",params:[key],id:idc++})); }catch(e){}
+      if(comp){ try{ w.send(JSON.stringify({method:"UNSUBSCRIBE",params:[comp],id:idc++})); }catch(e){} if(curComp===comp) curComp=null; }
+      if(curKey===key) curKey=null;
+      if(!got.length){ let hint;
+        if(tg) hint="đã gọi "+tg[0]+"() — nếu im: cần login / sai tham số / không có data";
+        else if(comp) hint="đã bật kèm "+comp+" — ngoài giờ"+(isBar?" / chưa nến đóng":"")+((comp.indexOf("@mbo")>=0)?" (DBO cần entitlement)":"");
+        else if(isRare) hint="callback theo SỰ KIỆN (settlement / đỉnh-đáy / market-mode / trade có điều kiện) — không phải mỗi tick";
+        else if(CONN.has(lc)) hint="event lúc KẾT NỐI/khởi động — đã bắn TRƯỚC khi subscribe. Trạng thái login xem RPC connections (gateway, ở api.html)";
+        else if(global) hint="account/order/PnL — cần đăng nhập + có hoạt động";
+        else hint="ngoài giờ giao dịch / chưa có data";
+        // hiện GIỐNG Copy ({stream,sample:null}) + 1 dòng chú thích //
+        out.textContent=JSON.stringify({stream:name,sample:null},null,2)+"\n\n// "+(winMs/1000)+"s không có event — "+hint; } }, winMs);
+  }
+  const getExch=()=>(document.getElementById("rwExch").value||"CME").trim().toUpperCase();
+  const getSym=()=>(document.getElementById("rwSym").value||"NQU6").trim().toUpperCase();
+  const rootOf=s=>s.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||s;
+  // suy expiration YYYYMM từ mã hợp đồng (NQU6 -> 202609) — optionChain mặc định tháng-này hay trúng option ĐÃ HẾT HẠN (rp=7)
+  const expOf=s=>{ const m=String(s||"").match(/([FGHJKMNQUVXZ])(\d{1,2})$/); if(!m) return ""; const y=m[2].length===1?2020+ +m[2]:2000+ +m[2]; return ""+y+String({F:1,G:2,H:3,J:4,K:5,M:6,N:7,Q:8,U:9,V:10,X:11,Z:12}[m[1]]).padStart(2,"0"); };
+  function noteCell(key,def){ const td=document.createElement("td"); td.contentEditable="true"; td.style.cssText="min-width:170px;outline:none;font-size:13px;color:#e3b341";
+    let v=null; try{ v=localStorage.getItem("rwnote:"+key); }catch(e){} td.textContent=(v!=null)?v:(def||""); if(v==null&&def) td.style.color="#8b949e";
+    td.addEventListener("input",()=>{ td.style.color="#e3b341"; try{ localStorage.setItem("rwnote:"+key,td.textContent); }catch(e){} }); return td; }
+  function mkbtn(t,fn){ const b=document.createElement("button"); b.textContent=t; b.onclick=fn; return b; }
+  // ô Response: vùng dán gọn (max-height, scroll) + nút 👁 mở to trong panel
+  function respCell(key,def){ const td=document.createElement("td"); td.style.cssText="min-width:110px;vertical-align:top;font-size:12px";
+    const val=def||"";   // lấy từ RESP (tôi bake); không đọc localStorage nữa
+    if(/^\s*[\{\[]/.test(val)){   // có JSON -> nút Xem (mở popup, PRETTY-PRINT)
+      const b=mkbtn("👁 Xem",()=>{ let s=val; try{ s=JSON.stringify(JSON.parse(val),null,2); }catch(e){}   // format đẹp dù lưu 1 dòng
+        panel.style.display="block"; document.getElementById("rwTitle").textContent=key.replace(/^[sr]:/,""); document.getElementById("rwInfo").textContent="response"; document.getElementById("rwOut").textContent=s; });
+      b.style.cssText="font-size:12px;padding:2px 10px;cursor:pointer"; td.appendChild(b);
+    } else if(val){ td.textContent=val; td.style.color="#8b949e"; }   // null / giải thích -> hiện THẲNG (không nút)
+    return td; }
+  const STREAMS=[
+   ["Quote L1","S",["OnBidQuote","OnAskQuote","OnBestBidQuote","OnBestAskQuote","OnBestBidAskQuote","OnQuote","OnQuoteReport","OnEndQuote"]],
+   ["Trades","S",["OnTradePrint","OnTradeCondition","OnTradeVolume","OnAggregator"]],
+   ["Giá phiên / OHLC","S",["OnOpenPrice","OnHighPrice","OnLowPrice","OnClosePrice","OnHighBidPrice","OnLowAskPrice","OnMidPrice","OnCloseMidPrice"]],
+   ["Settlement","S",["OnSettlementPrice","OnProjectedSettlementPrice"]],
+   ["Limit & trạng thái chợ","S",["OnHighPriceLimit","OnLowPriceLimit","OnMarketMode","OnOpeningIndicator","OnClosingIndicator"]],
+   ["Open interest","S",["OnOpenInterest"]],
+   ["Book / depth-by-order (feed @depth/@mbo)","S",["OnLimitOrderBook","OnDbo","OnDboBookRebuild"]],
+   ["Nến (feed @kline)","S",["OnBar","OnBarReplay"]],
+   ["Volume profile","S",["OnVolumeAtPrice"]],
+   ["Reference / instrument","S",["OnRefData","OnAuxRefData","OnPriceIncrUpdate"]],
+   ["Instruments / options / strategy","G",["OnExchangeList","OnInstrumentSearch","OnInstrumentByUnderlying","OnOptionList","OnStrategy","OnStrategyList","OnEquityOptionStrategyList","OnBinaryContractList","OnUserDefinedSpreadCreate","OnEasyToBorrow","OnEasyToBorrowList"]],
+   ["Account / position / PnL / RMS","G",["OnAccountUpdate","OnPnlUpdate","OnPnlReplay","OnPositionExit","OnProductRmsList","OnAutoLiquidate","OnSodUpdate"]],
+   ["Lệnh — replay + report","G",["OnTradeRouteList","OnTradeRoute","OnOrderReplay","OnOpenOrderReplay","OnSingleOrderReplay","OnExecutionReplay","OnOrderHistoryDates","OnLineUpdate","OnBracketReplay","OnBracketUpdate","OnBracketTierModify","OnFillReport","OnStatusReport","OnModifyReport","OnCancelReport","OnBustReport","OnFailureReport","OnRejectReport","OnNotCancelledReport","OnNotModifiedReport","OnTradeCorrectReport","OnTriggerReport","OnTriggerPulledReport","OnOtherReport"]]
+  ];
+  (function(){ const tb=document.querySelector("#rwcat tbody"); if(!tb) return;
+    STREAMS.forEach(([cl,sc,cbs])=>cbs.forEach((cb,i)=>{ const tr=document.createElement("tr");
+      const c1=document.createElement("td"); c1.textContent=i===0?cl:""; c1.style.color="#8b949e";
+      const c2=document.createElement("td"); c2.innerHTML='<span class="tag '+(sc==="G"?"g":"s")+'">'+sc+'</span>';
+      const c3=document.createElement("td"); c3.innerHTML='<code>@'+cb+'</code>';   // hiện CamelCase cho dễ đọc (subscribe vẫn case-insensitive)
+      const c4=document.createElement("td"); c4.appendChild(mkbtn("Thử",()=>tryCb(cb,sc==="G")));
+      tr.append(c1,c2,c3,c4, respCell("s:"+cb, RESP[cb.toLowerCase()]||""), noteCell(cb, DESC[cb.toLowerCase()]||"")); tb.appendChild(tr); })); })();
+  const PULLS=[
+   "▾ Query — GỌI nhận data INLINE ngay (request → result). Tên cột 1 = method REngine THẬT (tên cũ kiểu Binance vẫn chạy như alias).",
+   ["listExchanges","OnExchangeList",null],["getAccounts","OnAccountList (cache)",null],
+   ["instrumentInfo","OnRefData + OnPriceIncrUpdate (gateway GỘP 2)",(e,s)=>({exchange:e,symbol:s})],
+   ["searchInstrument","OnInstrumentSearch",(e,s,r)=>({query:r,exchange:e})],
+   ["getOptionList","OnOptionList",(e,s,r)=>({exchange:e,product:r,expiration:expOf(s)})],
+   ["getInstrumentByUnderlying","OnInstrumentByUnderlying",(e,s)=>({underlying:s,exchange:e,expiration:""})],
+   ["getVolumeAtPrice","OnVolumeAtPrice",(e,s)=>({exchange:e,symbol:s})],
+   ["listTradeRoutes","OnTradeRouteList",null],["getProductRmsInfo","OnProductRmsList",()=>({})],
+   ["getStrategyList","OnStrategyList",(e,s,r)=>({exchange:e,product:r})],["getStrategyInfo","OnStrategy",(e,s)=>({exchange:e,symbol:s})],
+   ["getEquityOptionStrategyList","OnEquityOptionStrategyList",(e,s,r)=>({exchange:e,underlying:s,strategyType:"",expiration:""})],
+   ["listBinaryContracts","OnBinaryContractList",(e,s,r)=>({exchange:e,product:r})],
+   ["getEasyToBorrowList","OnEasyToBorrowList",null],["getAuxRefData","OnAuxRefData",(e,s)=>({exchange:e,symbol:s})],
+   ["getUserProfile","OnUserProfile",null],["listOrderHistoryDates","OnOrderHistoryDates",null],
+   "⚡ Trigger — GỌI để kích, data về qua STREAM @On* (KHÔNG trả inline; cột → = tên stream ĐÚNG như bảng STREAMS để tra)",
+   ["replayPnl","@OnPnlReplay",()=>({})],["replayOpenOrders","@OnOpenOrderReplay",()=>({})],
+   ["replayAllOrders","@OnOrderReplay",()=>({startTime:Date.now()-6048e5,endTime:Date.now()})],
+   ["replayExecutions","@OnExecutionReplay",()=>({startTime:Date.now()-6048e5,endTime:Date.now()})],
+   ["replaySingleOrder","@OnSingleOrderReplay",()=>({orderNum:""})],["replayHistoricalOrders","@OnOrderReplay",()=>({date:""})],
+   ["replaySingleHistoricalOrder","@OnSingleOrderReplay",()=>({orderNum:"",date:""})],
+   ["replayBrackets","@OnBracketReplay",()=>({})],["replayQuotes","@OnQuoteReplay",()=>({})],
+   ["subscribePnl","@OnPnlUpdate",()=>({})],["subscribeOrders","@On*Report",()=>({})],["subscribeAutoLiquidate","@OnAutoLiquidate",()=>({})]
+  ];
+  (function(){ const tb=document.querySelector("#rwpull tbody"); if(!tb) return;
+    PULLS.forEach(row=>{
+      if(typeof row==="string"){   // marker chuỗi -> dòng NHÃN nhóm (gộp cả hàng)
+        const tr=document.createElement("tr"), td=document.createElement("td");
+        td.colSpan=5; td.textContent=row;
+        td.style.cssText="background:var(--panel);color:#e3b341;font-weight:600;font-size:12.5px;padding:7px 9px;border-top:2px solid var(--bd)";
+        tr.appendChild(td); tb.appendChild(tr); return;
+      }
+      const [rpc,rcb,pf]=row; const tr=document.createElement("tr");
+      const c1=document.createElement("td"); c1.innerHTML='<code>'+rpc+'</code>';
+      const c2=document.createElement("td"); c2.style.color="#8b949e"; c2.textContent=rcb;
+      const c3=document.createElement("td"); c3.appendChild(mkbtn("Execute",()=>{ const e=getExch(),s=getSym(); runRpc(rpc,pf?pf(e,s,rootOf(s)):null); }));
+      tr.append(c1,c2,c3, respCell("r:"+rpc, RESP["r:"+rpc]||""), noteCell("rpc:"+rpc,"")); tb.appendChild(tr); }); })();
+  const NOEXP=[
+   ["sendOrderList","Lệnh batch — param collection phức tạp; chưa expose"],["sendOcaList","OCA batch — param collection; chưa expose"],
+   ["cancelOrderList","Huỷ batch — param collection; chưa expose"],["modifyOrderList","Sửa batch — param collection; chưa expose"],
+   ["linkOrders","Liên kết lệnh — niche; chưa expose"],["modifyBracketTier","Sửa 1 tầng bracket — niche; chưa expose"],
+   ["modifyOrderRefData","Chỉ sửa tag/userTag lệnh; chưa expose"],["submitQuoteList","Market-maker quoting; chưa expose"],
+   ["cancelQuoteList","Market-maker quoting; chưa expose"]
+  ];
+  (function(){ const tb=document.querySelector("#rwnoexp tbody"); if(!tb) return;
+    NOEXP.forEach(([m,r])=>{ const tr=document.createElement("tr");
+      const c1=document.createElement("td"); c1.innerHTML='<code>'+m+'</code>';
+      const c2=document.createElement("td"); c2.style.color="#6e7681"; c2.textContent="—";
+      tr.append(c1,c2,noteCell("noexp:"+m,r)); tb.appendChild(tr); }); })();
+  // RPC pull (Dạng call) -> gửi RPC, hiện kết quả trả thẳng trong panel
+  async function runRpc(method, params){
+    panel.style.display="block";
+    document.getElementById("rwTitle").textContent=method+"()";
+    document.getElementById("rwInfo").textContent="RPC";
+    const out=document.getElementById("rwOut"); out.textContent="⏳ "+method+"() …"; lastRaw={rpc:method,result:null};   // reset -> Copy không ra kết quả RPC CŨ
+    let w; try{ w=await conn(); }catch(e){ out.textContent="Lỗi: "+e.message+"\n(mở từ http://127.0.0.1:9001/raw.html)"; return; }
+    const i=idc++; const to=setTimeout(()=>{ if(pend.delete(i)) out.textContent="(timeout "+method+")"; }, 12000);
+    pend.set(i,{ res:(r)=>{ clearTimeout(to); lastRaw={rpc:method,result:r}; out.textContent="▼ "+method+"() →\n"+JSON.stringify(r,null,1); },
+                 rej:(e)=>{ clearTimeout(to); out.textContent="Lỗi: "+method+" — "+e.message; } });
+    w.send(JSON.stringify(params?{method,params,id:i}:{method,id:i}));
+  }
+  conn().catch(()=>{});
+})();
+</script>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

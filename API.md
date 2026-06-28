@@ -335,22 +335,7 @@ when rows carry the aggressor order id (`o`); `firstTs`/`lastTs` (+ `…Iso`) br
 completion flag, or a **40 s** safety timeout. `replayTrades` only reaches the **current session**; the `bars` mode goes
 back ~90+ days — see **STORAGE.md** for the depth notes.
 
-### `account`
-
-```json
-{ "method":"account", "id":3 }
-```
-```json
-{ "id":3, "status":200, "result": { "Accounts":[
-  { "AccountId":"...", "FcmId":"...", "IbId":"...", "AccountName":"..." } ] } }
-```
-
-### `exchangeInfo`
-
-```json
-{ "method":"exchangeInfo", "id":4 }
-→ { "id":4, "status":200, "result": { "Exchanges":[ ... ] } }
-```
+> `account` & `exchangeInfo` are **pure raw 1-1** (returned as-is, no transform) → documented in **RAW.md §3** : `getAccounts` / `listExchanges`. The gateway still accepts the old Binance names via alias.
 
 ### `instrumentInfo`
 
@@ -731,7 +716,19 @@ while (ws.State == WebSocketState.Open) {
 
 ## Changelog
 
-Current API version: **1.7.0**. Follows SemVer — breaking changes bump the MAJOR number.
+Current API version: **1.9.0**. Follows SemVer — breaking changes bump the MAJOR number.
+
+### 1.9.0 — 2026-06-28
+- **Raw R|API+ completed + REngine renaming.** Every order/PnL/account/instrument/option callback, replay and report is now documented with verified payload shapes (PII redacted). **Pull** RPC names switched to the **REngine method** (`listExchanges`, `getAccounts`, `searchInstrument`, `getOptionList`, `getInstrumentByUnderlying`, `getVolumeAtPrice`, `getProductRmsInfo`, `getStrategyList`/`getStrategyInfo`, `getEquityOptionStrategyList`, `listBinaryContracts`, `getEasyToBorrowList`, `getAuxRefData`, `getUserProfile`, `listTradeRoutes`, `listOrderHistoryDates`); the old Binance-style names keep working as **dispatch aliases** (webapp/chart unchanged). `instrumentInfo` keeps its name (merges `getRefData`+`getPriceIncrInfo`). `replaySingleHistoricalOrder` exposed. See **RAW.md**.
+- **Order entry folded into RAW.md §3 ④ / `raw.html#order`** — the standalone `orders.html` + `ORDERS.md` were removed (full params + value maps now live in RAW.md). **`examples.html`** — minimal client code in 9 languages (Python / C# / JS / TS / C++ / Java / Go / Rust / Kotlin) for the three call kinds (stream / RPC-inline / RPC-trigger).
+- **api.html decluttered + composite→raw map.** New **#rawmap** section lists which Raw R|API+ each composite entrypoint calls (alias / merge / stream / local). Removed the pure-alias entrypoints (`account`/`exchangeInfo` → raw.html `getAccounts`/`listExchanges`) and the redundant Account/PnL/RMS table (raw passthrough → raw.html); kept the gateway-only `connections`.
+- **App.** API docs are now viewable **without a Rithmic login** (the gateway serves api.html/raw.html in a doc-only mode even during maintenance); MainForm split into separate **Web Chart** / **Docs** buttons.
+
+### 1.8.0 — 2026-06-26
+- **Remaining rapiplus pull/subscribe methods exposed — PnL, order/execution history, RMS, strategy, misc.** `subscribePnl` / `replayPnl`, `replayOpenOrders` / `replayAllOrders` / `replayExecutions` / `replayBrackets` / `replayHistoricalOrders` / `replaySingleOrder` / `orderHistoryDates`, `replayQuotes`, `productRms`, `strategyList` / `strategyInfo` / `equityOptionStrategies` / `binaryContracts`, `easyToBorrow`, `auxRefData`, `assignedUsers`, `subscribeAutoLiquidate`, `subscribeUser`, `listEnvironments` / `environment`. Query methods reply inline; subscribe/replay ack and stream results on the matching RAW channel (`@onpnlupdate`, `@onorderreplay`, `@onexecutionreplay`, …). Account auto-resolved. (Credential change, market-maker quoting, OCA/batch-order-list and user-defined-spread builders are intentionally not exposed.) The interactive **api.html** gains live **Execute** buttons for these read-only RPCs (none for order-entry actions). Plus a **Raw event inspector** panel in the web app to discover any callback's fields live.
+- **Order entry — `placeOrder` / `modifyOrder` / `cancelOrder` / `cancelAllOrders` / `exitPosition` (`flatten`) / `bracketOrder` / `subscribeOrders` / `tradeRoutes`.** Live order actions wrapping `REngine.sendOrder` (market/limit/stop/stop-limit), `modifyOrder`, `cancelOrder`, `exitPosition`, `sendBracketOrder`. Account is resolved from `{fcmId,ibId,accountId}` / `accountId` / first active; trade route auto-picked from the cached `OnTradeRoute` list (override with `tradeRoute`). The RPC reply is an accept-ack only — working/filled/rejected outcomes arrive on the RAW report streams (`@OnStatusReport` / `@OnFillReport` / `@OnRejectReport` / `@OnBracketUpdate`). ⚠ Real-money; trading entitlement required; local-only socket. Full params + value maps: **RAW.md §3 ④** / `raw.html#order`.
+- **Raw R|API+ passthrough — every rapiplus callback as a socket (1-to-1).** A reflective `OnAny` bus turns **each** Rithmic R|API+ push callback into its own stream `<exch>.<sym>@<CallbackName>` (symbol-scoped) or `*.*@<CallbackName>` (global: account / order / PnL / exchange-list / user…). Payload = the Info struct reflected to JSON (`e` = callback name + all fields). Curated streams are unchanged; the raw bus is additive and ref-counted (zero cost when unsubscribed). New 1-to-1 **pull** RPCs `listIbs` / `listUsers` / `userProfile` / `listAgreements`. ⚠ Account/order/PnL/user clusters need the trading entitlement and expose account data — trusted/local use only. See **RAW.md**.
+- **`@mboraw` — raw DBO event stream.** Passthrough of every Rithmic DBO event (`New`/`Change`/`Delete`/`Image` with `ExchOrdId`, side, price, size, priority, exchange ts), riding the same per-price window as `@mbo`. See **MBO.md**. (DOM `@depth` stays aggregated-only — no raw form.)
 
 ### 1.7.0 — 2026-06-22
 - **Continuous contract — `continuousInfo` + `cont` param.** Back-adjusted rollover chain: pick a **root** (e.g. `ES`) and the gateway stitches the locally-stored contracts (`ESM6`→`ESU6`→…) into one seamless series, **back-adjusting** older prices by the cumulative settlement gap at each roll. `continuousInfo` returns `{front, segments:[{symbol, start, end, offset}]}`; the client subscribes `front` live and draws roll markers. Passing `cont:{root, rule, adjust, rolls}` to `klines`, `aggTrades`, `bigTrades` and `volumeProfileRange` makes **candles *and* orderflow** (footprint / VP / big-trade) continuous + back-adjusted. `rule` = `date` (roll at expiry) or `volume` (roll when the next contract's daily volume overtakes); `rolls` overrides individual roll dates. See **CONTINUOUS.md**.
@@ -779,5 +776,5 @@ Current API version: **1.7.0**. Follows SemVer — breaking changes bump the MAJ
 
 ### 1.0.0 — 2026-06-13
 - Initial release. Streams: `@trade`, `@bookTicker`, `@depth[N]`, `@kline_<interval>`.
-- Requests: `klines`, `aggTrades`, `account`, `exchangeInfo`, `ping`, `SUBSCRIBE`/`UNSUBSCRIBE`.
+- Requests: `klines`, `aggTrades`, `instrumentInfo`, `searchSymbol`, `ping`, `SUBSCRIBE`/`UNSUBSCRIBE` (`account`/`exchangeInfo` → RAW.md: `getAccounts`/`listExchanges`).
 - Footprint = `aggTrades` (history) + `@trade` (live). Timestamps are Unix milliseconds everywhere.

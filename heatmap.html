@@ -82,7 +82,7 @@ candles (turn on "show candles" to overlay footprint/candles).</span></p>
 <tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Vì sao</span><span class="en">Why</span></th></tr>
 <tr><td><b><span class="vi">Ô nhiệt (thanh khoản)</span><span class="en">Heat cells</span></b></td><td><a class="h" href="api.html#s-depth"><code>@depth&lt;N&gt;</code></a></td>
   <td><span class="vi">Toàn bộ sổ mỗi snapshot; lấy mẫu mỗi <b>300 ms</b> thành 1 cột. <code>N</code> = độ sâu (dùng chung DOM).</span><span class="en">Full book per snapshot; sampled every <b>300 ms</b> into a column. <code>N</code> = depth (shared with DOM).</span></td></tr>
-<tr><td><b><span class="vi">Đường bid/ask</span><span class="en">Bid/ask line</span></b></td><td><a class="h" href="api.html#s-bookticker"><code>@bookTicker</code></a></td>
+<tr><td><b><span class="vi">Đường bid/ask</span><span class="en">Bid/ask line</span></b></td><td><a class="h" href="api.html#s-book"><code>@bookTicker</code></a></td>
   <td><span class="vi">Vẽ từ <b>mỗi</b> thay đổi quote (không phải mẫu 300 ms) -> đường sát, bóng trade khớp đúng.</span><span class="en">From <b>every</b> quote change (not the 300 ms sample) so the line is tight and bubbles sit on it.</span></td></tr>
 <tr><td><b><span class="vi">Bóng trade</span><span class="en">Trade bubbles</span></b></td><td><a class="h" href="api.html#s-trade"><code>@trade</code></a></td>
   <td><span class="vi">Một chấm mờ mỗi lệnh; bán kính ∝ √qty; xanh = mua / đỏ = bán.</span><span class="en">A translucent dot per print; radius ∝ √qty; blue = buy / red = sell.</span></td></tr>

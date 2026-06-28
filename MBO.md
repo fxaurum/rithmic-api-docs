@@ -15,6 +15,7 @@ detect icebergs/spoofs.
 | Goal | Call | Why |
 |---|---|---|
 | **Order-by-order book** (per-level orders) | `@mbo` / `@mbo<N>` (stream) | each price level returns `[price, orderCount, total, [sizes…]]` — the individual resting orders, queue-ordered. Gateway maintains a per-order book from Rithmic DBO and emits ~20 Hz. |
+| **Raw DBO events** (per order, no aggregation) | `@mboraw` (stream) | passthrough of **every** Rithmic DBO event — `New`/`Change`/`Delete`/`Image` with `ExchOrdId`, side, price, size, priority and exchange timestamp. No conflation, no book-building. Use when you need the raw order-flow tape, not a ladder. |
 | **Aggregated total** (per level) | same `@mbo` (field `total`) **or** `@depth` | MBO `total` = Σ of the orders in the window; `@depth` gives the full-book total at every level (deeper than the MBO window). The ladder shows both. |
 | **Verify entitlement / inspect raw DBO** | `mboProbe` (RPC, debug) | subscribes DBO around BBO for a few seconds and returns `{entitled, events, distinctOrders, hasExchOrdId, hasPriority, sample[]}`. |
 | **Best bid/ask, last, tick size** | `@bookTicker`, `@trade`, `instrumentInfo` | same as the regular DOM. |
@@ -33,6 +34,27 @@ detect icebergs/spoofs.
 
 Each level = `[price, orderCount, totalSize, sizes[]]`. `sizes[]` are the individual orders **sorted by queue priority**
 (front of queue first), capped at 64 per level. `@mbo<N>` slices to the top *N* levels each side (like `@depth<N>`).
+
+### `@mboraw` payload (raw DBO passthrough)
+
+One message **per DBO event** (not conflated):
+
+```json
+{ "stream":"comex.gcq6@mboraw", "data":{
+    "e":"mboraw", "s":"GCQ6",
+    "type":"Change",        // New | Change | Delete | Image
+    "side":"B",             // B | S
+    "p":4152.3,             // price
+    "q":8,                  // size  (-1 when the feed sends no size, e.g. Delete)
+    "oid":"8246531",        // ExchOrdId — the order key
+    "pri":"...",            // exchange queue priority (string as Rithmic gives it)
+    "ts":1718000002360 } }  // exchange source time (ms)
+```
+
+**Window:** `@mboraw` rides the same per-price DBO window as `@mbo` — events only for prices within ±`MBO_WIN_TICKS`
+(default 20) of the BBO. Subscribe `@mbo<N>` alongside to widen it (the window is the **max** of all requests on that
+symbol). Same entitlement requirement as `@mbo`. Order-of-magnitude higher message rate than `@mbo` — only subscribe when
+you actually consume every event; the gateway skips the passthrough entirely when no client holds `@mboraw`.
 
 ---
 
@@ -134,6 +156,9 @@ The book engine already keeps each order's **lifetime** (`firstMs`/`lastMs`), wh
 
 ## 8. Changelog
 
+- **2026-06-26** — Added **`@mboraw`** stream: raw Rithmic DBO passthrough (one message per `New`/`Change`/`Delete`/`Image`
+  event with `ExchOrdId`, side, price, size, priority, exchange ts). Rides the same per-price DBO window as `@mbo`;
+  gateway skips the passthrough entirely when no client holds it. (DOM `@depth` remains aggregated-only — no raw form.)
 - **2026-06-19** — MBO (Phase 1 + 1.5). Gateway: `MboBook` per-order engine on Rithmic DBO, rolling ±20-tick window around
   BBO (ref-counted, ~20 Hz emit), `@mbo`/`@mbo<N>` stream, `mboProbe` debug RPC. Entitlement confirmed on COMEX.GCQ6.
   Web app: DOM "MBO" toggle drawing per-order blocks (width ∝ size, queue order, in-cell size number), dedicated **Vol**

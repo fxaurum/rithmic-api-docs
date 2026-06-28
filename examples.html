@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Client examples (9 ngôn ngữ)</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --yel:#e3b341; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:30px 22px 80px}
+  h1{font-size:25px;color:#fff;margin:0 0 4px} .sub{color:var(--sub);margin:0 0 22px}
+  h2{font-size:20px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin:34px 0 14px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:16px 18px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.55;margin:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  a.h{color:var(--acc);text-decoration:none}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+  .tabs button{background:var(--panel);color:var(--sub);border:1px solid var(--bd);border-radius:8px;padding:6px 14px;cursor:pointer;font:inherit;font-size:13.5px}
+  .tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .bar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .bar .lib{color:var(--sub);font-size:12.5px}
+  .copy{margin-left:auto;background:#16324a;border:1px solid #5a6fb0;color:#9ecbff;border-radius:6px;padding:4px 11px;cursor:pointer;font:12px Segoe UI}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Client examples — gọi gateway từ 9 ngôn ngữ</h1>
+<p class="sub">Gateway = JSON-over-WebSocket kiểu Binance tại <code>ws://127.0.0.1:9001/</code>. Cùng 1 socket cho cả 3 kiểu gọi.</p>
+
+<h2>3 kiểu gọi</h2>
+<table>
+<tr><th>Kiểu</th><th>Gửi</th><th>Nhận</th><th>Phân biệt</th></tr>
+<tr><td><b>① Stream</b> (push)</td><td><code>{method:"SUBSCRIBE",params:["cme.nqu6@trade"],id}</code></td><td><b>n lần</b> <code>{stream,data}</code></td><td>theo <code>stream</code></td></tr>
+<tr><td><b>② RPC inline</b> (query)</td><td><code>{method:"instrumentInfo",params:{…},id}</code></td><td><b>1 lần</b> <code>{id,result}</code> (lỗi: <code>{id,error}</code>)</td><td>theo <code>id</code></td></tr>
+<tr><td><b>③ RPC trigger</b></td><td>SUBSCRIBE <code>*.*@onpnlreplay</code> → <code>{method:"replayPnl",…,id}</code></td><td>ack <code>{id}</code> + data về <b>stream</b> <code>@OnPnlReplay</code></td><td>ack theo <code>id</code>, data theo <code>stream</code></td></tr>
+</table>
+<div class="note">Cách phân loại message giống nhau ở mọi ngôn ngữ: có khoá <code>stream</code> → push; có khoá <code>id</code> → trả lời RPC. RPC <b>inline</b> trả <code>result</code> ngay; RPC <b>trigger</b> chỉ trả ack, data đến qua stream <code>@On*</code>. Stream key không phân biệt hoa thường. Mỗi ví dụ dưới làm cả 3 trong 1 client tối thiểu.</div>
+
+<h2>Ví dụ theo ngôn ngữ</h2>
+<div class="tabs" id="tabs"></div>
+<div class="bar"><span class="lib" id="lib"></span><button class="copy" id="copy">📋 Copy</button></div>
+<pre><code id="out"></code></pre>
+
+<p class="sub" style="margin-top:26px">Xem thêm: <a class="h" href="raw.html">Raw R|API+ (tên REngine, stream &amp; RPC đầy đủ)</a> · <a class="h" href="api.html">API tổng hợp (Binance-style)</a></p>
+</div>
+
+<script type="text/plain" data-lang="Python" data-lib="pip install websockets  ·  asyncio">
+import asyncio, json, itertools, websockets
+
+class Rithmic:
+    def __init__(self, url="ws://127.0.0.1:9001/"):
+        self.url, self.ws = url, None
+        self._id = itertools.count(1)
+        self._pending = {}    # id  -> Future  (RPC)
+        self._streams = {}    # key -> handler (push)
+
+    async def connect(self):
+        self.ws = await websockets.connect(self.url, max_size=None)
+        asyncio.create_task(self._reader())
+
+    async def _reader(self):
+        async for raw in self.ws:
+            m = json.loads(raw)
+            if "stream" in m:                                   # ① PUSH
+                h = self._streams.get(m["stream"].lower())
+                if h: h(m["data"])
+            elif "id" in m:                                     # ②③ RPC response / ack
+                fut = self._pending.pop(m["id"], None)
+                if fut and not fut.done():
+                    fut.set_exception(RuntimeError(m["error"])) if m.get("error") else fut.set_result(m.get("result"))
+
+    async def rpc(self, method, params=None):
+        i = next(self._id); fut = asyncio.get_event_loop().create_future(); self._pending[i] = fut
+        msg = {"method": method, "id": i}
+        if params is not None: msg["params"] = params
+        await self.ws.send(json.dumps(msg))
+        return await asyncio.wait_for(fut, 30)
+
+    async def subscribe(self, streams, handler):
+        for s in streams: self._streams[s.lower()] = handler
+        await self.ws.send(json.dumps({"method": "SUBSCRIBE", "params": streams, "id": next(self._id)}))
+
+async def main():
+    r = Rithmic(); await r.connect()
+    # ① STREAM
+    await r.subscribe(["cme.nqu6@trade"], lambda d: print("trade", d["Price"], d["Size"]))
+    # ② RPC INLINE (trả result ngay)
+    info = await r.rpc("instrumentInfo", {"exchange": "CME", "symbol": "NQU6"})
+    print("tickSize", info["tickSize"])
+    # ③ RPC TRIGGER (kích → data ra stream @OnPnlReplay)
+    await r.subscribe(["*.*@onpnlreplay"], lambda d: print("pnl", d))
+    await r.rpc("replayPnl", {})
+    await asyncio.sleep(10)
+
+asyncio.run(main())
+</script>
+
+<script type="text/plain" data-lang="C#" data-lib=".NET 6+  ·  System.Net.WebSockets (built-in)">
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
+using System.Collections.Concurrent;
+
+var ws = new ClientWebSocket();
+await ws.ConnectAsync(new Uri("ws://127.0.0.1:9001/"), default);
+int id = 0;
+var pending = new ConcurrentDictionary<int, TaskCompletionSource<JsonElement>>();
+var streams = new ConcurrentDictionary<string, Action<JsonElement>>();
+
+// reader loop
+_ = Task.Run(async () => {
+    var buf = new byte[1 << 16]; var sb = new StringBuilder();
+    while (ws.State == WebSocketState.Open) {
+        sb.Clear(); WebSocketReceiveResult r;
+        do { r = await ws.ReceiveAsync(buf, default);
+             sb.Append(Encoding.UTF8.GetString(buf, 0, r.Count)); } while (!r.EndOfMessage);
+        var m = JsonDocument.Parse(sb.ToString()).RootElement;
+        if (m.TryGetProperty("stream", out var s)) {                                   // ① PUSH
+            if (streams.TryGetValue(s.GetString()!.ToLower(), out var h)) h(m.GetProperty("data"));
+        } else if (m.TryGetProperty("id", out var i) && pending.TryRemove(i.GetInt32(), out var tcs)) {
+            if (m.TryGetProperty("error", out var e)) tcs.TrySetException(new Exception(e.GetString())); // ②③ RPC
+            else tcs.TrySetResult(m.TryGetProperty("result", out var res) ? res : default);
+        }
+    }
+});
+
+async Task Send(object o) =>
+    await ws.SendAsync(JsonSerializer.SerializeToUtf8Bytes(o), WebSocketMessageType.Text, true, default);
+
+async Task<JsonElement> Rpc(string method, object? p = null) {
+    int i = ++id; var tcs = new TaskCompletionSource<JsonElement>(); pending[i] = tcs;
+    await Send(p is null ? new { method, id = i } : new { method, @params = p, id = i });
+    return await tcs.Task;
+}
+async Task Subscribe(string[] s, Action<JsonElement> h) {
+    foreach (var k in s) streams[k.ToLower()] = h;
+    await Send(new { method = "SUBSCRIBE", @params = s, id = ++id });
+}
+
+// ① STREAM
+await Subscribe(new[] { "cme.nqu6@trade" }, d => Console.WriteLine($"trade {d.GetProperty("Price")} {d.GetProperty("Size")}"));
+// ② RPC INLINE
+var info = await Rpc("instrumentInfo", new { exchange = "CME", symbol = "NQU6" });
+Console.WriteLine($"tickSize {info.GetProperty("tickSize")}");
+// ③ RPC TRIGGER
+await Subscribe(new[] { "*.*@onpnlreplay" }, d => Console.WriteLine($"pnl {d}"));
+await Rpc("replayPnl", new { });
+await Task.Delay(10000);
+</script>
+
+<script type="text/plain" data-lang="JavaScript" data-lib="browser WebSocket  ·  Node: npm i ws">
+// Browser: WebSocket có sẵn. Node: const WebSocket = require("ws");
+const ws = new WebSocket("ws://127.0.0.1:9001/");
+let id = 0;
+const pending = new Map(), streams = new Map();
+
+ws.onmessage = (ev) => {
+  const m = JSON.parse(ev.data);
+  if (m.stream) {                                          // ① PUSH
+    const h = streams.get(m.stream.toLowerCase()); if (h) h(m.data);
+  } else if (m.id != null && pending.has(m.id)) {          // ②③ RPC
+    const p = pending.get(m.id); pending.delete(m.id);
+    m.error ? p.rej(new Error(m.error)) : p.res(m.result);
+  }
+};
+const send = (o) => ws.send(JSON.stringify(o));
+const rpc = (method, params) => new Promise((res, rej) => {
+  const i = ++id; pending.set(i, { res, rej });
+  send(params === undefined ? { method, id: i } : { method, params, id: i });
+});
+const subscribe = (arr, h) => {
+  arr.forEach((s) => streams.set(s.toLowerCase(), h));
+  send({ method: "SUBSCRIBE", params: arr, id: ++id });
+};
+
+ws.onopen = async () => {
+  // ① STREAM
+  subscribe(["cme.nqu6@trade"], (d) => console.log("trade", d.Price, d.Size));
+  // ② RPC INLINE
+  const info = await rpc("instrumentInfo", { exchange: "CME", symbol: "NQU6" });
+  console.log("tickSize", info.tickSize);
+  // ③ RPC TRIGGER
+  subscribe(["*.*@onpnlreplay"], (d) => console.log("pnl", d));
+  await rpc("replayPnl", {});
+};
+</script>
+
+<script type="text/plain" data-lang="TypeScript" data-lib="npm i ws @types/ws  ·  browser dùng WebSocket toàn cục">
+import WebSocket from "ws";
+
+type RpcResp = { id: number; result?: unknown; error?: string };
+type StreamMsg = { stream: string; data: Record<string, any> };
+type Pending = { res: (v: any) => void; rej: (e: Error) => void };
+
+const ws = new WebSocket("ws://127.0.0.1:9001/");
+let id = 0;
+const pending = new Map<number, Pending>();
+const streams = new Map<string, (d: any) => void>();
+
+ws.on("message", (buf: Buffer) => {
+  const m = JSON.parse(buf.toString()) as Partial<StreamMsg & RpcResp>;
+  if (m.stream) {                                          // ① PUSH
+    streams.get(m.stream.toLowerCase())?.(m.data);
+  } else if (m.id != null && pending.has(m.id)) {          // ②③ RPC
+    const p = pending.get(m.id)!; pending.delete(m.id);
+    m.error ? p.rej(new Error(m.error)) : p.res(m.result);
+  }
+});
+const send = (o: object) => ws.send(JSON.stringify(o));
+const rpc = <T = any>(method: string, params?: object) =>
+  new Promise<T>((res, rej) => {
+    const i = ++id; pending.set(i, { res, rej });
+    send(params === undefined ? { method, id: i } : { method, params, id: i });
+  });
+const subscribe = (arr: string[], h: (d: any) => void) => {
+  arr.forEach((s) => streams.set(s.toLowerCase(), h));
+  send({ method: "SUBSCRIBE", params: arr, id: ++id });
+};
+
+ws.on("open", async () => {
+  // ① STREAM
+  subscribe(["cme.nqu6@trade"], (d) => console.log("trade", d.Price, d.Size));
+  // ② RPC INLINE
+  const info = await rpc<{ tickSize: number }>("instrumentInfo", { exchange: "CME", symbol: "NQU6" });
+  console.log("tickSize", info.tickSize);
+  // ③ RPC TRIGGER
+  subscribe(["*.*@onpnlreplay"], (d) => console.log("pnl", d));
+  await rpc("replayPnl", {});
+});
+</script>
+
+<script type="text/plain" data-lang="C++" data-lib="ixwebsocket + nlohmann/json (header-only)">
+#include <ixwebsocket/IXWebSocket.h>
+#include <nlohmann/json.hpp>
+#include <iostream>
+#include <thread>
+using json = nlohmann::json;
+
+int main() {
+    ix::WebSocket ws;
+    ws.setUrl("ws://127.0.0.1:9001/");
+    int id = 0;
+
+    ws.setOnMessageCallback([&](const ix::WebSocketMessagePtr& msg) {
+        if (msg->type == ix::WebSocketMessageType::Message) {
+            auto m = json::parse(msg->str);
+            if (m.contains("stream"))                        // ① PUSH
+                std::cout << m["stream"].get<std::string>() << " " << m["data"].dump() << "\n";
+            else if (m.contains("id"))                       // ②③ RPC response / ack
+                std::cout << "rpc " << m["id"] << " => "
+                          << (m.contains("result") ? m["result"].dump() : m.value("error", "")) << "\n";
+        }
+        else if (msg->type == ix::WebSocketMessageType::Open) {
+            // ① STREAM
+            ws.send(json({{"method","SUBSCRIBE"}, {"params", {"cme.nqu6@trade"}}, {"id", ++id}}).dump());
+            // ② RPC INLINE
+            ws.send(json({{"method","instrumentInfo"}, {"params", {{"exchange","CME"},{"symbol","NQU6"}}}, {"id", ++id}}).dump());
+            // ③ RPC TRIGGER
+            ws.send(json({{"method","SUBSCRIBE"}, {"params", {"*.*@onpnlreplay"}}, {"id", ++id}}).dump());
+            ws.send(json({{"method","replayPnl"}, {"params", json::object()}, {"id", ++id}}).dump());
+        }
+    });
+
+    ws.start();
+    std::this_thread::sleep_for(std::chrono::seconds(15));
+    ws.stop();
+}
+</script>
+
+<script type="text/plain" data-lang="Java" data-lib="JDK 11+ java.net.http.WebSocket  ·  org.json">
+import java.net.http.*;
+import java.net.URI;
+import org.json.*;
+import java.util.concurrent.*;
+
+public class RithmicClient {
+    static int id = 0;
+    public static void main(String[] a) throws Exception {
+        var http = HttpClient.newHttpClient();
+        var ws = http.newWebSocketBuilder().buildAsync(
+            URI.create("ws://127.0.0.1:9001/"),
+            new WebSocket.Listener() {
+                StringBuilder sb = new StringBuilder();
+                public CompletionStage<?> onText(WebSocket w, CharSequence d, boolean last) {
+                    sb.append(d);
+                    if (last) {
+                        var m = new JSONObject(sb.toString()); sb = new StringBuilder();
+                        if (m.has("stream"))                 // ① PUSH
+                            System.out.println(m.getString("stream") + " " + m.get("data"));
+                        else if (m.has("id"))                // ②③ RPC
+                            System.out.println("rpc " + m.getInt("id") + " => " + m.opt("result"));
+                    }
+                    w.request(1);
+                    return null;
+                }
+            }).join();
+
+        // ① STREAM
+        ws.sendText(new JSONObject().put("method", "SUBSCRIBE")
+            .put("params", new JSONArray().put("cme.nqu6@trade")).put("id", ++id).toString(), true);
+        // ② RPC INLINE
+        ws.sendText(new JSONObject().put("method", "instrumentInfo")
+            .put("params", new JSONObject().put("exchange", "CME").put("symbol", "NQU6")).put("id", ++id).toString(), true);
+        // ③ RPC TRIGGER
+        ws.sendText(new JSONObject().put("method", "SUBSCRIBE")
+            .put("params", new JSONArray().put("*.*@onpnlreplay")).put("id", ++id).toString(), true);
+        ws.sendText(new JSONObject().put("method", "replayPnl")
+            .put("params", new JSONObject()).put("id", ++id).toString(), true);
+
+        Thread.sleep(15000);
+    }
+}
+</script>
+
+<script type="text/plain" data-lang="Go" data-lib="go get github.com/gorilla/websocket">
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "time"
+
+    "github.com/gorilla/websocket"
+)
+
+func main() {
+    c, _, err := websocket.DefaultDialer.Dial("ws://127.0.0.1:9001/", nil)
+    if err != nil { panic(err) }
+    defer c.Close()
+
+    id := 0
+    send := func(v map[string]any) { id++; v["id"] = id; c.WriteJSON(v) }
+
+    go func() {
+        for {
+            var m map[string]json.RawMessage
+            if c.ReadJSON(&m) != nil { return }
+            if s, ok := m["stream"]; ok {                    // ① PUSH
+                fmt.Println("stream", string(s), string(m["data"]))
+            } else if i, ok := m["id"]; ok {                 // ②③ RPC
+                fmt.Println("rpc", string(i), "=>", string(m["result"]))
+            }
+        }
+    }()
+
+    // ① STREAM
+    send(map[string]any{"method": "SUBSCRIBE", "params": []string{"cme.nqu6@trade"}})
+    // ② RPC INLINE
+    send(map[string]any{"method": "instrumentInfo", "params": map[string]string{"exchange": "CME", "symbol": "NQU6"}})
+    // ③ RPC TRIGGER
+    send(map[string]any{"method": "SUBSCRIBE", "params": []string{"*.*@onpnlreplay"}})
+    send(map[string]any{"method": "replayPnl", "params": map[string]any{}})
+
+    time.Sleep(15 * time.Second)
+}
+</script>
+
+<script type="text/plain" data-lang="Rust" data-lib="tokio-tungstenite + serde_json + futures-util">
+use futures_util::{SinkExt, StreamExt};
+use serde_json::{json, Value};
+use tokio_tungstenite::tungstenite::Message;
+
+#[tokio::main]
+async fn main() {
+    let (ws, _) = tokio_tungstenite::connect_async("ws://127.0.0.1:9001/").await.unwrap();
+    let (mut tx, mut rx) = ws.split();
+    let mut id = 0;
+    let mut next = || { id += 1; id };
+
+    // ① STREAM
+    tx.send(Message::Text(json!({"method":"SUBSCRIBE","params":["cme.nqu6@trade"],"id":next()}).to_string())).await.unwrap();
+    // ② RPC INLINE
+    tx.send(Message::Text(json!({"method":"instrumentInfo","params":{"exchange":"CME","symbol":"NQU6"},"id":next()}).to_string())).await.unwrap();
+    // ③ RPC TRIGGER
+    tx.send(Message::Text(json!({"method":"SUBSCRIBE","params":["*.*@onpnlreplay"],"id":next()}).to_string())).await.unwrap();
+    tx.send(Message::Text(json!({"method":"replayPnl","params":{},"id":next()}).to_string())).await.unwrap();
+
+    while let Some(Ok(Message::Text(t))) = rx.next().await {
+        let m: Value = serde_json::from_str(&t).unwrap();
+        if let Some(s) = m.get("stream") {                   // ① PUSH
+            println!("stream {} {}", s, m["data"]);
+        } else if m.get("id").is_some() {                    // ②③ RPC
+            println!("rpc {} => {}", m["id"], m.get("result").unwrap_or(&m["error"]));
+        }
+    }
+}
+</script>
+
+<script type="text/plain" data-lang="Kotlin" data-lib="com.squareup.okhttp3:okhttp  ·  org.json">
+import okhttp3.*
+import org.json.*
+
+fun main() {
+    val client = OkHttpClient()
+    var id = 0
+    val req = Request.Builder().url("ws://127.0.0.1:9001/").build()
+
+    val ws = client.newWebSocket(req, object : WebSocketListener() {
+        override fun onMessage(ws: WebSocket, text: String) {
+            val m = JSONObject(text)
+            when {
+                m.has("stream") -> println("${m.getString("stream")} ${m.get("data")}")   // ① PUSH
+                m.has("id")     -> println("rpc ${m.getInt("id")} => ${m.opt("result")}")  // ②③ RPC
+            }
+        }
+        override fun onOpen(ws: WebSocket, r: Response) {
+            // ① STREAM
+            ws.send(JSONObject().put("method", "SUBSCRIBE")
+                .put("params", JSONArray().put("cme.nqu6@trade")).put("id", ++id).toString())
+            // ② RPC INLINE
+            ws.send(JSONObject().put("method", "instrumentInfo")
+                .put("params", JSONObject().put("exchange", "CME").put("symbol", "NQU6")).put("id", ++id).toString())
+            // ③ RPC TRIGGER
+            ws.send(JSONObject().put("method", "SUBSCRIBE")
+                .put("params", JSONArray().put("*.*@onpnlreplay")).put("id", ++id).toString())
+            ws.send(JSONObject().put("method", "replayPnl")
+                .put("params", JSONObject()).put("id", ++id).toString())
+        }
+    })
+
+    Thread.sleep(15000)
+    ws.close(1000, null)
+    client.dispatcher.executorService.shutdown()
+}
+</script>
+
+<script>
+(function(){
+  var srcs = Array.prototype.slice.call(document.querySelectorAll('script[type="text/plain"][data-lang]'));
+  var tabs = document.getElementById("tabs"), out = document.getElementById("out"), lib = document.getElementById("lib");
+  var cur = 0;
+  function show(i){
+    cur = i;
+    var s = srcs[i];
+    out.textContent = s.textContent.replace(/^\n/, "").replace(/\s+$/, "");
+    lib.textContent = "deps: " + (s.getAttribute("data-lib") || "");
+    Array.prototype.forEach.call(tabs.children, function(b, j){ b.classList.toggle("on", j === i); });
+  }
+  srcs.forEach(function(s, i){
+    var b = document.createElement("button");
+    b.textContent = s.getAttribute("data-lang");
+    b.onclick = function(){ show(i); };
+    tabs.appendChild(b);
+  });
+  document.getElementById("copy").onclick = function(){
+    var t = out.textContent;
+    try { navigator.clipboard.writeText(t); } catch(e){
+      var ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch(_){} ta.remove();
+    }
+    var b = document.getElementById("copy"), o = b.textContent; b.textContent = "✓ đã copy"; setTimeout(function(){ b.textContent = o; }, 1000);
+  };
+  show(0);
+})();
+</script>
+</body>
+</html>

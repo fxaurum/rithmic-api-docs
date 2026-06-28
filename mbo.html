@@ -86,6 +86,8 @@
 <tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Vì sao</span><span class="en">Why</span></th></tr>
 <tr><td><b><span class="vi">Sổ order-by-order</span><span class="en">Order-by-order book</span></b></td><td><code>@mbo</code> / <code>@mbo&lt;N&gt;</code></td>
     <td><span class="vi">Mỗi mức trả <code>[giá, số lệnh, tổng, [sizes…]]</code> — từng lệnh chờ, xếp theo queue. Gateway duy trì sổ per-order từ DBO, emit ~20 Hz.</span><span class="en">Each level returns <code>[price, count, total, [sizes…]]</code> — the resting orders, queue-ordered. Gateway maintains a per-order book from DBO, emits ~20 Hz.</span></td></tr>
+<tr><td><b><span class="vi">DBO thô (từng event)</span><span class="en">Raw DBO events</span></b></td><td><code>@mboraw</code></td>
+    <td><span class="vi">Passthrough <b>mỗi</b> event DBO — <code>New/Change/Delete/Image</code> kèm <code>ExchOrdId</code>, side, giá, size, priority, mốc sàn. Không gộp, không dựng sổ. Dùng khi cần tape order-flow thô.</span><span class="en">Passthrough of <b>every</b> DBO event — <code>New/Change/Delete/Image</code> with <code>ExchOrdId</code>, side, price, size, priority, exchange ts. No conflation, no book-building. For the raw order-flow tape.</span></td></tr>
 <tr><td><span class="vi">Tổng gộp mỗi mức</span><span class="en">Aggregated total</span></td><td><code>@mbo</code> (<code>total</code>) / <code>@depth</code></td>
     <td><span class="vi">MBO <code>total</code> = Σ lệnh trong cửa sổ; <code>@depth</code> cho tổng cả sổ ở mọi mức (sâu hơn cửa sổ MBO).</span><span class="en">MBO <code>total</code> = Σ orders in window; <code>@depth</code> gives the full-book total at every level (deeper than the MBO window).</span></td></tr>
 <tr><td><span class="vi">Kiểm tra entitlement / xem DBO thô</span><span class="en">Verify entitlement / raw DBO</span></td><td><code>mboProbe</code> (RPC)</td>
@@ -99,6 +101,19 @@
     "asks":[ [4152.7, 1, 250, [250]] ] } }</code></pre>
 <p><span class="vi">Mỗi mức = <code>[giá, số lệnh, tổng size, sizes[]]</code>. <code>sizes[]</code> xếp theo <b>queue priority</b> (đầu hàng trước), tối đa 64 lệnh/mức. <code>@mbo&lt;N&gt;</code> cắt top <i>N</i> mức mỗi bên (như <code>@depth&lt;N&gt;</code>).</span>
 <span class="en">Each level = <code>[price, orderCount, totalSize, sizes[]]</code>. <code>sizes[]</code> are sorted by <b>queue priority</b> (front first), capped at 64/level. <code>@mbo&lt;N&gt;</code> slices to the top <i>N</i> levels each side (like <code>@depth&lt;N&gt;</code>).</span></p>
+
+<h3><code>@mboraw</code> <span class="vi">— passthrough DBO thô (1 message / event)</span><span class="en">— raw DBO passthrough (1 message / event)</span></h3>
+<pre><code>{ "stream":"comex.gcq6@mboraw", "data":{
+    "e":"mboraw", "s":"GCQ6",
+    "type":"Change",        // New | Change | Delete | Image
+    "side":"B",             // B | S
+    "p":4152.3,             // price
+    "q":8,                  // size  (-1 = feed khong kem size, vd Delete)
+    "oid":"8246531",        // ExchOrdId
+    "pri":"...",            // queue priority (string)
+    "ts":1718000002360 } }  // exchange source time (ms)</code></pre>
+<div class="note warn"><span class="vi"><b>Cửa sổ + entitlement:</b> <code>@mboraw</code> đi theo CÙNG cửa sổ DBO per-price như <code>@mbo</code> — chỉ có event cho giá trong ±<code>MBO_WIN_TICKS</code> (mặc định 20) quanh BBO; sub kèm <code>@mbo&lt;N&gt;</code> để nới (cửa sổ = MAX chung). Cùng entitlement như <code>@mbo</code>. Tần suất CAO hơn nhiều — chỉ sub khi thực sự xử lý hết; gateway bỏ qua passthrough khi không ai giữ <code>@mboraw</code>.</span>
+<span class="en"><b>Window + entitlement:</b> <code>@mboraw</code> rides the SAME per-price DBO window as <code>@mbo</code> — events only for prices within ±<code>MBO_WIN_TICKS</code> (default 20) of the BBO; subscribe <code>@mbo&lt;N&gt;</code> alongside to widen it (window = shared MAX). Same entitlement as <code>@mbo</code>. Much higher rate — only subscribe if you consume every event; the gateway skips the passthrough when no client holds <code>@mboraw</code>.</span></div>
 
 <h2 id="see"><span class="vi">Thấy gì trên ladder</span><span class="en">What you see</span></h2>
 <p><span class="vi">Bật panel <b>DOM</b>, rồi <b>⚙ → "MBO — order-by-order"</b>. Cột Bid/Ask đổi từ 1 thanh đặc thành <b>1 block/lệnh</b>:</span>

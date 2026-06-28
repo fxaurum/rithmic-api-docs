@@ -25,7 +25,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Fxaurum Rithmic API <span class="ver">API v1.7.0</span></h1>
+  <h1>Fxaurum Rithmic API <span class="ver">API v1.9.0</span></h1>
   <p class="sub">Tài liệu WebSocket gateway + chỉ báo orderflow · WebSocket gateway &amp; orderflow reference</p>
 
   <div class="note">
@@ -34,7 +34,9 @@
   </div>
 
   <div class="grid">
-    <a class="card" href="api.html"><div class="t">API · WebSocket <span class="en">reference</span></div><div class="d">Cổng WS, mọi RPC + stream (klines, aggTrades, options, volumeProfile, continuousInfo…).</div></a>
+    <a class="card" href="api.html"><div class="t">API · WebSocket <span class="en">reference</span></div><div class="d">Cổng WS, mọi RPC + stream tổng hợp (klines, aggTrades, options, volumeProfile, continuousInfo…) + bản đồ "gọi raw nào".</div></a>
+    <a class="card" href="raw.html"><div class="t">Raw R|API+ <span class="en">every callback</span></div><div class="d">Mọi callback Rithmic R|API+ phơi 1-1 ra socket (tên REngine): stream/query/trigger + order entry.</div></a>
+    <a class="card" href="examples.html"><div class="t">Client code <span class="en">9 languages</span></div><div class="d">Ví dụ client tối thiểu (stream · RPC inline · RPC trigger) — Python/C#/JS/TS/C++/Java/Go/Rust/Kotlin.</div></a>
     <a class="card" href="footprint.html"><div class="t">Footprint</div><div class="d">Ladder mua/bán theo giá, POC, delta — dựng từ <code>aggTrades</code> + <code>@trade</code>.</div></a>
     <a class="card" href="volumeprofile.html"><div class="t">Volume Profile</div><div class="d">Volume-at-price, VPOC, Value Area — phiên hiện tại + gộp nhiều phiên.</div></a>
     <a class="card" href="dom.html"><div class="t">DOM <span class="en">order book</span></div><div class="d">Sổ lệnh ladder kiểu SmartDOM từ <code>@depth</code>.</div></a>

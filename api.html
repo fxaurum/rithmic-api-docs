@@ -53,6 +53,7 @@
   <div class="v">Fxaurum gateway · Binance-style</div>
   <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
   <a href="#overview"><span class="vi">Tổng quan</span><span class="en">Overview</span></a>
+  <a href="#rawmap"><span class="vi">→ gọi raw nào</span><span class="en">→ which raw</span></a>
   <a href="#connect"><span class="vi">Kết nối</span><span class="en">Connecting</span></a>
   <a href="#lifecycle"><span class="vi">Vòng đời / nối lại</span><span class="en">Lifecycle &amp; reconnect</span></a>
   <a href="#envelope"><span class="vi">Định dạng message</span><span class="en">Message format</span></a>
@@ -68,8 +69,6 @@
   <a href="#syncstatus">syncStatus</a>
   <a href="#synchistory">syncHistory</a>
   <a href="#rawticks">rawTicks</a>
-  <a href="#account">account</a>
-  <a href="#exchangeinfo">exchangeInfo</a>
   <a href="#instrumentinfo">instrumentInfo</a>
   <a href="#searchsymbol">searchSymbol</a>
   <a href="#instrumentbyunderlying">instrumentByUnderlying</a>
@@ -77,11 +76,13 @@
   <a href="#chainsub">chainSub / chainUnsub</a>
   <a href="#ping">ping</a>
   <a href="#subscribe">SUBSCRIBE / UNSUBSCRIBE</a>
+  <a href="#trading"><span class="vi">Diagnostics (connections)</span><span class="en">Diagnostics (connections)</span></a>
   <div class="grp">Streams</div>
   <a href="#s-trade">@trade</a>
   <a href="#s-book">@bookTicker</a>
   <a href="#s-depth">@depth</a>
   <a href="#s-mbo">@mbo</a>
+  <a href="#s-mbo-raw">@mboraw</a>
   <a href="#s-kline">@kline</a>
   <div class="grp">Reference</div>
   <a href="#intervals"><span class="vi">Khung thời gian</span><span class="en">Intervals</span></a>
@@ -89,9 +90,7 @@
   <a href="#notes"><span class="vi">Lưu ý</span><span class="en">Notes &amp; gotchas</span></a>
   <a href="#changelog"><span class="vi">Lịch sử phiên bản</span><span class="en">Changelog</span></a>
   <div class="grp"><span class="vi">Ví dụ</span><span class="en">Examples</span></div>
-  <a href="#ex-js">JavaScript</a>
-  <a href="#ex-py">Python</a>
-  <a href="#ex-cs">C#</a>
+  <a href="#examples"><span class="vi">Ví dụ (9 ngôn ngữ)</span><span class="en">Examples (9 langs)</span></a>
   <hr>
   <a href="api.md" class="h" target="_blank"><span class="vi">↓ api.md (Markdown cho AI)</span><span class="en">↓ api.md (Markdown for AI)</span></a>
   <a href="footprint.html" class="h"><span class="vi">→ Hướng dẫn Footprint</span><span class="en">→ Footprint guide</span></a>
@@ -103,6 +102,8 @@
   <a href="continuous.html" class="h"><span class="vi">→ Hợp đồng liên tục (continuous)</span><span class="en">→ Continuous contract</span></a>
   <a href="options.html" class="h"><span class="vi">→ Options · GEX · 0DTE</span><span class="en">→ Options · GEX · 0DTE</span></a>
   <a href="storage.html" class="h"><span class="vi">→ Lưu trữ &amp; tối ưu API</span><span class="en">→ Storage &amp; API tuning</span></a>
+  <a href="raw.html" class="h"><span class="vi">→ Raw R|API+ (mọi callback ra socket)</span><span class="en">→ Raw R|API+ (every callback as a socket)</span></a>
+  <a href="examples.html" class="h"><span class="vi">→ Code 9 ngôn ngữ</span><span class="en">→ Code (9 languages)</span></a>
 </nav>
 <main>
 
@@ -126,6 +127,39 @@ receives only those — no client-side filtering needed.</span></p>
 <tr><td>Symbol</td><td><span class="vi">Không phân biệt hoa/thường; server tự viết HOA (<code>esu6</code>→<code>ESU6</code>)</span><span class="en">Case-insensitive; the server upper-cases symbols (<code>esu6</code>→<code>ESU6</code>)</span></td></tr>
 <tr><td>Timestamp</td><td><span class="vi">Unix <b>mili-giây</b> (UTC) ở mọi nơi</span><span class="en">Unix <b>milliseconds</b> (UTC) everywhere</span></td></tr>
 </table>
+
+<h3 id="rawmap"><span class="vi">Mỗi entrypoint gọi Raw R|API+ nào</span><span class="en">Which Raw R|API+ each entrypoint calls</span></h3>
+<p style="color:var(--sub)"><span class="vi">api.html là lớp <b>TỔNG HỢP</b> (Binance-style) đứng <b>trên</b> <a class="h" href="raw.html">Raw R|API+</a>. Mỗi entrypoint gọi / dựng trên raw API sau (tên raw = method REngine):</span>
+<span class="en">api.html is the <b>composite</b> (Binance-style) layer over <a class="h" href="raw.html">Raw R|API+</a>. Each entrypoint calls / builds on the raw API below (raw name = REngine method):</span></p>
+<table>
+<tr><th>api.html</th><th>→ Raw R|API+ (<a class="h" href="raw.html">raw.html</a>)</th><th><span class="vi">Loại</span><span class="en">Kind</span></th></tr>
+<tr><td><code>searchSymbol</code></td><td><code>searchInstrument</code> <span style="color:var(--sub)">(gom nhiều sàn + cache)</span></td><td>curate</td></tr>
+<tr><td><code>optionChain</code></td><td><code>getOptionList</code></td><td>alias</td></tr>
+<tr><td><code>instrumentByUnderlying</code></td><td><code>getInstrumentByUnderlying</code></td><td>alias</td></tr>
+<tr><td><code>volumeProfile</code></td><td><code>getVolumeAtPrice</code></td><td>alias</td></tr>
+<tr><td><code>instrumentInfo</code></td><td><code>getRefData</code> + <code>getPriceIncrInfo</code> <span style="color:var(--sub)">(GỘP 2)</span></td><td>merge</td></tr>
+<tr><td><code>@trade</code></td><td><code>subscribe</code> → <code>OnTradePrint</code> <span style="color:var(--sub)">(+ ghi TickStore)</span></td><td>stream</td></tr>
+<tr><td><code>@bookTicker</code></td><td><code>subscribe</code> → <code>OnBestBidQuote</code>/<code>OnBestAskQuote</code> + <code>OnTradeVolume</code> + <code>OnOpenInterest</code></td><td>stream</td></tr>
+<tr><td><code>@depth</code></td><td><code>subscribe</code> → <code>OnLimitOrderBook</code> + <code>OnBidQuote</code>/<code>OnAskQuote</code></td><td>stream</td></tr>
+<tr><td><code>@mbo</code> / <code>@mboraw</code></td><td><code>subscribeDbo</code> → <code>OnDbo</code></td><td>stream</td></tr>
+<tr><td><code>@kline</code></td><td><code>subscribeBar</code> → <code>OnBar</code> <span style="color:var(--sub)">(+ <code>replayBars</code> + BarStore)</span></td><td>stream</td></tr>
+<tr><td><code>chainSub</code> / <code>chainUnsub</code></td><td><code>subscribeByUnderlying</code> / <code>unsubscribeByUnderlying</code></td><td>stream</td></tr>
+<tr><td><code>klines</code></td><td>BarStore <span style="color:var(--sub)">(← <code>replayBars</code> phân trang)</span></td><td>local</td></tr>
+<tr><td><code>aggTrades</code></td><td>TickStore <span style="color:var(--sub)">(← <code>replayTrades</code>)</span></td><td>local</td></tr>
+<tr><td><code>bigTrades</code></td><td>TickStore <span style="color:var(--sub)">(gom server-side theo tu)</span></td><td>local</td></tr>
+<tr><td><code>volumeProfileRange</code></td><td>TickStore <span style="color:var(--sub)">(gộp nhiều phiên)</span></td><td>local</td></tr>
+<tr><td><code>continuousInfo</code></td><td>ContinuousResolver <span style="color:var(--sub)">(+ <code>searchInstrument</code> + BarStore)</span></td><td>local</td></tr>
+<tr><td><code>syncTicks</code></td><td><code>replayBars(Tick,1)</code> / <code>replayTrades</code> → TickStore <span style="color:var(--sub)">(archiver)</span></td><td>local</td></tr>
+<tr><td><code>syncHistory</code></td><td><code>replayBars</code> → BarStore <span style="color:var(--sub)">(archiver)</span></td><td>local</td></tr>
+<tr><td><code>tickInfo</code> · <code>syncStatus</code></td><td><span style="color:var(--sub)">metadata kho local (không gọi raw)</span></td><td>local</td></tr>
+<tr><td><code>rawTicks</code></td><td><code>replayTrades</code> / <code>replayBars(Tick,1)</code> <span style="color:var(--sub)">(debug, bỏ qua kho)</span></td><td>debug</td></tr>
+<tr><td><code>ping</code></td><td><span style="color:var(--sub)">— (WS keepalive, không gọi REngine)</span></td><td>gateway</td></tr>
+<tr><td><code>SUBSCRIBE</code> / <code>UNSUBSCRIBE</code></td><td><code>subscribe</code> / <code>subscribeBar</code> / <code>subscribeDbo</code> / <code>subscribeByUnderlying</code> <span style="color:var(--sub)">(theo loại stream)</span></td><td>—</td></tr>
+<tr><td><code>connections</code></td><td><span style="color:var(--sub)">— (gateway: plant nào đang login; KHÔNG có method REngine)</span></td><td>gateway</td></tr>
+<tr><td><b>Account · PnL · RMS · Strategy · route</b></td><td><span style="color:var(--sub)">= raw PULLS y nguyên (<code>replayPnl</code>/<code>getProductRmsInfo</code>/<code>listTradeRoutes</code>/<code>listOrderHistoryDates</code>/…) → <a class="h" href="raw.html#call">raw.html</a>, KHÔNG lặp ở api.html</span></td><td>passthrough</td></tr>
+</table>
+<div class="note"><span class="vi"><b>3 loại:</b> <b>alias/merge</b> = pull đọc-1-lần gọi thẳng raw (đổi tên Binance↔REngine, chạy chung handler qua alias) · <b>stream</b> = curated bật bằng <code>subscribe*</code> raw rồi biến đổi · <b>local</b> = gateway-only, dựng từ kho TickStore/BarStore (kho được nạp bởi <code>replayBars</code>/<code>replayTrades</code> raw), <b>không</b> có raw 1-1 — xem API.md.</span>
+<span class="en"><b>3 kinds:</b> <b>alias/merge</b> = read-once pulls calling raw directly (Binance↔REngine names, same handler via alias) · <b>stream</b> = curated, turned on by raw <code>subscribe*</code> then transformed · <b>local</b> = gateway-only, built on TickStore/BarStore (filled by raw <code>replayBars</code>/<code>replayTrades</code>), no raw 1-1 — see API.md.</span></div>
 
 <h2 id="connect"><span class="vi">Kết nối</span><span class="en">Connecting</span></h2>
 <p><span class="vi">Mở WebSocket tới endpoint. Không có bước handshake/login — nối xong là gửi request và subscribe được ngay.</span>
@@ -291,18 +325,8 @@ receives only those — no client-side filtering needed.</span></p>
 <div class="note warn"><span class="vi"><b>rawTicks</b> (debug): <code>count</code> = tổng dòng Rithmic trả (<code>capped:true</code> nếu nhiều hơn mẫu); <code>withOrderId</code> = có id lệnh aggressor (<code>o</code>); <code>firstTs</code>/<code>lastTs</code> = phạm vi thật nhận được. Trả khi có cờ hoàn tất hoặc timeout an toàn 40s. Xem <a class="h" href="storage.html">Storage</a>.</span>
 <span class="en"><b>rawTicks</b> (debug): <code>count</code> = total rows Rithmic returned (<code>capped:true</code> if more than the sample); <code>withOrderId</code> = rows carry the aggressor order id (<code>o</code>); <code>firstTs</code>/<code>lastTs</code> = the range actually returned. Replies on a completion flag or a 40 s safety timeout. See <a class="h" href="storage.html">Storage</a>.</span></div>
 
-<h3 id="account"><span class="tag req">request</span> account</h3>
-<p><span class="vi">Trả về các tài khoản giao dịch đang đăng nhập (flatten từ <code>AccountList</code> của Rithmic).</span>
-<span class="en">Returns the logged-in trading accounts (flattened Rithmic <code>AccountList</code>).</span></p>
-<pre><code>{ "method":"account", "id":3 }
-→ { "id":3, "status":200, "result": { "Accounts":[ { "AccountId":"...", "FcmId":"...", "IbId":"...", "AccountName":"..." } ] } }</code></pre>
-<button class="run" data-method="account">Execute</button><pre class="out"></pre>
-
-<h3 id="exchangeinfo"><span class="tag req">request</span> exchangeInfo</h3>
-<p><span class="vi">Trả về danh sách sàn mà tài khoản truy cập được.</span><span class="en">Returns the list of exchanges available to the account.</span></p>
-<pre><code>{ "method":"exchangeInfo", "id":4 }
-→ { "id":4, "status":200, "result": { "Exchanges":[ ... ] } }</code></pre>
-<button class="run" data-method="exchangeInfo">Execute</button><pre class="out"></pre>
+<div class="note"><span class="vi"><code>account</code> &amp; <code>exchangeInfo</code> là <b>raw 1-1 thuần</b> (trả y nguyên, không biến đổi) → tài liệu ở Raw R|API+: <a class="h" href="raw.html#call"><code>getAccounts</code></a> · <a class="h" href="raw.html#call"><code>listExchanges</code></a>. Gateway vẫn nhận tên cũ qua alias (webapp không đổi).</span>
+<span class="en"><code>account</code> &amp; <code>exchangeInfo</code> are <b>pure raw 1-1</b> (returned as-is) → documented in Raw R|API+: <a class="h" href="raw.html#call"><code>getAccounts</code></a> · <a class="h" href="raw.html#call"><code>listExchanges</code></a>. The gateway still accepts the old names via alias.</span></div>
 
 <h3 id="instrumentinfo"><span class="tag req">request</span> instrumentInfo</h3>
 <p><span class="vi">Thông tin tham chiếu của một mã: <b>tick size</b>, số lẻ giá, <b>ngày hết hạn</b> hợp đồng, point value… (nguồn chuẩn từ Rithmic — đừng đoán tick từ giá).</span>
@@ -395,6 +419,17 @@ receives only those — no client-side filtering needed.</span></p>
 <div class="note"><span class="vi">Sau SUBSCRIBE, các <span class="tag strm">stream</span> event tương ứng về liên tục cho tới khi UNSUBSCRIBE hoặc đóng socket. Subscription được đếm tham chiếu phía server và dùng chung giữa các client.</span>
 <span class="en">After SUBSCRIBE, matching <span class="tag strm">stream</span> events arrive continuously until you UNSUBSCRIBE or the socket closes. Subscriptions are reference-counted server-side and shared across clients.</span></div>
 
+<h2 id="trading"><span class="vi">Diagnostics (gateway-only)</span><span class="en">Diagnostics (gateway-only)</span></h2>
+<div class="note"><span class="vi">Các RPC <b>account / PnL / lịch sử lệnh / RMS / strategy / route</b> (<code>replayPnl</code>, <code>replayAllOrders</code>, <code>productRms</code>, <code>strategyList</code>, <code>tradeRoutes</code>, <code>orderHistoryDates</code>, <code>auxRefData</code>…) là <b>raw R|API+ 1-1</b> → tài liệu đầy đủ ở <a class="h" href="raw.html#call">raw.html (Call)</a> + <a class="h" href="raw.html#order">Order entry</a>. KHÔNG lặp lại ở đây. Dưới đây chỉ giữ thứ <b>gateway-only</b>:</span>
+<span class="en">The <b>account / PnL / order-history / RMS / strategy / route</b> RPCs (<code>replayPnl</code>, <code>replayAllOrders</code>, <code>productRms</code>, <code>strategyList</code>, <code>tradeRoutes</code>…) are <b>raw R|API+ 1-1</b> → fully documented in <a class="h" href="raw.html#call">raw.html (Call)</a> + <a class="h" href="raw.html#order">Order entry</a>. Not duplicated here. Only the <b>gateway-only</b> bit remains below:</span></div>
+<p><span class="vi"><code>connections</code> — kiểm plant Rithmic nào đang login (R Trader: Market Data + Orders; PnL/History nối kèm). <code>repository:false</code> là bình thường (chỉ nối khi agreement chưa ký):</span>
+<span class="en"><code>connections</code> — which Rithmic plants are logged in (R Trader: Market Data + Orders; PnL/History ride along). <code>repository:false</code> is normal (only connects when an agreement is unsigned):</span></p>
+<pre><code>{ "loggedIn":["MarketData","TradingSystem","History","PnL"],
+  "marketData":true, "tradingSystem":true, "pnl":true, "history":true, "repository":false }</code></pre>
+<button class="run" data-method="connections">Execute</button><pre class="out"></pre>
+<div class="note warn"><span class="vi"><b>Order entry</b> (<code>placeOrder</code>/<code>modifyOrder</code>/<code>cancelOrder</code>/<code>bracketOrder</code>/<code>exitPosition</code>) là <b>LỆNH TIỀN THẬT</b> — KHÔNG có nút Execute ở đây để tránh bấm nhầm. Xem <a class="h" href="raw.html#order">Order entry (raw.html)</a> · params đầy đủ <a class="h" href="RAW.md" target="_blank">RAW.md §3④</a>.</span>
+<span class="en"><b>Order entry</b> (<code>placeOrder</code>/<code>modifyOrder</code>/<code>cancelOrder</code>/<code>bracketOrder</code>/<code>exitPosition</code>) is <b>REAL-MONEY</b> — no Execute button here to avoid mis-clicks. See <a class="h" href="raw.html#order">Order entry (raw.html)</a> · full params <a class="h" href="RAW.md" target="_blank">RAW.md §3④</a>.</span></div>
+
 <h2 id="s-trade">Streams</h2>
 <h3 id="s-trade-h"><span class="tag strm">stream</span> <code>@trade</code> — <span class="vi">lệnh khớp</span><span class="en">last-trade prints</span></h3>
 <p><span class="vi">Mỗi event là 1 lệnh khớp. Kèm bên chủ động <code>side</code>.</span><span class="en">One event per executed trade. Carries the aggressor <code>side</code>.</span></p>
@@ -451,6 +486,20 @@ receives only those — no client-side filtering needed.</span></p>
 <tr><td><code>sizes[]</code></td><td><span class="vi">Từng lệnh chờ tại giá đó, <b>xếp theo queue priority</b> (đầu hàng trước), tối đa 64/mức</span><span class="en">Individual resting orders at that price, <b>sorted by queue priority</b> (front first), capped 64/level</span></td></tr></table>
 <div class="note warn"><span class="vi"><b>mboProbe</b> (debug): <code>{"method":"mboProbe","params":{"exchange","symbol","levels","ms"}}</code> — sub DBO quanh BBO vài giây rồi trả <code>{entitled, events, distinctOrders, hasExchOrdId, hasPriority, sample[]}</code> và unsub. Chạy sau khi mở chart mã đó. <code>entitled:true</code> ⇒ DBO chạy → dùng được <code>@mbo</code>.</span>
 <span class="en"><b>mboProbe</b> (debug): <code>{"method":"mboProbe","params":{"exchange","symbol","levels","ms"}}</code> — subscribes DBO around the BBO for a few seconds, returns <code>{entitled, events, distinctOrders, hasExchOrdId, hasPriority, sample[]}</code> and unsubscribes. Run after opening the symbol's chart. <code>entitled:true</code> ⇒ DBO works → <code>@mbo</code> usable.</span></div>
+
+<h3 id="s-mbo-raw"><span class="tag strm">stream</span> <code>@mboraw</code> — <span class="vi">DBO thô (từng event)</span><span class="en">raw DBO (per event)</span></h3>
+<p><span class="vi">Passthrough <b>mỗi</b> event DBO của Rithmic, KHÔNG gộp, KHÔNG dựng sổ — 1 message / event (<code>New</code>/<code>Change</code>/<code>Delete</code>/<code>Image</code>). Dùng khi cần <b>tape order-flow thô</b> thay vì ladder. Đi theo CÙNG cửa sổ ±20 tick + entitlement như <code>@mbo</code> (nới bằng cách sub kèm <code>@mbo&lt;N&gt;</code>). Tần suất CAO hơn nhiều — chỉ sub khi xử lý hết. Xem <a class="h" href="mbo.html">MBO</a>.</span>
+<span class="en">Passthrough of <b>every</b> Rithmic DBO event — no conflation, no book-building — one message per event (<code>New</code>/<code>Change</code>/<code>Delete</code>/<code>Image</code>). For a <b>raw order-flow tape</b> rather than a ladder. Rides the SAME ±20-tick window + entitlement as <code>@mbo</code> (widen by also subscribing <code>@mbo&lt;N&gt;</code>). Much higher rate — only subscribe if you consume it. See <a class="h" href="mbo.html">MBO</a>.</span></p>
+<pre><code>{ "stream":"comex.gcq6@mboraw",
+  "data":{ "e":"mboraw", "s":"GCQ6", "type":"Change",   // New | Change | Delete | Image
+           "side":"B", "p":4152.3, "q":8,                // q = -1 khi feed khong kem size (vd Delete)
+           "oid":"8246531", "pri":"…", "ts":1718000002360 } }</code></pre>
+<table>
+<tr><th><code>type</code></th><td><code>New</code> · <code>Change</code> · <code>Delete</code> · <code>Image</code></td></tr>
+<tr><td><code>oid</code></td><td>ExchOrdId — <span class="vi">khoá lệnh</span><span class="en">the order key</span></td></tr>
+<tr><td><code>pri</code></td><td><span class="vi">queue priority của sàn</span><span class="en">exchange queue priority</span></td></tr>
+<tr><td><code>ts</code></td><td><span class="vi">mốc sàn (ms)</span><span class="en">exchange source time (ms)</span></td></tr></table>
+<button class="run" data-stream="@mboraw">Execute</button><pre class="out"></pre>
 
 <h3 id="s-kline"><span class="tag strm">stream</span> <code>@kline_&lt;interval&gt;</code> — <span class="vi">nến live</span><span class="en">live candles</span></h3>
 <p><span class="vi">Đẩy object nến theo interval. Lưu ý: Rithmic thường chỉ bắn nến khi nến <b>đóng</b>, nên muốn nến <i>đang chạy</i> cập nhật mượt, đa số client tự dựng từ <code>@trade</code> (xem hướng dẫn footprint).</span>
@@ -519,7 +568,10 @@ receives only those — no client-side filtering needed.</span></p>
 <li><span class="vi"><b>Tháng hợp đồng.</b> Futures đáo hạn theo quý (H/M/U/Z). Dùng hợp đồng đang active, vd <code>ESU6</code> = E-mini S&amp;P, tháng 9/2026.</span><span class="en"><b>Contract month.</b> Futures roll quarterly (H/M/U/Z). Use the active contract, e.g. <code>ESU6</code> = E-mini S&amp;P, Sep 2026.</span></li>
 </ul>
 
-<h2 id="ex-js"><span class="vi">Ví dụ</span><span class="en">Examples</span> — JavaScript (browser/Node)</h2>
+<h2 id="examples"><span class="vi">Ví dụ — client code (9 ngôn ngữ)</span><span class="en">Examples — client code (9 languages)</span></h2>
+<div class="note"><span class="vi">Code client tối thiểu cho <b>cả 3 kiểu gọi</b> (stream · RPC inline · RPC trigger) bằng <b>9 ngôn ngữ</b> — Python · C# · JavaScript · TypeScript · C++ · Java · Go · Rust · Kotlin — ở trang riêng (chọn tab + Copy): <a class="h" href="examples.html"><b>→ examples.html</b></a>. Cùng protocol JSON-over-WebSocket cho api.html lẫn raw.html. Vài ví dụ nhanh ngay dưới:</span>
+<span class="en">Minimal client code for <b>all 3 call kinds</b> (stream · RPC inline · RPC trigger) in <b>9 languages</b> — Python · C# · JavaScript · TypeScript · C++ · Java · Go · Rust · Kotlin — on a dedicated page (tabs + Copy): <a class="h" href="examples.html"><b>→ examples.html</b></a>. Same JSON-over-WebSocket protocol for both api.html and raw.html. A few quick ones below:</span></div>
+<h3 id="ex-js">JavaScript (browser/Node)</h3>
 <pre><code>const ws = new WebSocket("ws://127.0.0.1:9001/");
 let id = 1;
 const pending = new Map();
@@ -545,7 +597,7 @@ ws.onopen = async () => {
   ws.send(JSON.stringify({method:"SUBSCRIBE", params:["CME.ESU6@trade","CME.ESU6@bookTicker"], id:id++}));
 };</code></pre>
 
-<h2 id="ex-py"><span class="vi">Ví dụ</span><span class="en">Examples</span> — Python (<code>websockets</code>)</h2>
+<h3 id="ex-py">Python (<code>websockets</code>)</h3>
 <pre><code>import asyncio, json, time, websockets
 
 async def main():
@@ -565,7 +617,7 @@ async def main():
 
 asyncio.run(main())</code></pre>
 
-<h2 id="ex-cs"><span class="vi">Ví dụ</span><span class="en">Examples</span> — C# (<code>ClientWebSocket</code>)</h2>
+<h3 id="ex-cs">C# (<code>ClientWebSocket</code>)</h3>
 <pre><code>using System.Net.WebSockets; using System.Text; using System.Text.Json;
 
 var ws = new ClientWebSocket();
@@ -592,8 +644,26 @@ while (ws.State == WebSocketState.Open) {
 }</code></pre>
 
 <h2 id="changelog"><span class="vi">Lịch sử phiên bản</span><span class="en">Changelog</span></h2>
-<p><span class="vi">Phiên bản API hiện tại: <b>1.7.0</b>. Theo <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — thay đổi phá vỡ tương thích sẽ tăng số MAJOR.</span>
-<span class="en">Current API version: <b>1.7.0</b>. Follows <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — breaking changes bump the MAJOR number.</span></p>
+<p><span class="vi">Phiên bản API hiện tại: <b>1.9.0</b>. Theo <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — thay đổi phá vỡ tương thích sẽ tăng số MAJOR.</span>
+<span class="en">Current API version: <b>1.9.0</b>. Follows <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — breaking changes bump the MAJOR number.</span></p>
+
+<h3>1.9.0 — 2026-06-28</h3>
+<ul>
+<li><span class="vi"><b>Raw R|API+ hoàn chỉnh + đổi tên theo REngine.</b> Tên các RPC <b>pull</b> đổi sang <b>method REngine</b> (<code>getOptionList</code>/<code>searchInstrument</code>/<code>listExchanges</code>/<code>getVolumeAtPrice</code>…); tên Binance cũ giữ làm <b>alias</b> trong dispatch (webapp/chart không đổi). <code>replaySingleHistoricalOrder</code> được expose. Mọi callback/replay/report cụm Lệnh đã ghi + xác minh shape (PII đã ẩn). Xem <a class="h" href="raw.html">Raw R|API+</a>.</span>
+<span class="en"><b>Raw R|API+ completed + REngine renaming.</b> <b>Pull</b> RPC names switched to the <b>REngine method</b> (<code>getOptionList</code>/<code>searchInstrument</code>/<code>listExchanges</code>/<code>getVolumeAtPrice</code>…); old Binance names kept as dispatch <b>aliases</b> (chart unchanged). <code>replaySingleHistoricalOrder</code> exposed. Every order callback/replay/report shape documented &amp; verified (PII redacted). See <a class="h" href="raw.html">Raw R|API+</a>.</span></li>
+<li><span class="vi"><b>Order entry gộp vào <a class="h" href="raw.html#order">raw.html §Order entry</a> + RAW.md §3④</b> (bỏ trang/ file orders.html &amp; ORDERS.md riêng). <b>examples.html — code client 9 ngôn ngữ</b> (Python/C#/JS/TS/C++/Java/Go/Rust/Kotlin) cho stream / RPC-inline / RPC-trigger.</span>
+<span class="en"><b>Order entry folded into <a class="h" href="raw.html#order">raw.html §Order entry</a> + RAW.md §3④</b> (separate orders.html &amp; ORDERS.md removed). <b>examples.html — 9-language client code</b> (Python/C#/JS/TS/C++/Java/Go/Rust/Kotlin) for stream / RPC-inline / RPC-trigger.</span></li>
+<li><span class="vi"><b>api.html dọn gọn.</b> Thêm mục <a class="h" href="#rawmap">→ gọi raw nào</a> (mỗi entrypoint tổng hợp gọi raw R|API+ nào); bỏ alias thuần (<code>account</code>/<code>exchangeInfo</code> → raw.html <code>getAccounts</code>/<code>listExchanges</code>) + bảng Account/PnL/RMS trùng (raw passthrough → raw.html), giữ lại <code>connections</code> (gateway-only).</span>
+<span class="en"><b>api.html decluttered.</b> Added <a class="h" href="#rawmap">→ which raw</a> (which raw R|API+ each composite entrypoint calls); removed pure aliases (<code>account</code>/<code>exchangeInfo</code> → raw.html <code>getAccounts</code>/<code>listExchanges</code>) + the redundant Account/PnL/RMS table (raw passthrough → raw.html); kept gateway-only <code>connections</code>.</span></li>
+<li><span class="vi"><b>App:</b> xem <b>tài liệu API không cần login</b> (Rithmic bảo trì vẫn mở api.html/raw.html — gateway chạy chế độ doc-only); MainForm tách nút <b>Web Chart</b> / <b>Tài liệu</b>.</span>
+<span class="en"><b>App:</b> <b>view API docs without logging in</b> (api.html/raw.html open even during Rithmic maintenance — gateway runs doc-only); MainForm split into <b>Web Chart</b> / <b>Docs</b> buttons.</span></li>
+</ul>
+
+<h3>1.8.0 — 2026-06-26</h3>
+<ul>
+<li><span class="vi"><b>Raw R|API+ passthrough — mọi callback rapiplus thành 1 stream (1-1).</b> Bus <code>OnAny</code> phơi <b>mỗi</b> callback push thành stream <code>&lt;exch&gt;.&lt;sym&gt;@&lt;Callback&gt;</code> (hoặc <code>*.*@&lt;Callback&gt;</code> toàn cục). Thêm các RPC pull/subscribe còn lại (PnL, lịch sử lệnh/execution, RMS, strategy…). <b>Order entry</b> (<code>placeOrder</code>/<code>modifyOrder</code>/<code>cancelOrder</code>/<code>bracketOrder</code>/<code>exitPosition</code>). <code>@mboraw</code> (DBO thô). Raw event inspector trong web app. Xem <a class="h" href="raw.html">RAW</a>.</span>
+<span class="en"><b>Raw R|API+ passthrough — every rapiplus callback as a 1-to-1 stream.</b> An <code>OnAny</code> bus turns <b>each</b> push callback into <code>&lt;exch&gt;.&lt;sym&gt;@&lt;Callback&gt;</code> (or global <code>*.*@&lt;Callback&gt;</code>). Added the remaining pull/subscribe RPCs (PnL, order/execution history, RMS, strategy…). <b>Order entry</b> (<code>placeOrder</code>/<code>modifyOrder</code>/<code>cancelOrder</code>/<code>bracketOrder</code>/<code>exitPosition</code>). <code>@mboraw</code> (raw DBO). Raw event inspector in the web app. See <a class="h" href="raw.html">RAW</a>.</span></li>
+</ul>
 
 <h3>1.7.0 — 2026-06-22</h3>
 <ul>
@@ -683,8 +753,8 @@ while (ws.State == WebSocketState.Open) {
 <ul>
 <li><span class="vi">Phát hành đầu. Streams: <code>@trade</code>, <code>@bookTicker</code>, <code>@depth[N]</code>, <code>@kline_&lt;interval&gt;</code>.</span>
 <span class="en">Initial release. Streams: <code>@trade</code>, <code>@bookTicker</code>, <code>@depth[N]</code>, <code>@kline_&lt;interval&gt;</code>.</span></li>
-<li><span class="vi">Requests: <code>klines</code>, <code>aggTrades</code>, <code>account</code>, <code>exchangeInfo</code>, <code>instrumentInfo</code>, <code>searchSymbol</code>, <code>ping</code>, <code>SUBSCRIBE</code>/<code>UNSUBSCRIBE</code>.</span>
-<span class="en">Requests: <code>klines</code>, <code>aggTrades</code>, <code>account</code>, <code>exchangeInfo</code>, <code>instrumentInfo</code>, <code>searchSymbol</code>, <code>ping</code>, <code>SUBSCRIBE</code>/<code>UNSUBSCRIBE</code>.</span></li>
+<li><span class="vi">Requests: <code>klines</code>, <code>aggTrades</code>, <code>instrumentInfo</code>, <code>searchSymbol</code>, <code>ping</code>, <code>SUBSCRIBE</code>/<code>UNSUBSCRIBE</code> (account/exchangeInfo → raw.html: getAccounts/listExchanges).</span>
+<span class="en">Requests: <code>klines</code>, <code>aggTrades</code>, <code>instrumentInfo</code>, <code>searchSymbol</code>, <code>ping</code>, <code>SUBSCRIBE</code>/<code>UNSUBSCRIBE</code> (account/exchangeInfo → raw.html: getAccounts/listExchanges).</span></li>
 <li><span class="vi">Footprint = <code>aggTrades</code> (lịch sử) + <code>@trade</code> (live). Timestamp Unix mili-giây ở mọi nơi.</span>
 <span class="en">Footprint = <code>aggTrades</code> (history) + <code>@trade</code> (live). Timestamps are Unix milliseconds everywhere.</span></li>
 </ul>
@@ -725,12 +795,26 @@ while (ws.State == WebSocketState.Open) {
         try{ w.send(JSON.stringify({method:"UNSUBSCRIBE",params:[name],id:id++})); }catch(e){} res(got); };
       scb.set(key,(d)=>{ got.push(d); if(got.length>=maxN) fin(); });
       w.send(JSON.stringify({method:"SUBSCRIBE",params:[name],id:id++})); setTimeout(fin,ms); }); }
-  function show(out,v){ let s; if(Array.isArray(v)){ s=JSON.stringify(v.slice(0,8),null,1); if(v.length>8) s+="\n… ("+v.length+" phần tử)"; }
-    else s=JSON.stringify(v,null,1); out.textContent=s; }
-  async function run(btn){ const out=btn.nextElementSibling; out.style.display="block"; out.textContent="⏳ đang chạy…"; btn.disabled=true;
+  function fmt(v){ if(Array.isArray(v)){ let s=JSON.stringify(v.slice(0,20),null,2); if(v.length>20) s+="\n… ("+v.length+" phần tử)"; return s; } return JSON.stringify(v,null,2); }
+  let _modal=null,_mTitle=null,_mOut=null;
+  function modalShow(title,text){
+    if(!_modal){ _modal=document.createElement("div");
+      _modal.style.cssText="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55)";
+      _modal.innerHTML='<div style="position:absolute;right:20px;top:20px;bottom:20px;width:min(740px,92vw);background:#0e1116;border:1px solid #283041;border-radius:12px;box-shadow:0 10px 40px #000b;display:flex;flex-direction:column"><div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #283041;font:13px Segoe UI"><b id="amTitle" style="color:#fff">—</b><button id="amCopy" style="margin-left:auto;background:#16324a;border:1px solid #5a6fb0;color:#9ecbff;border-radius:6px;padding:3px 10px;cursor:pointer;font:12px Segoe UI">📋 Copy</button><button id="amClose" style="background:none;border:0;color:#8b949e;font-size:18px;cursor:pointer">✕</button></div><pre id="amOut" style="margin:0;flex:1;overflow:auto;padding:14px;background:#0b0f14;border-radius:0 0 12px 12px;font:12.5px Consolas;white-space:pre-wrap;color:#aeb6bf"></pre></div>';
+      document.body.appendChild(_modal);
+      _modal.addEventListener("click",e=>{ if(e.target===_modal) _modal.style.display="none"; });
+      _modal.querySelector("#amClose").onclick=()=>_modal.style.display="none";
+      _modal.querySelector("#amCopy").onclick=()=>{ const t=_mOut.textContent; try{navigator.clipboard.writeText(t);}catch(e){ const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(_){}ta.remove(); } const b=_modal.querySelector("#amCopy"),o=b.textContent;b.textContent="✓ đã copy";setTimeout(()=>b.textContent=o,1000); };
+      document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&_modal) _modal.style.display="none"; });
+      _mTitle=_modal.querySelector("#amTitle"); _mOut=_modal.querySelector("#amOut");
+    }
+    _mTitle.textContent=title; _mOut.textContent=text; _modal.style.display="block";
+  }
+  async function run(btn){ const title=btn.dataset.stream?(EXCH+"."+SYM+btn.dataset.stream):btn.dataset.method;
+    modalShow(title,"⏳ đang chạy…"); btn.disabled=true;
     try{ const now=Date.now();
       if(btn.dataset.stream){ const ev=await stream((EXCH+"."+SYM+btn.dataset.stream).toLowerCase(),4000,3);
-        if(ev.length) show(out,ev); else out.textContent="(không có event trong 4s — ngoài giờ giao dịch?)"; }
+        modalShow(title, ev.length? fmt(ev) : "(không có event trong 4s — ngoài giờ giao dịch?)"); }
       else{ const m=btn.dataset.method; let p;
         if(m==="klines") p={exchange:EXCH,symbol:SYM,interval:"1m",startTime:now-3*864e5,endTime:now,limit:30};
         else if(m==="aggTrades") p={exchange:EXCH,symbol:SYM,startTime:now-30*6e4,endTime:now,limit:30};
@@ -738,13 +822,20 @@ while (ws.State == WebSocketState.Open) {
         else if(m==="instrumentInfo") p={exchange:EXCH,symbol:SYM};
         else if(m==="searchSymbol") p={query:(SYM.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||SYM),exchange:EXCH};
         else if(m==="instrumentByUnderlying") p={underlying:SYM,exchange:EXCH,expiration:""};
-        else if(m==="optionChain") p={exchange:EXCH,product:(SYM.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||SYM)};   // expiration mặc định = tháng này
+        else if(m==="optionChain"){ const _m=SYM.match(/([FGHJKMNQUVXZ])(\d{1,2})$/); const _e=_m?(""+(_m[2].length===1?2020+ +_m[2]:2000+ +_m[2])+String({F:1,G:2,H:3,J:4,K:5,M:6,N:7,Q:8,U:9,V:10,X:11,Z:12}[_m[1]]).padStart(2,"0")):""; p={exchange:EXCH,product:(SYM.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||SYM),expiration:_e}; }   // suy expiration YYYYMM từ mã (NQU6->202609); để trống -> gateway mặc định tháng này (dễ trúng option đã hết hạn rp=7)
         else if(m==="tickInfo") p={exchange:EXCH,symbols:[SYM]};
         else if(m==="volumeProfile") p={exchange:EXCH,symbol:SYM};
         else if(m==="volumeProfileRange") p={exchange:EXCH,symbol:SYM,days:5,split:"1"};
         else if(m==="continuousInfo") p={exchange:EXCH,root:(SYM.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||SYM),rule:"date",adjust:"1"};
-        show(out, await req(m,p)); }
-    }catch(e){ out.textContent="Lỗi: "+e.message; } finally{ btn.disabled=false; } }
+        // ----- account-based (account mặc định nếu bỏ trống) -----
+        else if(["subscribePnl","replayPnl","replayOpenOrders","replayBrackets","replayQuotes","productRms","assignedUsers","subscribeAutoLiquidate","subscribeOrders","tradeRoutes","orderHistoryDates","easyToBorrow","listEnvironments"].includes(m)) p={};
+        else if(m==="replayAllOrders"||m==="replayExecutions") p={startTime:now-7*864e5,endTime:now};
+        else if(m==="strategyList") p={exchange:EXCH,product:(SYM.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||SYM),strategyType:"",expiration:""};
+        else if(m==="strategyInfo"||m==="auxRefData") p={exchange:EXCH,symbol:SYM};
+        else if(m==="binaryContracts") p={exchange:EXCH,product:(SYM.replace(/[FGHJKMNQUVXZ]\d{1,2}$/,"")||SYM)};
+        else if(m==="environment") p={key:""};
+        modalShow(title, fmt(await req(m,p))); }
+    }catch(e){ modalShow(title,"Lỗi: "+e.message); } finally{ btn.disabled=false; } }
   document.addEventListener("click",(e)=>{ const b=e.target.closest(".run"); if(b){ e.preventDefault(); run(b); } });
   document.addEventListener("input",(e)=>{ if(e.target.id==="trySym") SYM=(e.target.value.trim().toUpperCase())||"ESU6";
     if(e.target.id==="tryExch") EXCH=(e.target.value.trim().toUpperCase())||"CME"; });
