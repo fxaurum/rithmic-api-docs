@@ -22,12 +22,11 @@ All under `%LOCALAPPDATA%\FxaurumRithmic\` (Windows).
 ### TickStore record format (v2)
 - `.tick` — a **32-byte header** (magic `FXTK`, version `2`, recSize `29`) then fixed **29-byte** records: `time` (int64 ms, 8) ·
   `price` (double, 8) · `qty` (int32, 4) · `side` (byte, 1 — `B`/`S`/`0`) · **`tu`** (int64, 8). `tu` = exchange match time in
-  **microseconds** (`SourceSsboe*1e6 + SourceUsecs`); it is now stored **in-record** — the old parallel `.fxu` sidecar is gone
-  (that removed the `.fxt`/`.fxu` mis-alignment bug). Group cumulative trades like ATAS by identical `tu`. Only days recorded by
-  very old builds are `tu`-less (fall back to a ms-window when grouping). **Live-write dedup** drops only the immediately-repeated
+  **microseconds** (`SourceSsboe*1e6 + SourceUsecs`); it is stored **in-record**. Group cumulative trades like ATAS by identical
+  `tu`. **Live-write dedup** drops only the immediately-repeated
   record matching on **all of `(ms, price, qty, side, tu)`** — that suppresses Rithmic's Image-snapshot resend on (re)subscribe
   **without** dropping two genuine trades at the same ms/price/qty/side (they differ in `tu`), so session volume isn't undercounted.
-- `tick.coverage` — one small **text** index per symbol (replaces every per-session `.fxv` marker): lines `<tag> <fullUpToMs>
+- `tick.coverage` — one small **text** index per symbol: lines `<tag> <fullUpToMs>
   <flag>` where the flag is `D` = has data · `V` = **verified-complete** (a clean grab reached the session end) · `E` =
   checked-empty · `P` = pre-liquid (skipped) — plus an optional `FINAL <tag>` line meaning the contract is fully captured to
   its last session → never synced again. Flags don't downgrade (rank `V` > `D` > `E`/`P`); `D`/`V` both count as "has data".
@@ -46,10 +45,6 @@ All under `%LOCALAPPDATA%\FxaurumRithmic\` (Windows).
     grab fills it first, *then* `V`), so the self-heal above is unaffected.
   - **Durability:** the merge/rewrite path `fsync`s the temp file then atomically renames; coverage is written **only after** the
     data write succeeds. Killing the process mid-merge leaves the old file intact, never a half-written one.
-
-> **Migration is automatic.** Old layouts (folder `Database`, 3-file `.fxt`+`.fxu`+`.fxv` per session, `.fxk`/`.fxb`) are
-> converted in place on first run with **zero tick loss** (folder `Database`→`TickDb`; `.fxt`(+`.fxu`)→`.tick`; `.fxv`→`tick.coverage`;
-> `.fxb`→`.bigcache`). The **wire format** (`@trade`/`aggTrades`/`bigTrades`) is unchanged.
 
 ### Session partitioning (the key idea)
 `DayKey(ms) = CentralOf(ms).AddHours(24 − 17).Date` → the **CME Globex trade-date** (session rolls **17:00 CT**, DST-aware via
