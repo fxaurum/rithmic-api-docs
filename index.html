@@ -23,6 +23,9 @@
   a.card.core:hover{ border-color:var(--acc); }
   a.card.core .t{ color:#d6e6ff; }
   a.card.core .d{ color:#9fb4d4; }
+  .dlbtn{ display:inline-flex; align-items:center; gap:8px; background:#16233c; border:1px solid #2f5aa0; color:#d6e6ff; border-radius:8px; padding:10px 18px; text-decoration:none; font-size:14px; font-weight:600; margin:0 0 22px; cursor:pointer; }
+  .dlbtn:hover{ border-color:var(--acc); }
+  .dlbtn .s{ color:var(--sub); font-weight:400; font-size:12.5px; }
   footer{ color:var(--sub); font-size:12.5px; margin-top:34px; border-top:1px solid var(--bd); padding-top:16px; }
   code{ background:#0b0f14; border:1px solid var(--bd); border-radius:4px; padding:1px 5px; font-size:12.5px; }
 </style>
@@ -31,6 +34,8 @@
 <div class="wrap">
   <h1>Fxaurum Rithmic API <span class="ver">API v1.9.0</span></h1>
   <p class="sub">Tài liệu WebSocket gateway + chỉ báo orderflow · WebSocket gateway &amp; orderflow reference</p>
+
+  <a id="dlAll" href="#" class="dlbtn">⬇ Tải toàn bộ tài liệu <span class="s">(.md gộp 1 file — cho AI đọc / for an LLM)</span></a>
 
   <div class="note">
     <b>Lưu ý / Note:</b> Các nút <b>Execute</b> trong <code>API</code> gọi tới <code>ws://127.0.0.1:9001</code> — chỉ chạy khi <b>app FxaurumRithmicApi đang mở trên chính máy bạn</b>. Trên trang online chúng dùng để <i>đọc tham khảo</i>; muốn thử thật thì mở app local rồi bấm.
@@ -58,5 +63,48 @@
     Each page also has a Markdown version (<code>API.md</code>, <code>FOOTPRINT.md</code>, …) in this repo.
   </footer>
 </div>
+<script>
+(function(){
+  // Gộp MỌI file .md trong repo thành 1 file để nạp cho LLM khác đọc.
+  var FILES = ["README.md","API.md","RAW.md","FOOTPRINT.md","BIGTRADES.md","RECIPES.md","DOM.md","MBO.md","HEATMAP.md","VOLUMEPROFILE.md","CONTINUOUS.md","OPTIONS.md","STORAGE.md"];
+  var btn = document.getElementById("dlAll");
+  if(!btn) return;
+  btn.addEventListener("click", async function(e){
+    e.preventDefault();
+    if(btn.dataset.busy) return; btn.dataset.busy = "1";
+    var label = btn.innerHTML; btn.textContent = "⏳ đang gộp " + FILES.length + " file…";
+    try{
+      var base = location.href.replace(/[^\/]*$/, "");   // thư mục hiện tại
+      var out = ["# Fxaurum Rithmic API — toàn bộ tài liệu (.md gộp 1 file)",
+                 "",
+                 "Nguồn / source: " + base,
+                 "Tạo lúc / generated: " + new Date().toISOString(),
+                 "Gồm " + FILES.length + " file: " + FILES.join(", "),
+                 "", ""].join("\n");
+      var ok = 0;
+      for(var i=0;i<FILES.length;i++){
+        var f = FILES[i], txt;
+        try{ var r = await fetch(base + f, {cache:"no-store"}); txt = r.ok ? await r.text() : "> (HTTP " + r.status + " — không tải được " + f + ")"; if(r.ok) ok++; }
+        catch(err){ txt = "> (lỗi tải " + f + ": " + err.message + ")"; }
+        out += "\n\n\n<!-- ============================================================ -->\n";
+        out += "# ▼ FILE: " + f + "\n";
+        out += "<!-- ============================================================ -->\n\n";
+        out += txt;
+      }
+      var blob = new Blob([out], {type:"text/markdown;charset=utf-8"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = "fxaurum-rithmic-api-docs.md";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+      btn.innerHTML = "✓ đã tải " + ok + "/" + FILES.length + " file";
+      setTimeout(function(){ btn.innerHTML = label; delete btn.dataset.busy; }, 2500);
+    }catch(err){
+      btn.textContent = "Lỗi: " + err.message; delete btn.dataset.busy;
+      setTimeout(function(){ btn.innerHTML = label; }, 3000);
+    }
+  });
+})();
+</script>
 </body>
 </html>
