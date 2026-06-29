@@ -67,3 +67,17 @@ kiểu Binance phát data futures/options Rithmic (R|API+).
 - Bắt đầu 1 symbol (vd `CME.NQU6`), đổi qua `searchSymbol`.
 
 Trước khi code: đọc file `.md` gộp, tóm tắt kiến trúc + danh sách stream/RPC sẽ dùng, rồi mới dựng.
+
+## PHẢN HỒI (quan trọng)
+Trong lúc đọc API và dựng app, nếu bạn phát hiện **vấn đề** (tài liệu thiếu/mâu thuẫn, API khó
+dùng, thiếu field cần thiết, payload không đủ để dựng panel, bug, rủi ro) HOẶC có **đề xuất cải
+tiến** (thêm RPC/stream/field, đổi format, tối ưu luồng dữ liệu, gom call…) → **ĐỪNG tự ý sửa
+gateway**. Hãy **liệt kê rõ ràng để người dùng xem và quyết định**: mỗi mục ghi (1) vấn đề/đề
+xuất, (2) ảnh hưởng tới việc dựng panel nào, (3) gợi ý cách giải quyết. Cứ dựng phần làm được
+trước, đánh dấu chỗ phải workaround vì API chưa hỗ trợ.
+
+> NOTE FOR THE AI: while reading the API / building, if you hit any **problem** (missing or
+> contradictory docs, awkward API, missing field, insufficient payload, bug, risk) or have an
+> **improvement idea** (new RPC/stream/field, format change, data-flow optimization) — do **not**
+> change the gateway yourself; **list it clearly for the user to review and decide** (problem →
+> which panel it affects → suggested fix). Build what's possible first and flag any workarounds.
