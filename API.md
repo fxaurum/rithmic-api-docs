@@ -719,7 +719,7 @@ while (ws.State == WebSocketState.Open) {
 Current API version: **1.9.1**. Follows SemVer — breaking changes bump the MAJOR number.
 
 ### 1.9.1 — 2026-06-29
-- **In-app docs landing + offline build prompt.** The gateway now serves a docs index at **`/docs.html`** (card grid + a "download all .md merged" button for feeding an LLM); the app's **Docs** button opens it instead of jumping straight to api.html. A **Build prompt** page (**`/build.html`**, rendered from `BUILD_PROMPT.md`, with a Copy button + a sample screenshot) ships embedded too — a paste-and-go prompt that has another AI read this API and rebuild the "Market Structure" dashboard. Both work in doc-only mode (no Rithmic login).
+- **In-app docs landing + offline build prompt.** The gateway now serves a docs index at **`/index.html`** (card grid + a "download all .md merged" button for feeding an LLM; `/` stays the web chart); the app's **Docs** button opens it instead of jumping straight to api.html. A **Build prompt** page (**`/build.html`**, rendered from `BUILD_PROMPT.md`, with a Copy button + a sample screenshot) ships embedded too — a paste-and-go prompt that has another AI read this API and rebuild the "Market Structure" dashboard. Both work in doc-only mode (no Rithmic login).
 - **Feedback note for AI consumers.** The build prompt and the merged-.md header now ask any AI reading the API to surface problems / improvement ideas for the user to review rather than changing the gateway itself.
 
 ### 1.9.0 — 2026-06-28

@@ -92,7 +92,7 @@
   <div class="grp"><span class="vi">Ví dụ</span><span class="en">Examples</span></div>
   <a href="#examples"><span class="vi">Ví dụ (9 ngôn ngữ)</span><span class="en">Examples (9 langs)</span></a>
   <hr>
-  <a href="docs.html" class="h"><span class="vi">🏠 Mục lục tài liệu</span><span class="en">🏠 All docs</span></a>
+  <a href="index.html" class="h"><span class="vi">🏠 Mục lục tài liệu</span><span class="en">🏠 All docs</span></a>
   <a href="api.md" class="h" target="_blank"><span class="vi">↓ api.md (Markdown cho AI)</span><span class="en">↓ api.md (Markdown for AI)</span></a>
   <a href="footprint.html" class="h"><span class="vi">→ Hướng dẫn Footprint</span><span class="en">→ Footprint guide</span></a>
   <a href="bigtrades.html" class="h"><span class="vi">→ Big trades (parity ATAS)</span><span class="en">→ Big trades (ATAS parity)</span></a>
@@ -650,8 +650,8 @@ while (ws.State == WebSocketState.Open) {
 
 <h3>1.9.1 — 2026-06-29</h3>
 <ul>
-<li><span class="vi"><b>Trang mục lục tài liệu trong app + build prompt offline.</b> Gateway phục vụ trang mục lục <code>/docs.html</code> (lưới card + nút <b>tải gộp toàn bộ .md</b> cho AI đọc); nút <b>Tài liệu</b> mở trang này thay vì nhảy thẳng api.html. Trang <b>Build prompt</b> (<code>/build.html</code>, render từ <code>BUILD_PROMPT.md</code>, có nút Copy + ảnh mẫu) nay nhúng sẵn — prompt dán-là-chạy để AI khác đọc API rồi dựng lại dashboard “Market Structure”. Cả hai chạy được ở chế độ doc-only (không cần login).</span>
-<span class="en"><b>In-app docs landing + offline build prompt.</b> The gateway serves a docs index at <code>/docs.html</code> (card grid + a <b>download-all-.md</b> button for feeding an LLM); the <b>Docs</b> button opens it instead of jumping straight to api.html. A <b>Build prompt</b> page (<code>/build.html</code>, rendered from <code>BUILD_PROMPT.md</code>, with a Copy button + sample screenshot) now ships embedded — a paste-and-go prompt for another AI to read this API and rebuild the “Market Structure” dashboard. Both work in doc-only mode (no login).</span></li>
+<li><span class="vi"><b>Trang mục lục tài liệu trong app + build prompt offline.</b> Gateway phục vụ trang mục lục <code>/index.html</code> (lưới card + nút <b>tải gộp toàn bộ .md</b> cho AI đọc; <code>/</code> vẫn là web chart); nút <b>Tài liệu</b> mở trang này thay vì nhảy thẳng api.html. Trang <b>Build prompt</b> (<code>/build.html</code>, render từ <code>BUILD_PROMPT.md</code>, có nút Copy + ảnh mẫu) nay nhúng sẵn — prompt dán-là-chạy để AI khác đọc API rồi dựng lại dashboard “Market Structure”. Cả hai chạy được ở chế độ doc-only (không cần login).</span>
+<span class="en"><b>In-app docs landing + offline build prompt.</b> The gateway serves a docs index at <code>/index.html</code> (card grid + a <b>download-all-.md</b> button for feeding an LLM; <code>/</code> stays the web chart); the <b>Docs</b> button opens it instead of jumping straight to api.html. A <b>Build prompt</b> page (<code>/build.html</code>, rendered from <code>BUILD_PROMPT.md</code>, with a Copy button + sample screenshot) now ships embedded — a paste-and-go prompt for another AI to read this API and rebuild the “Market Structure” dashboard. Both work in doc-only mode (no login).</span></li>
 <li><span class="vi"><b>Ghi chú phản hồi cho AI.</b> Build prompt và header của file <code>.md</code> gộp đề nghị: AI nào đọc API mà thấy vấn đề / ý cải tiến thì <b>nêu cho người dùng xem &amp; quyết định</b>, không tự sửa gateway.</span>
 <span class="en"><b>Feedback note for AI consumers.</b> The build prompt and the merged-<code>.md</code> header ask any AI reading the API to <b>surface problems / improvement ideas for the user to review</b> rather than changing the gateway itself.</span></li>
 </ul>
