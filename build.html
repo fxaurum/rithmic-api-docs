@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build prompt — Fxaurum Rithmic API</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e; --acc:#2f81f7; --yel:#e3b341; --code:#0b0f14; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--txt); font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+  .wrap{ max-width:920px; margin:0 auto; padding:30px 22px 80px; }
+  .bar{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 22px; }
+  .btn{ display:inline-flex; align-items:center; gap:8px; background:#16233c; border:1px solid #2f5aa0; color:#d6e6ff; border-radius:8px; padding:9px 16px; text-decoration:none; font:600 14px/1 Segoe UI; cursor:pointer; }
+  .btn:hover{ border-color:var(--acc); }
+  .btn.ghost{ background:transparent; color:var(--sub); border-color:var(--bd); font-weight:400; }
+  a.home{ color:var(--sub); text-decoration:none; font-size:13.5px; margin-right:auto; }
+  a.home:hover{ color:var(--txt); }
+  #doc h1{ font-size:25px; color:#fff; margin:26px 0 4px; }
+  #doc h2{ font-size:20px; color:#fff; border-bottom:1px solid var(--bd); padding-bottom:7px; margin:30px 0 12px; }
+  #doc h3{ font-size:16.5px; color:#fff; margin:22px 0 8px; }
+  #doc p{ margin:10px 0; }
+  #doc code{ background:var(--panel2); padding:2px 6px; border-radius:5px; font-family:Consolas,Menlo,monospace; font-size:13px; color:#e6edf3; }
+  #doc a{ color:var(--acc); text-decoration:none; } #doc a:hover{ text-decoration:underline; }
+  #doc table{ border-collapse:collapse; width:100%; margin:14px 0; font-size:13.5px; }
+  #doc th,#doc td{ border:1px solid var(--bd); padding:8px 11px; text-align:left; vertical-align:top; }
+  #doc th{ background:var(--panel2); color:#fff; }
+  #doc blockquote{ background:var(--panel); border-left:3px solid var(--yel); color:#e8d8a8; margin:14px 0; padding:10px 14px; border-radius:0 8px 8px 0; }
+  #doc ul{ margin:10px 0; padding-left:22px; } #doc li{ margin:4px 0; }
+  #doc hr{ border:0; border-top:1px solid var(--bd); margin:26px 0; }
+  #fallback{ background:var(--code); border:1px solid var(--bd); border-radius:10px; padding:16px; white-space:pre-wrap; font:12.5px Consolas,monospace; color:#aeb6bf; display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <a class="home" href="index.html">← Docs home</a>
+    <button id="copy" class="btn">📋 Copy prompt</button>
+    <a class="btn ghost" href="BUILD_PROMPT.md" download>⬇ Tải .md</a>
+  </div>
+  <div id="doc"></div>
+  <pre id="fallback"></pre>
+</div>
+<script>
+(function(){
+  var prompt = "";  // phần prompt (sau "---") để copy
+  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function inl(s){ return esc(s)
+    .replace(/`([^`]+)`/g,"<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>")
+    .replace(/(https?:\/\/[^\s)]+)/g,'<a href="$1" target="_blank">$1</a>'); }
+  function render(md){
+    var L = md.split("\n"), out = "", i = 0, m;
+    while(i < L.length){
+      var ln = L[i];
+      if(/^\s*\|.*\|\s*$/.test(ln) && i+1 < L.length && /^\s*\|[-:\s|]+\|\s*$/.test(L[i+1])){
+        var head = ln.trim().replace(/^\||\|$/g,"").split("|").map(function(c){return c.trim();});
+        i += 2; var rows = [];
+        while(i < L.length && /^\s*\|.*\|\s*$/.test(L[i])){ rows.push(L[i].trim().replace(/^\||\|$/g,"").split("|").map(function(c){return c.trim();})); i++; }
+        out += "<table><thead><tr>" + head.map(function(h){return "<th>"+inl(h)+"</th>";}).join("") + "</tr></thead><tbody>"
+             + rows.map(function(r){return "<tr>"+r.map(function(c){return "<td>"+inl(c)+"</td>";}).join("")+"</tr>";}).join("") + "</tbody></table>";
+        continue;
+      }
+      if(m = ln.match(/^(#{1,4})\s+(.*)$/)){ var lv = m[1].length; out += "<h"+lv+">"+inl(m[2])+"</h"+lv+">"; i++; continue; }
+      if(/^---+\s*$/.test(ln)){ out += "<hr>"; i++; continue; }
+      if(/^\s*>\s?/.test(ln)){ var bq = []; while(i < L.length && /^\s*>\s?/.test(L[i])){ bq.push(L[i].replace(/^\s*>\s?/,"")); i++; } out += "<blockquote>"+inl(bq.join(" "))+"</blockquote>"; continue; }
+      if(/^\s*[-*]\s+/.test(ln)){ var it = []; while(i < L.length && /^\s*[-*]\s+/.test(L[i])){ it.push(L[i].replace(/^\s*[-*]\s+/,"")); i++; } out += "<ul>"+it.map(function(x){return "<li>"+inl(x)+"</li>";}).join("")+"</ul>"; continue; }
+      if(ln.trim() === ""){ i++; continue; }
+      var p = []; while(i < L.length && L[i].trim() !== "" && !/^(#{1,4}\s|>\s?|\s*[-*]\s|\s*\|)/.test(L[i]) && !/^---+\s*$/.test(L[i])){ p.push(L[i]); i++; }
+      out += "<p>"+inl(p.join(" "))+"</p>";
+    }
+    return out;
+  }
+  fetch("BUILD_PROMPT.md", {cache:"no-store"}).then(function(r){ return r.ok ? r.text() : Promise.reject(r.status); }).then(function(md){
+    document.getElementById("doc").innerHTML = render(md);
+    var parts = md.split(/\n-{3,}\n/);   // phần sau "---" = prompt thực
+    prompt = (parts.length > 1 ? parts.slice(1).join("\n---\n") : md).trim();
+  }).catch(function(){
+    var fb = document.getElementById("fallback");
+    fb.style.display = "block";
+    fb.textContent = "Không tải được BUILD_PROMPT.md (mở trang này từ http(s):// chứ không phải file://). Tải trực tiếp: BUILD_PROMPT.md";
+  });
+  document.getElementById("copy").addEventListener("click", function(){
+    var b = this, t = prompt || "";
+    if(!t){ b.textContent = "⏳ chưa nạp xong"; return; }
+    function done(){ var o = b.textContent; b.textContent = "✓ đã copy prompt"; setTimeout(function(){ b.textContent = o; }, 1500); }
+    try{ navigator.clipboard.writeText(t).then(done, fallbackCopy); }catch(e){ fallbackCopy(); }
+    function fallbackCopy(){ var ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); }catch(_){} ta.remove(); done(); }
+  });
+})();
+</script>
+</body>
+</html>
