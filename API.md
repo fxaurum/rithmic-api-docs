@@ -716,7 +716,11 @@ while (ws.State == WebSocketState.Open) {
 
 ## Changelog
 
-Current API version: **1.9.0**. Follows SemVer — breaking changes bump the MAJOR number.
+Current API version: **1.9.1**. Follows SemVer — breaking changes bump the MAJOR number.
+
+### 1.9.1 — 2026-06-29
+- **In-app docs landing + offline build prompt.** The gateway now serves a docs index at **`/docs.html`** (card grid + a "download all .md merged" button for feeding an LLM); the app's **Docs** button opens it instead of jumping straight to api.html. A **Build prompt** page (**`/build.html`**, rendered from `BUILD_PROMPT.md`, with a Copy button + a sample screenshot) ships embedded too — a paste-and-go prompt that has another AI read this API and rebuild the "Market Structure" dashboard. Both work in doc-only mode (no Rithmic login).
+- **Feedback note for AI consumers.** The build prompt and the merged-.md header now ask any AI reading the API to surface problems / improvement ideas for the user to review rather than changing the gateway itself.
 
 ### 1.9.0 — 2026-06-28
 - **Raw R|API+ completed + REngine renaming.** Every order/PnL/account/instrument/option callback, replay and report is now documented with verified payload shapes (PII redacted). **Pull** RPC names switched to the **REngine method** (`listExchanges`, `getAccounts`, `searchInstrument`, `getOptionList`, `getInstrumentByUnderlying`, `getVolumeAtPrice`, `getProductRmsInfo`, `getStrategyList`/`getStrategyInfo`, `getEquityOptionStrategyList`, `listBinaryContracts`, `getEasyToBorrowList`, `getAuxRefData`, `getUserProfile`, `listTradeRoutes`, `listOrderHistoryDates`); the old Binance-style names keep working as **dispatch aliases** (webapp/chart unchanged). `instrumentInfo` keeps its name (merges `getRefData`+`getPriceIncrInfo`). `replaySingleHistoricalOrder` exposed. See **RAW.md**.
