@@ -645,8 +645,34 @@ while (ws.State == WebSocketState.Open) {
 }</code></pre>
 
 <h2 id="changelog"><span class="vi">Lịch sử phiên bản</span><span class="en">Changelog</span></h2>
-<p><span class="vi">Phiên bản API hiện tại: <b>1.9.1</b>. Theo <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — thay đổi phá vỡ tương thích sẽ tăng số MAJOR.</span>
-<span class="en">Current API version: <b>1.9.1</b>. Follows <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — breaking changes bump the MAJOR number.</span></p>
+<p><span class="vi">Phiên bản API hiện tại: <b>1.9.3</b>. Theo <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — thay đổi phá vỡ tương thích sẽ tăng số MAJOR.</span>
+<span class="en">Current API version: <b>1.9.3</b>. Follows <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — breaking changes bump the MAJOR number.</span></p>
+
+<h3>1.9.3 — 2026-07-01</h3>
+<ul>
+<li><span class="vi"><b>MBO per-order FULL sổ.</b> DBO nay sub cho <b>cả sổ <code>@depth</code></b> (cửa sổ book-driven — <b>"Độ sâu MBO" = 0</b> = cả sổ tới đáy, như ATAS) thay vì dải ±20 tick; fill đầu có throttle (<code>MBO_SUB_PER_TICK</code>, khoá re-entry) để né rate-limit <code>OMException</code>, và dọn lệnh chéo (<code>@mboraw</code> <code>Delete</code> tổng hợp). <code>@depth</code> luôn full + mang <b>số lệnh mỗi mức</b> (<code>[giá, size, count]</code> từ <code>NumOrders</code>) nên ladder hiện <code>×N</code> ở mọi mức. Xem <a class="h" href="mbo.html">MBO</a> / <a class="h" href="dom.html">DOM</a>.</span>
+<span class="en"><b>Full-book per-order MBO.</b> DBO is now subscribed for the <b>whole <code>@depth</code> book</b> (book-driven window — <b>"Độ sâu MBO" = 0</b> = full to the bottom, like ATAS) instead of a ±20-tick band; the fill is throttled (<code>MBO_SUB_PER_TICK</code>, re-entry-guarded) to dodge the Rithmic rate-limit <code>OMException</code>, and crossed orders are pruned (synthetic <code>@mboraw</code> <code>Delete</code>). <code>@depth</code> is always full and carries a per-level <b>order count</b> (<code>[price, size, count]</code> from <code>NumOrders</code>) so the ladder shows <code>×N</code> at every level. See <a class="h" href="mbo.html">MBO</a> / <a class="h" href="dom.html">DOM</a>.</span></li>
+<li><span class="vi"><b>Heatmap MBO đối soát khớp DOM.</b> Thanh per-order được đối soát với <code>@mbo</code> mỗi 300 ms (vá lệnh thiếu bằng size THẬT / chốt lệnh thừa) nên khớp DOM từng tick dù <code>@mboraw</code> trôi; + cap lệnh chết mỗi giá (giữ lệnh to). MBO bật thì DOM ẩn thanh @depth fallback ở mức không có per-order (giữ <code>×N</code>). Trục <b>Y</b> heatmap thêm kéo pan/zoom + tự canh giữa giá. Xem <a class="h" href="heatmap.html">Heatmap</a>.</span>
+<span class="en"><b>MBO heatmap reconciled to the DOM.</b> The per-order bars are reconciled against <code>@mbo</code> every 300 ms (add-missing with real sizes / close-phantom) so the heatmap matches the DOM tick-for-tick despite <code>@mboraw</code> drift; plus a per-price dead-order cap (largest-kept). With MBO on the DOM hides the <code>@depth</code> fallback bar at levels without per-order data (keeps <code>×N</code>). The heatmap <b>Y-axis</b> gains drag pan/zoom + auto-center on price. See <a class="h" href="heatmap.html">Heatmap</a>.</span></li>
+<li><span class="vi"><b>Cây mã — sửa "không có hợp đồng" trên máy mới.</b> Bấm nhanh nhiều root không còn rớt vài cái: search cây được <b>xếp hàng</b> phía client (1 cái/lúc) nên gateway không bỏ nhầm search đang chờ; + fallback <code>CONTRACT_CYCLES</code> dựng tháng chuẩn khi search live rỗng.</span>
+<span class="en"><b>Symbol tree — "no contracts" on a fresh machine fixed.</b> Clicking several roots quickly no longer drops some of them: tree searches are <b>serialized</b> client-side (one in-flight) so the gateway's queued-search coalescing can't discard them, with a <code>CONTRACT_CYCLES</code> fallback that builds the standard months when a live search returns empty.</span></li>
+<li><span class="vi"><b>Sửa lỗi</b> — setting "Độ sâu MBO" nay lưu được <code>0</code> (full) thay vì luôn về 100; lấy mẫu heatmap chịu được lỗi bảo trì per-order (ladder giữ live).</span>
+<span class="en"><b>Fixes</b> — the "Độ sâu MBO" setting persists <code>0</code> (full) instead of reverting to 100; heatmap sampling is resilient to a per-order maintenance error (the depth ladder stays live).</span></li>
+</ul>
+
+<h3>1.9.2 — 2026-06-30</h3>
+<ul>
+<li><span class="vi"><b>Plugin Mode — “Connect via R Trader Pro”.</b> Tuỳ chọn lúc login: Market Data + History đi qua R Trader Pro đang chạy (bật <i>Allow Plugins</i>) tại <code>127.0.0.1:3010</code> / <code>3012</code> (encoding <code>4</code>) thay vì mở thêm 1 phiên feed từ xa — orders/PnL vẫn nối remote trực tiếp nên đặt lệnh vẫn chạy. Form login tự kiểm R Trader Pro đã bật Allow Plugins chưa, chưa thì báo.</span>
+<span class="en"><b>Plugin Mode — “Connect via R Trader Pro”.</b> Optional login toggle: Market Data + History are relayed through a running R Trader Pro (with <i>Allow Plugins</i> on) at <code>127.0.0.1:3010</code> / <code>3012</code> (encoding <code>4</code>) instead of opening a second remote feed — orders/PnL stay on a direct remote session so order entry still works. The login form checks whether R Trader Pro is running with Allow Plugins enabled and prompts otherwise.</span></li>
+<li><span class="vi"><b>Thanh trạng thái kết nối + nhịp feed.</b> MainForm có footer với 4 đèn plant Rithmic (Order / RMS / Price / History — xanh khi đã login) và <b>price msgs/giây</b> trung bình 5s / 10s / 30s (như R Trader Pro). Snapshot resync sổ lệnh bị loại nên số phản ánh đúng nhịp thị trường (≈0 lúc nghỉ).</span>
+<span class="en"><b>Connection status footer + feed rate.</b> MainForm gains a status bar with the four Rithmic plant lights (Order / RMS / Price / History — green when logged in) and <b>price msgs/sec</b> averaged over 5 s / 10 s / 30 s (like R Trader Pro). Book-resync snapshots are excluded so the number reflects real market flow (≈0 when the market is idle).</span></li>
+<li><span class="vi"><b>Giao diện tiếng Anh</b> — form login &amp; chính dịch sang English; hộp thoại timeout rút gọn.</span>
+<span class="en"><b>English UI</b> — login and main windows translated; the connection-timeout dialog simplified.</span></li>
+<li><span class="vi"><b>Hạn dự tính — AMP-Paper.</b> Tài khoản demo AMP (<code>IbId = AMP-Paper</code>) nay ước lượng 30 ngày (luật IB-30-ngày ưu tiên trước luật theo prefix tài khoản).</span>
+<span class="en"><b>Projected expiry — AMP-Paper.</b> AMP demo accounts (<code>IbId = AMP-Paper</code>) now estimate a 30-day window (the IB 30-day rule takes priority over the account-prefix rule).</span></li>
+<li><span class="vi"><b>Hợp đồng liên tục theo đúng chu kỳ tháng</b> — tháng lệch chu kỳ (vd vàng <code>GCN6</code>) không còn lọt vào chuỗi continuous đã ghép.</span>
+<span class="en"><b>Continuous front-month respects contract cycles</b> — off-cycle months (e.g. gold <code>GCN6</code>) no longer leak into the stitched continuous series.</span></li>
+</ul>
 
 <h3>1.9.1 — 2026-06-29</h3>
 <ul>

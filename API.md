@@ -716,7 +716,20 @@ while (ws.State == WebSocketState.Open) {
 
 ## Changelog
 
-Current API version: **1.9.1**. Follows SemVer — breaking changes bump the MAJOR number.
+Current API version: **1.9.3**. Follows SemVer — breaking changes bump the MAJOR number.
+
+### 1.9.3 — 2026-07-01
+- **Full-book per-order MBO.** DBO is now subscribed for the **whole `@depth` book** (book-driven window — **"Độ sâu MBO" = 0** = full to the bottom, like ATAS) instead of a fixed ±20-tick band; the initial fill is throttled (`MBO_SUB_PER_TICK`, re-entry-guarded) to dodge the Rithmic rate-limit `OMException`, and crossed orders are pruned (synthetic `@mboraw` `Delete`). `@depth` is always full and now carries a per-level **order count** (`[price, size, count]` from `NumOrders`) so the ladder shows `×N` at every level. See **MBO.md** / **DOM.md**.
+- **MBO heatmap reconciled to the DOM.** The per-order lifetime bars are reconciled against `@mbo` every 300 ms (add-missing with the real `@mbo` sizes / close-phantom) so the heatmap matches the DOM tick-for-tick despite `@mboraw` event drift; plus a per-price dead-order cap (largest-kept). With MBO on, the DOM ladder hides the `@depth` fallback bar at levels without per-order data (keeps `×N`). The heatmap **Y-axis** gains drag pan/zoom + auto-center on price. See **HEATMAP.md**.
+- **Symbol tree — "no contracts" on a fresh machine fixed.** Clicking several roots quickly no longer drops some of them: tree searches are **serialized** client-side (one in-flight) so the gateway's queued-search coalescing can't discard them, with a `CONTRACT_CYCLES` fallback that builds the standard months when a live search returns empty.
+- **Fixes** — the "Độ sâu MBO" setting now persists `0` (full) instead of reverting to 100; heatmap sampling is resilient to a per-order maintenance error (the depth ladder stays live).
+
+### 1.9.2 — 2026-06-30
+- **Plugin Mode — "Connect via R Trader Pro".** Optional login toggle: Market Data + History are relayed through a running R Trader Pro (with *Allow Plugins* on) at `127.0.0.1:3010` / `3012` (encoding `4`) instead of opening a second remote feed — orders/PnL stay on a direct remote session so order entry still works. The login form checks whether R Trader Pro is running with Allow Plugins enabled and prompts otherwise.
+- **Connection status footer + feed rate.** MainForm gains a status bar with the four Rithmic plant lights (Order / RMS / Price / History — green when logged in) and **price msgs/sec** averaged over 5 s / 10 s / 30 s (like R Trader Pro). Book-resync snapshots are excluded so the number reflects real market flow (≈0 when the market is idle).
+- **English UI** — login and main windows translated; the connection-timeout dialog simplified.
+- **Projected expiry — AMP-Paper.** AMP demo accounts (`IbId = AMP-Paper`) now estimate a 30-day window (the IB 30-day rule takes priority over the account-prefix rule).
+- **Continuous front-month respects contract cycles** — off-cycle months (e.g. gold `GCN6`) no longer leak into the stitched continuous series.
 
 ### 1.9.1 — 2026-06-29
 - **In-app docs landing + offline build prompt.** The gateway now serves a docs index at **`/index.html`** (card grid + a "download all .md merged" button for feeding an LLM; `/` stays the web chart); the app's **Docs** button opens it instead of jumping straight to api.html. A **Build prompt** page (**`/build.html`**, rendered from `BUILD_PROMPT.md`, with a Copy button + a sample screenshot) ships embedded too — a paste-and-go prompt that has another AI read this API and rebuild the "Market Structure" dashboard. Both work in doc-only mode (no Rithmic login).

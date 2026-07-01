@@ -32,14 +32,14 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Fxaurum Rithmic API <span class="ver">API v1.9.1</span></h1>
+  <h1>Fxaurum Rithmic API <span class="ver">API v1.9.3</span></h1>
   <p class="sub">Tài liệu WebSocket gateway + chỉ báo orderflow · WebSocket gateway &amp; orderflow reference</p>
 
   <a id="dlAll" href="#" class="dlbtn">⬇ Tải toàn bộ tài liệu <span class="s">(.md gộp 1 file — cho AI đọc / for an LLM)</span></a>
 
   <div class="note">
-    <b>Lưu ý / Note:</b> Các nút <b>Execute</b> trong <code>API</code> gọi tới <code>ws://127.0.0.1:9001</code> — chỉ chạy khi <b>app FxaurumRithmicApi đang mở trên chính máy bạn</b>. Trên trang online chúng dùng để <i>đọc tham khảo</i>; muốn thử thật thì mở app local rồi bấm.
-    <br><span style="color:var(--sub)">The <b>Execute</b> buttons call <code>ws://127.0.0.1:9001</code> and only work when the local app is running. Online they are for reference.</span>
+    <b>Lưu ý / Note:</b> Các nút <b>Execute</b> gọi gateway local <code>ws://127.0.0.1:9001</code> đang chạy ngay trong app này. Khi đã <b>đăng nhập Rithmic</b> chúng chạy <b>thật</b>; nếu mở từ màn hình đăng nhập (chưa kết nối) sẽ báo <i>"Chưa kết nối Rithmic — chế độ xem tài liệu"</i>.
+    <br><span style="color:var(--sub)">The <b>Execute</b> buttons call the local gateway embedded in this app. They run for real once you're logged in to Rithmic; in doc-only mode (not connected) they return an offline notice.</span>
   </div>
 
   <div class="grid">
@@ -50,7 +50,7 @@
     <a class="card" href="footprint.html"><div class="t">Footprint</div><div class="d">Ladder mua/bán theo giá, POC, delta — dựng từ <code>aggTrades</code> + <code>@trade</code>.</div></a>
     <a class="card" href="volumeprofile.html"><div class="t">Volume Profile</div><div class="d">Volume-at-price, VPOC, Value Area — phiên hiện tại + gộp nhiều phiên.</div></a>
     <a class="card" href="dom.html"><div class="t">DOM <span class="en">order book</span></div><div class="d">Sổ lệnh ladder kiểu SmartDOM từ <code>@depth</code>.</div></a>
-    <a class="card" href="heatmap.html"><div class="t">Heatmap</div><div class="d">Bản đồ nhiệt thanh khoản theo thời gian.</div></a>
+    <a class="card" href="heatmap.html"><div class="t">Heatmap</div><div class="d">Bản đồ nhiệt thanh khoản theo thời gian (+ chế độ MBO: thanh theo đời lệnh).</div></a>
     <a class="card" href="mbo.html"><div class="t">MBO <span class="en">order-by-order</span></div><div class="d">Sổ theo từng lệnh trên Rithmic DBO (<code>@mbo</code> + <code>mboProbe</code>).</div></a>
     <a class="card" href="bigtrades.html"><div class="t">Big Trades</div><div class="d">Phát hiện lệnh lớn / sweep gom server-side (<code>bigTrades</code>).</div></a>
     <a class="card" href="options.html"><div class="t">Options · GEX · 0DTE</div><div class="d">Chuỗi quyền chọn, gamma exposure, Call/Put Wall, γ-flip.</div></a>
@@ -60,14 +60,14 @@
   </div>
 
   <footer>
-    Bản chụp tài liệu của Fxaurum Rithmic API. Nội dung gốc nhúng trong app; trang này phục vụ xem online.<br>
-    Each page also has a Markdown version (<code>API.md</code>, <code>FOOTPRINT.md</code>, …) in this repo.
+    Tài liệu Fxaurum Rithmic API — nhúng sẵn trong app, phục vụ ngay tại máy bạn.<br>
+    Mỗi trang đều có bản Markdown (<code>api.md</code>, <code>raw.md</code>, …) tại <code>/api.md</code>, <code>/raw.md</code>, …
   </footer>
 </div>
 <script>
 (function(){
-  // Gộp MỌI file .md trong repo thành 1 file để nạp cho LLM khác đọc.
-  var FILES = ["README.md","API.md","RAW.md","FOOTPRINT.md","BIGTRADES.md","RECIPES.md","DOM.md","MBO.md","HEATMAP.md","VOLUMEPROFILE.md","CONTINUOUS.md","OPTIONS.md","STORAGE.md"];
+  // Gộp MỌI file .md app đang phục vụ thành 1 file để nạp cho LLM khác đọc.
+  var FILES = ["API.md","RAW.md","FOOTPRINT.md","BIGTRADES.md","RECIPES.md","DOM.md","MBO.md","HEATMAP.md","VOLUMEPROFILE.md","CONTINUOUS.md","OPTIONS.md","STORAGE.md"];
   var btn = document.getElementById("dlAll");
   if(!btn) return;
   btn.addEventListener("click", async function(e){
