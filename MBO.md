@@ -97,7 +97,7 @@ Raising the cell size widens it further. Per-symbol (saved in `domCols`).
 ## 4. How it works (gateway internals)
 
 **DBO is per-PRICE.** Rithmic's `subscribeDbo(exch, sym, price)` subscribes the order-by-order feed **for one price level**.
-There is **no "subscribe the whole book" call** in `rapiplus.dll` (verified by reflecting the DLL) — but it **does** serve
+There is **no "subscribe the whole book" call** in R|API+ — but it **does** serve
 per-order at **any** depth. So to match ATAS's full-book MBO the gateway subscribes DBO for **every level it wants**, one call
 each, and maintains a **book-driven window**:
 

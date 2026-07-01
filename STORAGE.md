@@ -166,7 +166,7 @@ disk needs a **rebuild + gateway restart** — a browser refresh alone serves th
   Subscriptions **linger ~6 s** (kills the sub/unsub churn + the `in use` replay race). Archiver is **opened-symbol-only** (no
   sibling fan-out; ⤓ Lịch sử for prior contracts). Errors now return a **`code`** (OMException `rp` + `omdesc`/`detail`); a global
   first-chance logger + the **`notice` stream** surface meaningful failures to the web (red/yellow/blue banner, click-to-copy),
-  filtering out rapiplus's internal login-machinery exceptions. Added a small offline **unit-test** project (`RithmicApi.Tests`).
+  filtering out R|API+'s internal login-machinery exceptions. Added a small offline **unit-test** project (`RithmicApi.Tests`).
 - **2026-06-18** — **TickStore v2**: one `.tick` file per CME session (32B `FXTK` header + 29B records, **`tu` in-record** — the
   `.fxu` sidecar is gone), a per-symbol `tick.coverage` index (D/E/P + `FINAL`, replaces every `.fxv`), folder `Database`→`TickDb`;
   **auto-migrates** old layouts with zero loss. Big-trade cache `.fxb`→`.bigcache`. Added the **Bar store** (`.bars`+`.coverage`)

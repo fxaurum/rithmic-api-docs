@@ -44,7 +44,7 @@
 <div class="wrap">
 <nav>
   <h1>Raw R|API+</h1>
-  <div class="v">Mọi callback rapiplus &rarr; socket (1-1)</div>
+  <div class="v">Mọi callback R|API+ &rarr; socket (1-1)</div>
   <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
   <a href="#what"><span class="vi">Nó là gì</span><span class="en">What it is</span></a>
   <a href="#stream"><span class="vi">Dạng stream (push)</span><span class="en">Stream form (push)</span></a>
@@ -62,7 +62,7 @@
 <p><span class="vi">Phơi <b>MỌI</b> callback Rithmic R|API+ ra WebSocket theo kiểu <b>1-1</b>. Các stream curated (<code>@trade</code>, <code>@depth</code>, <code>@mbo</code>, <code>@kline</code>, <code>@bookticker</code>, <code>@mboraw</code>…) là bản đã biến đổi nằm <b>trên</b> lớp này — dùng chúng để vẽ chart. Dùng raw bus khi cần event Rithmic <b>thô, đủ field</b>.</span>
 <span class="en">Exposes <b>every</b> Rithmic R|API+ callback over the socket <b>1-to-1</b>. The curated streams (<code>@trade</code>, <code>@depth</code>, <code>@mbo</code>, <code>@kline</code>, <code>@bookticker</code>, <code>@mboraw</code>…) are transforms built <b>on top</b> — use those for charting. Use the raw bus when you want the untouched Rithmic event with all its fields.</span></p>
 <table>
-<tr><th>rapiplus</th><th>socket</th></tr>
+<tr><th>R|API+</th><th>socket</th></tr>
 <tr><td><span class="vi">callback push (data chảy liên tục)</span><span class="en">push callback (continuous)</span></td><td><span class="vi"><b>stream</b> <code>&lt;exch&gt;.&lt;sym&gt;@&lt;TenCallback&gt;</code></span><span class="en"><b>stream</b> <code>&lt;exch&gt;.&lt;sym&gt;@&lt;CallbackName&gt;</code></span></td></tr>
 <tr><td><span class="vi">push KHÔNG gắn symbol (account/order/exchange list/user…)</span><span class="en">push without a symbol</span></td><td><span class="vi"><b>stream toàn cục</b> <code>*.*@&lt;TenCallback&gt;</code></span><span class="en"><b>global stream</b> <code>*.*@&lt;CallbackName&gt;</code></span></td></tr>
 <tr><td><span class="vi">method pull/query (hỏi &rarr; 1 đáp)</span><span class="en">pull / query method</span></td><td><span class="vi"><b>RPC</b> call</span><span class="en"><b>RPC</b> call</span></td></tr>
@@ -158,8 +158,8 @@ SUBSCRIBE  *.*@onfillreport</code></pre>
 </div>
 <div class="note"><span class="vi">Bấm <b>Thử</b>/<b>Execute</b> từng dòng. Cột <b>Note</b> gõ trực tiếp được, <b>tự lưu trên trình duyệt</b> (không mất khi reload).</span><span class="en">Click <b>Try</b>/<b>Execute</b> per row. The <b>Note</b> cell is editable, <b>auto-saved in your browser</b>.</span></div>
 <h3><span class="vi">Stream (push callback) — 1 dòng / callback</span><span class="en">Streams — one row per callback</span></h3>
-<p style="color:var(--sub);font-size:13px"><span class="vi">Đã bỏ nhóm <b>Kết nối / phiên</b> (<code>OnAlert</code>, <code>OnLoginCompleted</code>, <code>OnEnvironment</code>, <code>OnEnvironmentList</code>, <code>OnPing</code>) — nội bộ login, không dùng khai thác data; trạng thái login xem RPC <code>connections</code> (gateway — ở <a class="h" href="api.html">api.html</a>, không phải rapiplus).</span>
-<span class="en">Dropped the <b>Connection / session</b> cluster (<code>OnAlert</code>, <code>OnLoginCompleted</code>, <code>OnEnvironment</code>, <code>OnEnvironmentList</code>, <code>OnPing</code>) — login internals, not for data; for login status use the <code>connections</code> RPC (gateway — see <a class="h" href="api.html">api.html</a>, not rapiplus).</span></p>
+<p style="color:var(--sub);font-size:13px"><span class="vi">Đã bỏ nhóm <b>Kết nối / phiên</b> (<code>OnAlert</code>, <code>OnLoginCompleted</code>, <code>OnEnvironment</code>, <code>OnEnvironmentList</code>, <code>OnPing</code>) — nội bộ login, không dùng khai thác data; trạng thái login xem RPC <code>connections</code> (gateway — ở <a class="h" href="api.html">api.html</a>, không phải R|API+).</span>
+<span class="en">Dropped the <b>Connection / session</b> cluster (<code>OnAlert</code>, <code>OnLoginCompleted</code>, <code>OnEnvironment</code>, <code>OnEnvironmentList</code>, <code>OnPing</code>) — login internals, not for data; for login status use the <code>connections</code> RPC (gateway — see <a class="h" href="api.html">api.html</a>, not R|API+).</span></p>
 <table id="rwcat"><thead><tr><th><span class="vi">Cụm</span><span class="en">Cluster</span></th><th></th><th>Callback (<code>@&lt;ten&gt;</code>)</th><th><span class="vi">Thử</span><span class="en">Try</span></th><th>Response <span style="color:var(--sub);font-weight:400">(dán Copy)</span></th><th><span class="vi">Note (mô tả)</span><span class="en">Note (desc)</span></th></tr></thead><tbody></tbody></table>
 <div class="note warn"><span class="vi">⚠ Cụm account / order / PnL / RMS / user cần entitlement trading + lộ dữ liệu tài khoản — chỉ local/tin cậy.</span><span class="en">⚠ account / order / PnL / RMS / user clusters need trading entitlement + expose account data — local/trusted only.</span></div>
 

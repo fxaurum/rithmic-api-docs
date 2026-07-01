@@ -1,10 +1,10 @@
-# Raw R|API+ passthrough — every rapiplus callback as a socket
+# Raw R|API+ passthrough — every R|API+ callback as a socket
 
 > Companion docs: **API.md** (the curated, higher-level streams/RPCs) · **MBO.md** · **DOM.md** · **examples.html** (client code, 9 languages)
 
 This exposes **every** Rithmic R|API+ callback over the WebSocket, **1-to-1**:
 
-| rapiplus surface | socket shape |
+| R\|API+ surface | socket shape |
 |---|---|
 | **push callback** (data arrives continuously) | a **stream** `<exch>.<sym>@<CallbackName>` |
 | push callback **without a symbol** (account / order / exchange list / user…) | a **global stream** `*.*@<CallbackName>` |
@@ -156,7 +156,7 @@ Each fires the query and returns once (8 s timeout → `null`). Reply = same ref
 | `subscribeOrders` | `{accountId?}` | `@On*Report` (auto lúc login) |
 | `subscribeAutoLiquidate` | `{accountId?}` | `@OnAutoLiquidate` |
 
-> `instrumentInfo` giữ tên (gateway **gộp** 2 method REngine). Gateway-only / Binance-style (KHÔNG phải raw rapiplus): `klines`, `aggTrades`, `bigTrades`, `volumeProfileRange`, `continuousInfo`, `syncHistory`, `syncTicks`, `tickInfo`, `syncStatus` — xem API.md. Một số stream/RPC ít dùng (`@onuserprofile`…/`listIbs`…) **vẫn chạy** nhưng đã ẩn khỏi bảng tương tác trong `raw.html` cho gọn — vẫn liệt kê đầy đủ ở trên.
+> `instrumentInfo` giữ tên (gateway **gộp** 2 method REngine). Gateway-only / Binance-style (KHÔNG phải raw R|API+): `klines`, `aggTrades`, `bigTrades`, `volumeProfileRange`, `continuousInfo`, `syncHistory`, `syncTicks`, `tickInfo`, `syncStatus` — xem API.md. Một số stream/RPC ít dùng (`@onuserprofile`…/`listIbs`…) **vẫn chạy** nhưng đã ẩn khỏi bảng tương tác trong `raw.html` cho gọn — vẫn liệt kê đầy đủ ở trên.
 
 ### ④ Order entry — write (TIỀN THẬT, composite → REngine)
 
@@ -320,7 +320,7 @@ Field riêng: `AggressorSide` B/S (bên chủ động) · `AggressorExchOrdId`/`
 
 ### Giá phiên / OHLC — `OnOpenPrice` · `OnHighPrice` · `OnLowPrice` · `OnClosePrice` · `OnHighBidPrice` · `OnLowAskPrice` · `OnMidPrice` · `OnCloseMidPrice` (symbol, push)
 
-Đã xác minh qua reflection `rapiplus.dll`: các flag tương ứng **đều nằm trong `SubscriptionFlags.All`** (mình subscribe bằng `All`) và các struct (`OpenPriceInfo`, `HighPriceInfo`, …) đều tồn tại → **gọi API đúng, không thiếu cờ**. **7/8 là field SNAPSHOT** — bắn `CallbackType:"Image"` một lượt khi subscribe mã mới tinh. Đã xác nhận trên NQU6 (cả 7 cùng `Ssboe:1782493440` = chung một snapshot, phục vụ từ cache):
+Đã xác minh: các flag tương ứng **đều nằm trong `SubscriptionFlags.All`** (mình subscribe bằng `All`) và các struct (`OpenPriceInfo`, `HighPriceInfo`, …) đều tồn tại → **gọi API đúng, không thiếu cờ**. **7/8 là field SNAPSHOT** — bắn `CallbackType:"Image"` một lượt khi subscribe mã mới tinh. Đã xác nhận trên NQU6 (cả 7 cùng `Ssboe:1782493440` = chung một snapshot, phục vụ từ cache):
 
 ```json
 { "e":"OnOpenPrice",    "CallbackType":"Image", "Symbol":"NQU6", "Price":29742    }
@@ -341,7 +341,7 @@ Field riêng: `AggressorSide` B/S (bên chủ động) · `AggressorExchOrdId`/`
 | `OnCloseMidPrice` | `Close` 0x8 + `MidPrice` 0x4000 | **null thật trên future CME** — Rithmic không gửi close-midpoint cho future (dành cho instrument có bid/ask lúc đóng: cổ phiếu/option). Không nằm trong burst snapshot. |
 
 #### Cache để hết RACE re-subscribe
-Mấy cái này bắn **một lần** trong snapshot lúc subscribe đầu. Bấm "Thử" liên tiếp trên cùng mã thì `unsubscribe→subscribe` sát nhau khiến rapiplus **bỏ re-image** lệch nhịp (pattern xen kẽ ✓✗). **Fix:** gateway **cache giá trị mới nhất** của nhóm low-freq (OHLC/settlement/OI/market-mode/limit) ngay trong `OnAny` — **kể cả khi không ai xem** — rồi **đẩy cache cho client ngay khi subscribe** (`RawCachePush`). Nhờ đó lần Thử đầu mồi cả 8 vào cache, các lần sau lấy từ cache → ra đủ, không phụ thuộc re-image. (Đính chính: lúc đầu tưởng High/Low là "update-only không trong snapshot" — **sai**; tất cả đều là snapshot.)
+Mấy cái này bắn **một lần** trong snapshot lúc subscribe đầu. Bấm "Thử" liên tiếp trên cùng mã thì `unsubscribe→subscribe` sát nhau khiến R|API+ **bỏ re-image** lệch nhịp (pattern xen kẽ ✓✗). **Fix:** gateway **cache giá trị mới nhất** của nhóm low-freq (OHLC/settlement/OI/market-mode/limit) ngay trong `OnAny` — **kể cả khi không ai xem** — rồi **đẩy cache cho client ngay khi subscribe** (`RawCachePush`). Nhờ đó lần Thử đầu mồi cả 8 vào cache, các lần sau lấy từ cache → ra đủ, không phụ thuộc re-image. (Đính chính: lúc đầu tưởng High/Low là "update-only không trong snapshot" — **sai**; tất cả đều là snapshot.)
 
 #### Hành vi LIVE (giữ sub liên tục)
 Lúc subscribe: cả 7 ra một lượt `CallbackType:"Image"`. Sau đó:
