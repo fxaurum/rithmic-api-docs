@@ -67,10 +67,12 @@ hollow when zoomed in / solid when zoomed out — the DOM panel is separate and 
 | Setting | Meaning | ATAS equivalent |
 |---|---|---|
 | Show/hide columns | Toggle **Today · Chg · Sells · Buys**. Price · Bid · Ask always shown; remaining columns auto-stretch. | column visibility |
-| Depth | Levels each side of the current price to **render**; **0 = fill** the panel | (display depth) |
+| Depth | Levels each side of the current price to **render** (scroll for more); **0 = fill** the panel | (display depth) |
+| **MBO — order-by-order** | Overlay per-order blocks + `×N` count on the ladder (see **MBO.md**) | Level-3 |
+| **Độ sâu MBO (per-order)** | How many levels each side get **per-order** DBO; **0 = full** (the whole book). Only sizes the MBO layer — see below | (per-order depth) |
 | View day | Pick a day to view history (reads store); "Hôm nay" returns to live | — |
 
-> **Data depth** (how many levels the gateway actually streams, `@depth<N>`) is set in the **Heatmap ⚙ → "Độ sâu sổ lệnh"** (default **100**, max 1000) and is **shared** by the DOM and the heatmap — they subscribe one `@depth<N>` stream. The DOM's own *Depth* above only limits how many of the streamed levels are drawn. Raise the heatmap setting to see deeper resting liquidity (heavier feed).
+> **The `@depth` book is now ALWAYS full.** The DOM subscribes `@depth1000` (≈ the whole MBP ladder, hundreds–1000+ levels to the bottom), so resting liquidity is never truncated regardless of the *Depth* render setting above (which only limits how many rows are **drawn**). The former "Độ sâu sổ lệnh" knob is now **"Độ sâu MBO"** and only sizes the **per-order** layer (`@mbo<N>` DBO window; **0 = full**), shared with the heatmap — see **MBO.md**. `@depth` also carries a per-level **order count** (`NumOrders`), so the ladder can show `×N` at every Level-2 level even beyond the per-order MBO window.
 
 ---
 
@@ -96,9 +98,13 @@ chart during the session (from Rithmic replay → merged into the store). Conseq
   coalesced) with a trailing flush and a ~1.5 s resync.
 - Each emit wraps the book in a **`DepthBox`** (up to `DOM_MAX_LEVELS` = 1000 nearest-to-price each side); `Route` then
   serves each subscriber its own slice — `@depth<N>` → `Top(N)`, plain `@depth` → `Full()`. So per-client depth is honored
-  on the live book, not just snapshots. Rithmic's MBP (`Quotes` flag) supplies hundreds of levels — enough for this
-  **aggregated** ladder. For **order-by-order** (the individual orders behind each level, queue position, iceberg/spoof) the
-  app has a separate **MBO** mode on Rithmic **DBO** — see **MBO.md** (separate entitlement; not required for this DOM).
+  on the live book, not just snapshots. The web app **always subscribes `@depth1000`** (the whole ladder) — the depth knob now
+  only sizes the per-order MBO layer, not this book. Each level emits **`[price, size, count]`**, where `count` = `NumOrders`
+  (the Level-2 order count from `OnLimitOrderBook`), so the ladder can print `×N` at every level. Rithmic's MBP (`Quotes` flag)
+  supplies hundreds of levels — enough for this **aggregated** ladder. For **order-by-order** (the individual orders behind each
+  level, queue position, iceberg/spoof) the app has a separate **MBO** mode on Rithmic **DBO** — see **MBO.md** (separate
+  entitlement; not required for this DOM). Near the BBO the ladder shows real per-order MBO blocks; deeper it falls back to the
+  `@depth` `×N` count.
 - On a `@depth` subscribe the gateway calls `RebuildBook` for an immediate snapshot.
 - `aggTrades` prefers **Rithmic replay** (full session, direct); a **full-session request** (window from the session open, 17:00 CT) is merged
   into the `TickStore` (one file per session) and marks the session backfilled; smaller requests trigger a background full-session backfill.
@@ -116,6 +122,7 @@ chart during the session (from Rithmic replay → merged into the store). Conseq
 | Latest-trade flash | ✅ |
 | Show/hide columns, depth, view past day | ✅ |
 | **Order-by-order (MBO / DBO)** | ✅ (DOM ⚙ "MBO" toggle — per-order blocks, queue, Vol/count, filters; see **MBO.md**) |
+| **Full-depth book (whole ladder, always)** | ✅ (`@depth1000`; `×N` order count at every level) |
 | Orders / PnL | ⬜ (needs order routing) |
 | Liquidity Map (heatmap) | ⬜ (separate heatmap panel; MBO heatmap = MBO.md Phase 2) |
 | Notes | ⬜ |
@@ -124,6 +131,11 @@ chart during the session (from Rithmic replay → merged into the store). Conseq
 
 ## 8. Changelog
 
+- **2026-07-01** — **Full-depth book + per-level order count.** The DOM now subscribes **`@depth1000`** (the whole ladder to
+  the bottom) instead of a capped depth, so resting liquidity is never truncated; each level carries **`NumOrders`** (`[price,
+  size, count]`) so the ladder shows `×N` at every Level-2 level. The old "Độ sâu sổ lệnh" knob is repurposed to **"Độ sâu MBO"**
+  (the per-order DBO window; **0 = full**, shared with the heatmap), and per-order MBO can now cover the **whole book** (see
+  **MBO.md**). Near the BBO the ladder draws real per-order blocks; deeper it uses the `@depth` count.
 - **2026-06-16** — Configurable book depth: `@depth<N>` now trims the **live** book per-subscription via `DepthBox`/`Route.Top(N)`
   (was a fixed 100-level cap). Data depth is a shared **Heatmap ⚙ "Độ sâu sổ lệnh"** setting (default 100, max `DOM_MAX_LEVELS`=1000),
   driving both the DOM ladder and the heatmap. Confirmed Rithmic MBP (`Quotes`) provides hundreds of levels — full ATAS-like depth

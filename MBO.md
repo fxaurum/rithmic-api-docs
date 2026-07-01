@@ -33,7 +33,10 @@ detect icebergs/spoofs.
 ```
 
 Each level = `[price, orderCount, totalSize, sizes[]]`. `sizes[]` are the individual orders **sorted by queue priority**
-(front of queue first), capped at 64 per level. `@mbo<N>` slices to the top *N* levels each side (like `@depth<N>`).
+(front of queue first), **capped at 64 per level** (`orderCount`/`total` are still the full figures — so a level with >64
+orders reports the true count/total but lists only the front 64 sizes). `@mbo<N>` = **N book levels each side** get per-order
+DBO and are emitted; **`N` large (e.g. 1000) = the whole book**, order-by-order to the bottom (like ATAS). `N` drives both how
+many levels the gateway subscribes DBO for (book-driven, see §4) **and** the slice width of the emit.
 
 ### `@mboraw` payload (raw DBO passthrough)
 
@@ -51,10 +54,12 @@ One message **per DBO event** (not conflated):
     "ts":1718000002360 } }  // exchange source time (ms)
 ```
 
-**Window:** `@mboraw` rides the same per-price DBO window as `@mbo` — events only for prices within ±`MBO_WIN_TICKS`
-(default 20) of the BBO. Subscribe `@mbo<N>` alongside to widen it (the window is the **max** of all requests on that
-symbol). Same entitlement requirement as `@mbo`. Order-of-magnitude higher message rate than `@mbo` — only subscribe when
-you actually consume every event; the gateway skips the passthrough entirely when no client holds `@mboraw`.
+**Window:** `@mboraw` rides the same per-price DBO window as `@mbo` — the window is **book-driven**: the gateway subscribes
+DBO for the **nearest `N` levels each side that actually exist in the `@depth` book** (not a fixed ±tick band), where `N` =
+the largest `@mbo<N>` request on that symbol, capped at `MBO_WIN_MAX` (1000). **`N` = 1000 (or the app's "Độ sâu MBO = 0")
+subscribes the whole book** — every populated level to the bottom of the ladder. Same entitlement as `@mbo`.
+Order-of-magnitude higher message rate than `@mbo` — only subscribe when you consume every event; the gateway skips the
+passthrough entirely when no client holds `@mboraw`.
 
 ---
 
@@ -78,6 +83,7 @@ So a level reading `Vol 31 · ×4 · [15][8][5][3]` = 31 lots resting as 4 order
 | Setting | Meaning |
 |---|---|
 | **MBO — order-by-order** | Master toggle. Subscribes `@mbo<N>` (additive — does **not** disturb the `@depth`/heatmap streams). |
+| **Độ sâu MBO (per-order)** | `N` levels each side that get per-order DBO. **`0` = full** (subscribe the whole `@depth` book, like ATAS). The plain `@depth` ladder is **always full** regardless — this only sizes the per-order layer (cost: one `subscribeDbo` per level, throttled — see §4). Shared with the heatmap MBO window. Default **0**. |
 | **Cỡ ô mỗi lệnh** (cell size, px) | Base width of one order block (size-1). Larger orders scale up from this. 2–40 px. |
 | **Tô đậm lệnh ≥** (highlight ≥) | Orders at/above this size render at full opacity (spot the big single orders). `0` = off. |
 | **Ẩn lệnh <** (hide <) | Orders below this size are not drawn (de-clutter the size-1 noise). `0` = off. |
@@ -91,14 +97,22 @@ Raising the cell size widens it further. Per-symbol (saved in `domCols`).
 ## 4. How it works (gateway internals)
 
 **DBO is per-PRICE.** Rithmic's `subscribeDbo(exch, sym, price)` subscribes the order-by-order feed **for one price level**.
-There is no "subscribe the whole book" call — so the gateway maintains a **rolling window**:
+There is **no "subscribe the whole book" call** in `rapiplus.dll` (verified by reflecting the DLL) — but it **does** serve
+per-order at **any** depth. So to match ATAS's full-book MBO the gateway subscribes DBO for **every level it wants**, one call
+each, and maintains a **book-driven window**:
 
 - A `MboBook` per symbol holds `ExchOrdId → {price, size, side, priority, firstMs, lastMs}`.
-- A 60 ms timer keeps the window subscribed to **±`MBO_WIN_TICKS` (20)** price levels around the BBO, **unsubscribing**
-  levels that drift beyond the window + an 8-tick hysteresis margin (so a 1-tick wiggle doesn't churn subscriptions).
-  Ref-counted per symbol like `_mdRef` — N charts of one symbol share one set of DBO subscriptions.
+- A 60 ms timer (`MboTick`, guarded by `Interlocked` re-entry so a slow fill can't double-subscribe) keeps DBO subscribed to
+  the **nearest `WinTicks` levels each side that exist in the `DomBook`** (the real `@depth` ladder — not a fixed ±tick band),
+  where `WinTicks` = the largest `@mbo<N>` request, capped `MBO_WIN_MAX` (1000). **`N=1000`/`0` = the whole book, to the
+  bottom.** New levels are subscribed **nearest-first and throttled** (`MBO_SUB_PER_TICK` = 25 per pass) so the initial fill
+  doesn't burst ~1375 `subscribeDbo` calls at once (that trips a Rithmic **rate limit** → `OMException`; a throttled fill
+  reaches full in a few seconds). Ref-counted per symbol like `_mdRef` — N charts share one set of DBO subs.
 - `OnDbo` events update the book: `Image`/`New` add, `Change` updates (price/size/priority), `Delete` removes. Prices are
   rounded to the tick grid (Rithmic returns floats like `4151.900000000001`).
+- **Crossed-order prune:** if the market moves through a resting order (a bid ≥ the best ask, or ask ≤ best bid) the stale
+  order is dropped from the book and a synthetic `Delete` is emitted on `@mboraw`, so neither `@mbo` nor the heatmap shows a
+  bid stuck above the ask.
 - Every tick the book is aggregated per price (group orders by price, sort by `Priority`) and emitted as `@mbo` (~20 Hz,
   coalesced), wrapped in an `MboBox` so `Route` can slice `@mbo<N>` → `Top(N)` per subscriber (mirrors `DepthBox`/`@depth`).
 - On reconnect the engine loses all DBO subs → the book's subscribed-price set is cleared so the timer re-subscribes fresh.
@@ -136,8 +150,11 @@ rpc("mboProbe",{exchange:"COMEX",symbol:"GCQ6",levels:6,ms:8000}).then(r=>consol
 | Order-size number inside the block | ✅ (when wide enough) |
 | Highlight large orders / hide tiny | ✅ (filters) |
 | Level-2 fallback where MBO absent | ~ (overlays on the `@depth` ladder, which already covers all levels) |
+| **Full-book per-order (whole ladder, not a ±band)** | ✅ (`Độ sâu MBO = 0`; `@depth` always full) |
 | Per-order Ctrl-hover tooltip (price/vol/time/id/priority) | ⬜ |
-| MBO **Heatmap** (time-weighted + spoof subtraction) | ⬜ (Phase 2) |
+| MBO **Heatmap** — per-order lifetime bars (lanes + size, on the chart) | ✅ (see [HEATMAP.md](HEATMAP.md) §5) |
+| MBO **Heatmap** — per-order reconciled to the DOM (no drift) | ✅ (client reconciles `@mboraw` ↔ `@mbo` each 300 ms) |
+| MBO Heatmap — time-weighted EMA + spoof subtraction | ⬜ (Phase 2) |
 | Iceberg / spoof detector | ⬜ (Phase 2) |
 
 ---
@@ -146,16 +163,29 @@ rpc("mboProbe",{exchange:"COMEX",symbol:"GCQ6",levels:6,ms:8000}).then(r=>consol
 
 The book engine already keeps each order's **lifetime** (`firstMs`/`lastMs`), which is the input for:
 
-- **MBO Heatmap** — time-weighted EMA of resting volume per price (resting liquidity brightens; flicker fades) with
-  **spoof subtraction** (young + unfilled orders excluded). This is the upgrade over the current `@depth`-sampled heatmap.
+- **MBO Heatmap** — ✅ **built** (lifetime-bar form): `@mboraw` drives one rectangle per order on the chart heatmap
+  (width = lifetime, lane-stacked), **reconciled against `@mbo` every 300 ms so it matches the DOM tick-for-tick** (no
+  event-stream drift), see [HEATMAP.md](HEATMAP.md) §5. Still on the roadmap: a **time-weighted EMA** form (resting liquidity
+  brightens; flicker fades) with **spoof subtraction** (young + unfilled orders excluded).
 - **Iceberg / spoof detection** — track each `ExchOrdId`: refills at the same price (iceberg), big unfilled orders pulled
-  fast far from the BBO (spoof) → highlight + alert.
+  fast far from the BBO (spoof) → highlight + alert. The per-order `@mboraw` ids/lifetimes are **kept** (the reconcile only
+  patches display gaps with `@mbo`), so the raw material for this is in place.
 - **Per-order tooltip** — hover a block to read its id/priority/size/age.
 
 ---
 
 ## 8. Changelog
 
+- **2026-07-01** — **Full-book per-order + heatmap reconcile.** DBO is now subscribed for the **whole `@depth` book**
+  (book-driven window, `Độ sâu MBO = 0` = full to the bottom of the ladder, like ATAS) instead of a fixed ±20-tick band;
+  the initial fill is **throttled** (`MBO_SUB_PER_TICK` = 25/pass, re-entry-guarded) to dodge the Rithmic rate-limit
+  `OMException`, and crossed orders are pruned (synthetic `@mboraw` `Delete`). On the client, the heatmap's per-order bars are
+  **reconciled against `@mbo` every 300 ms** (add-missing with real `@mbo` sizes / close-phantom) so they **match the DOM**
+  despite `@mboraw` drift, plus a per-price **dead-order cap** (largest-kept). See [HEATMAP.md](HEATMAP.md) §5.
+- **2026-06-30** — **MBO Heatmap (lifetime-bar form) shipped** on the chart: `@mboraw` now drives one rectangle per order
+  (width = lifetime, lane-stacked, side-colored big-order highlight) in the heatmap's **MBO** mode — see
+  [HEATMAP.md](HEATMAP.md) §5. Gateway pushes the current `MboBook` as `Image` events on `@mboraw` (re)subscribe so a chart
+  enabling MBO mid-session sees the already-resting orders. (Time-weighted EMA + iceberg/spoof classification remain Phase 2.)
 - **2026-06-26** — Added **`@mboraw`** stream: raw Rithmic DBO passthrough (one message per `New`/`Change`/`Delete`/`Image`
   event with `ExchOrdId`, side, price, size, priority, exchange ts). Rides the same per-price DBO window as `@mbo`;
   gateway skips the passthrough entirely when no client holds it. (DOM `@depth` remains aggregated-only — no raw form.)
