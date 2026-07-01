@@ -645,8 +645,18 @@ while (ws.State == WebSocketState.Open) {
 }</code></pre>
 
 <h2 id="changelog"><span class="vi">Lịch sử phiên bản</span><span class="en">Changelog</span></h2>
-<p><span class="vi">Phiên bản API hiện tại: <b>1.9.3</b>. Theo <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — thay đổi phá vỡ tương thích sẽ tăng số MAJOR.</span>
-<span class="en">Current API version: <b>1.9.3</b>. Follows <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — breaking changes bump the MAJOR number.</span></p>
+<p><span class="vi">Phiên bản API hiện tại: <b>1.9.4</b>. Theo <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — thay đổi phá vỡ tương thích sẽ tăng số MAJOR.</span>
+<span class="en">Current API version: <b>1.9.4</b>. Follows <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — breaking changes bump the MAJOR number.</span></p>
+
+<h3>1.9.4 — 2026-07-01</h3>
+<ul>
+<li><span class="vi"><b>Market Structure overlay</b> (nút <b>MS</b>) — đường settlement + settlement dự tính, band limit up/down, badge trạng thái chợ (Open/Halt/Pause/Auction/Closed), open interest futures, chênh lệch giá vs settlement (live), và <b>chỉ báo đấu giá</b> mở/đóng (IOP/ICP). Từ push raw low-freq của R|API+ (<code>@OnSettlementPrice</code>, <code>@OnHighPriceLimit</code>/<code>@OnLowPriceLimit</code>, <code>@OnMarketMode</code>, <code>@OnOpenInterest</code>, <code>@OnOpeningIndicator</code>/<code>@OnClosingIndicator</code>). Xem <a class="h" href="marketstructure.html">Market Structure</a>.</span>
+<span class="en"><b>Market Structure overlay</b> (<b>MS</b> toggle) — settlement + projected-settlement lines, limit up/down bands, market-status badge (Open/Halt/Pause/Auction/Closed), futures open interest, live price-vs-settlement, and opening/closing <b>auction indicators</b> (IOP/ICP). From R|API+ low-frequency raw pushes. See <a class="h" href="marketstructure.html">Market Structure</a>.</span></li>
+<li><span class="vi"><b>Contract Spec panel</b> (nút <b>ⓘ</b>) — giá trị tick / giá trị điểm / tiền tệ / HSD (<code>instrumentInfo</code>), kiểu thanh toán / đơn vị HĐ / ngày GD cuối (<code>auxRefData</code>), hạn mức RMS (<code>productRms</code>).</span>
+<span class="en"><b>Contract Spec panel</b> (<b>ⓘ</b>) — tick value / point value / currency / expiration (<code>instrumentInfo</code>), settlement method / unit / last-trading-date (<code>auxRefData</code>), account RMS limits (<code>productRms</code>).</span></li>
+<li><span class="vi"><b>Chart</b> — wheel zoom giữ nến cuối neo ở live edge (có giới hạn zoom); nút về-live ẩn đúng ở chế độ heatmap MBO.</span>
+<span class="en"><b>Chart</b> — wheel zoom keeps the last candle anchored at the live edge (with zoom limits); the go-live button hides correctly in heatmap MBO mode.</span></li>
+</ul>
 
 <h3>1.9.3 — 2026-07-01</h3>
 <ul>

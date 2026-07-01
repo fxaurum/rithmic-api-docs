@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Market Structure & Contract Spec</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Market Structure</h1>
+  <div class="v">Settlement · limits · status · OI · contract spec</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#what"><span class="vi">Là gì</span><span class="en">What it is</span></a>
+  <a href="#sockets"><span class="vi">Gọi socket nào</span><span class="en">Which sockets</span></a>
+  <a href="#ms"><span class="vi">Market Structure (MS)</span><span class="en">Market Structure (MS)</span></a>
+  <a href="#spec"><span class="vi">Contract Spec (ⓘ)</span><span class="en">Contract Spec (ⓘ)</span></a>
+  <hr>
+  <a href="index.html" class="h"><span class="vi">🏠 Mục lục tài liệu</span><span class="en">🏠 All docs</span></a>
+  <a href="marketstructure.md" class="h" target="_blank">↓ marketstructure.md</a>
+  <a href="api.html" class="h"><span class="vi">← WebSocket API</span><span class="en">← WebSocket API</span></a>
+  <a href="raw.html" class="h"><span class="vi">→ Raw R|API+</span><span class="en">→ Raw R|API+</span></a>
+</nav>
+<main>
+
+<h2 id="what" style="margin-top:0"><span class="vi">Là gì</span><span class="en">What it is</span></h2>
+<p><span class="vi">Hai lớp overlay nhẹ (chủ yếu tần suất thấp) dựng trên push tham chiếu/phiên của Rithmic <b>R|API+</b>: overlay <b>Market Structure</b> (settlement, giới hạn giá ngày, trạng thái chợ, open interest, chỉ báo đấu giá) và popup <b>Contract Spec</b> (giá trị tick, giá trị điểm, margin, kiểu thanh toán…). Cả hai là <b>snapshot lúc subscribe</b> + push khi đổi → rẻ, hiện ngay, không cần replay lịch sử.</span>
+<span class="en">Two lightweight (mostly low-frequency) overlays on Rithmic <b>R|API+</b> reference/session pushes: a <b>Market Structure</b> overlay (settlement, daily price limits, market status, open interest, auction indicators) and a <b>Contract Spec</b> popup (tick value, point value, margin, settlement method…). Both are <b>snapshot-on-subscribe</b> + push-on-change → cheap, instant, no history replay.</span></p>
+
+<h2 id="sockets"><span class="vi">Gọi socket nào</span><span class="en">Which sockets</span></h2>
+<p><span class="vi"><b>Market Structure</b> (nút <b>MS</b>) subscribe các stream raw (<code>&lt;exch&gt;.&lt;sym&gt;@&lt;callback&gt;</code>, snapshot <code>Image</code> lúc sub rồi push khi đổi):</span>
+<span class="en"><b>Market Structure</b> (<b>MS</b> toggle) subscribes raw streams (<code>&lt;exch&gt;.&lt;sym&gt;@&lt;callback&gt;</code>, snapshot <code>Image</code> on subscribe then push-on-change):</span></p>
+<table>
+<tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th>Stream</th><th>Field</th></tr>
+<tr><td><span class="vi">Settlement (đường)</span><span class="en">Settlement line</span></td><td><code>@OnSettlementPrice</code></td><td><code>Price</code>, <code>PriceType</code>, <code>Date</code></td></tr>
+<tr><td><span class="vi">Settlement dự tính</span><span class="en">Projected settlement</span></td><td><code>@OnProjectedSettlementPrice</code></td><td><code>Price</code> (null ngoài cửa sổ)</td></tr>
+<tr><td><span class="vi">Limit up / down</span><span class="en">Limit up / down</span></td><td><code>@OnHighPriceLimit</code> / <code>@OnLowPriceLimit</code></td><td><code>Price</code> (<code>"NaN"</code> = chưa công bố)</td></tr>
+<tr><td><span class="vi">Trạng thái chợ</span><span class="en">Market status</span></td><td><code>@OnMarketMode</code></td><td><code>MarketMode</code>, <code>Reason</code>, <code>Event</code></td></tr>
+<tr><td>Open interest</td><td><code>@OnOpenInterest</code></td><td><code>Quantity</code>, <code>QuantityFlag</code> (EOD)</td></tr>
+<tr><td><span class="vi">Chỉ báo đấu giá</span><span class="en">Auction indicative</span></td><td><code>@OnOpeningIndicator</code> / <code>@OnClosingIndicator</code></td><td><code>Price</code> (IOP/ICP)</td></tr>
+</table>
+<p><span class="vi"><b>Contract Spec</b> (nút <b>ⓘ</b>) dùng RPC trả inline: <code>instrumentInfo</code> (tick size, point value, currency, HSD) · <code>auxRefData</code> (SettlementMethod cash/physical, UnitOfMeasure, LastTradingDate) · <code>productRms</code> (BuyLimit/SellLimit, MaxOrderQty, LossLimit — thường rỗng trên demo).</span>
+<span class="en"><b>Contract Spec</b> (<b>ⓘ</b> button) uses inline RPCs: <code>instrumentInfo</code> (tick size, point value, currency, expiration) · <code>auxRefData</code> (SettlementMethod cash/physical, UnitOfMeasure, LastTradingDate) · <code>productRms</code> (BuyLimit/SellLimit, MaxOrderQty, LossLimit — usually empty on demo).</span></p>
+
+<h2 id="ms"><span class="vi">Market Structure — thấy gì</span><span class="en">Market Structure — what you see</span></h2>
+<ul>
+<li><span class="vi"><b>Đường settlement</b> — vàng LIỀN (<code>Settle</code>); dự tính vàng ĐỨT (<code>Settle~</code>, quanh giờ đóng).</span><span class="en"><b>Settlement line</b> — gold SOLID (<code>Settle</code>); projected gold DASHED (<code>Settle~</code>, near close).</span></li>
+<li><span class="vi"><b>Limit up</b> đỏ đứt (<code>Limit↑</code>) / <b>limit down</b> xanh đứt (<code>Limit↓</code>). Band <code>NaN</code> = không vẽ.</span><span class="en"><b>Limit up</b> red dashed / <b>down</b> green dashed. A <code>NaN</code> band draws nothing.</span></li>
+<li><span class="vi"><b>Chỉ báo đấu giá</b> — <span style="color:#c07cff">IOP</span> tím (mở) / <span style="color:#7cc0ff">ICP</span> xanh (đóng), chỉ trong cửa sổ đấu giá.</span><span class="en"><b>Auction indicative</b> — <span style="color:#c07cff">IOP</span> (open) / <span style="color:#7cc0ff">ICP</span> (close), only inside the auction window.</span></li>
+<li><span class="vi"><b>Badge</b> cạnh nút: trạng thái chợ (Open xanh / Halt đỏ / Auction vàng / Closed xám) · <b>OI</b> · <b>stl ±x (±%)</b> (giá vs settlement, live).</span><span class="en"><b>Badge</b>: market status (Open green / Halt red / Auction amber / Closed grey) · <b>OI</b> · <b>stl ±x (±%)</b> (price vs settlement, live).</span></li>
+</ul>
+<div class="note"><span class="vi"><b>Settlement</b> = giá mark chính thức của sàn (mark-to-market / mốc % ngày), KHÔNG phải last trade. <b>OI</b> = số hợp đồng mở, <b>EOD</b> (cập nhật ~1 lần/ngày, không intraday); OI cân bằng long=short theo định nghĩa, không tách bên được. <b>Limit</b> = band circuit-breaker, thường xa giá → phải zoom out mới thấy.</span>
+<span class="en"><b>Settlement</b> = the exchange's official daily mark (mark-to-market / daily %), NOT the last trade. <b>OI</b> = open contracts, an <b>EOD</b> figure (updates ~once/day, not intraday); OI is symmetric (longs = shorts) so it can't be split by side. <b>Limits</b> = circuit-breaker bands, usually far from price → zoom out to see.</span></div>
+
+<h2 id="spec"><span class="vi">Contract Spec — thấy gì</span><span class="en">Contract Spec — what you see</span></h2>
+<p><span class="vi">Bấm <b>ⓘ</b> cạnh mã → popup:</span><span class="en">Click <b>ⓘ</b> next to the symbol → popup:</span></p>
+<ul>
+<li><span class="vi"><b>Hợp đồng</b>: mô tả · mã · sàn · loại · HSD.</span><span class="en"><b>Contract</b>: description · symbol · exchange · type · expiration.</span></li>
+<li><span class="vi"><b>Bước giá</b> · <b>giá trị 1 tick</b> (= tick × point value, vd GC $10, ES $12.50) · <b>giá trị 1 điểm</b> ($) · tiền tệ.</span><span class="en"><b>Tick size</b> · <b>tick value</b> (= tickSize × pointValue, e.g. GC $10, ES $12.50) · <b>point value</b> ($) · currency.</span></li>
+<li><span class="vi"><b>Kiểu thanh toán</b> (cash/physical) · <b>đơn vị HĐ</b> (× qty) · <b>ngày GD cuối</b> (auxRefData).</span><span class="en"><b>Settlement method</b> (cash/physical) · <b>unit of measure</b> (× qty) · <b>last trading date</b> (auxRefData).</span></li>
+<li><span class="vi"><b>Hạn mức RMS</b> (productRms): giới hạn vị thế mua/bán, max lệnh, loss limit — hiện khi có (rỗng trên demo/data-only).</span><span class="en"><b>RMS limits</b> (productRms): buy/sell position limit, max order qty, loss limit — shown when set (empty on demo/data-only).</span></li>
+</ul>
+<p style="color:var(--sub);font-size:13px"><span class="vi">Thông số chính lấy từ <code>instrumentInfo</code> (đã cache mỗi mã) nên hiện tức thì; auxRefData/productRms điền async.</span>
+<span class="en">Core specs come from cached <code>instrumentInfo</code> (instant); auxRefData/productRms fill in async.</span></p>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="api.html">WebSocket API</a> · <a class="h" href="raw.html">Raw R|API+</a> · <a class="h" href="dom.html">DOM</a> ·
+<a class="h" href="heatmap.html">Heatmap</a> · <a class="h" href="marketstructure.md" target="_blank">marketstructure.md</a></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

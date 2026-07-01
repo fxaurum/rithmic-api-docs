@@ -32,7 +32,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Fxaurum Rithmic API <span class="ver">API v1.9.3</span></h1>
+  <h1>Fxaurum Rithmic API <span class="ver">API v1.9.4</span></h1>
   <p class="sub">Tài liệu WebSocket gateway + chỉ báo orderflow · WebSocket gateway &amp; orderflow reference</p>
 
   <a id="dlAll" href="#" class="dlbtn">⬇ Tải toàn bộ tài liệu <span class="s">(.md gộp 1 file — cho AI đọc / for an LLM)</span></a>
@@ -52,6 +52,7 @@
     <a class="card" href="dom.html"><div class="t">DOM <span class="en">order book</span></div><div class="d">Sổ lệnh ladder kiểu SmartDOM từ <code>@depth</code>.</div></a>
     <a class="card" href="heatmap.html"><div class="t">Heatmap</div><div class="d">Bản đồ nhiệt thanh khoản theo thời gian (+ chế độ MBO: thanh theo đời lệnh).</div></a>
     <a class="card" href="mbo.html"><div class="t">MBO <span class="en">order-by-order</span></div><div class="d">Sổ theo từng lệnh trên Rithmic DBO (<code>@mbo</code> + <code>mboProbe</code>).</div></a>
+    <a class="card" href="marketstructure.html"><div class="t">Market Structure <span class="en">+ contract spec</span></div><div class="d">Settlement, limit up/down, trạng thái chợ, OI, đấu giá + thông số hợp đồng (tick value, margin).</div></a>
     <a class="card" href="bigtrades.html"><div class="t">Big Trades</div><div class="d">Phát hiện lệnh lớn / sweep gom server-side (<code>bigTrades</code>).</div></a>
     <a class="card" href="options.html"><div class="t">Options · GEX · 0DTE</div><div class="d">Chuỗi quyền chọn, gamma exposure, Call/Put Wall, γ-flip.</div></a>
     <a class="card" href="continuous.html"><div class="t">Continuous Contract <span class="en">rollover</span></div><div class="d">Hợp đồng liên tục back-adjusted (<code>continuousInfo</code> + <code>cont</code>).</div></a>
@@ -67,7 +68,7 @@
 <script>
 (function(){
   // Gộp MỌI file .md app đang phục vụ thành 1 file để nạp cho LLM khác đọc.
-  var FILES = ["API.md","RAW.md","FOOTPRINT.md","BIGTRADES.md","RECIPES.md","DOM.md","MBO.md","HEATMAP.md","VOLUMEPROFILE.md","CONTINUOUS.md","OPTIONS.md","STORAGE.md"];
+  var FILES = ["API.md","RAW.md","FOOTPRINT.md","BIGTRADES.md","RECIPES.md","DOM.md","MBO.md","HEATMAP.md","MARKETSTRUCTURE.md","VOLUMEPROFILE.md","CONTINUOUS.md","OPTIONS.md","STORAGE.md"];
   var btn = document.getElementById("dlAll");
   if(!btn) return;
   btn.addEventListener("click", async function(e){

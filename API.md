@@ -716,7 +716,12 @@ while (ws.State == WebSocketState.Open) {
 
 ## Changelog
 
-Current API version: **1.9.3**. Follows SemVer — breaking changes bump the MAJOR number.
+Current API version: **1.9.4**. Follows SemVer — breaking changes bump the MAJOR number.
+
+### 1.9.4 — 2026-07-01
+- **Market Structure overlay** (`MS` toggle) — settlement + projected-settlement price lines, limit up/down bands, a market-status badge (Open/Halt/Pause/Auction/Closed), futures open interest, live price-vs-settlement, and opening/closing **auction indicators** (IOP/ICP). All from R|API+ low-frequency raw pushes (`@OnSettlementPrice`, `@OnProjectedSettlementPrice`, `@OnHighPriceLimit`/`@OnLowPriceLimit`, `@OnMarketMode`, `@OnOpenInterest`, `@OnOpeningIndicator`/`@OnClosingIndicator`). See **MARKETSTRUCTURE.md**.
+- **Contract Spec panel** (`ⓘ` next to the symbol) — tick value / point value / currency / expiration (`instrumentInfo`), settlement method / unit-of-measure / last-trading-date (`auxRefData`), account RMS limits (`productRms`).
+- **Chart** — wheel zoom keeps the last candle anchored at the live edge (with zoom limits); go-live button now hides correctly in heatmap MBO mode.
 
 ### 1.9.3 — 2026-07-01
 - **Full-book per-order MBO.** DBO is now subscribed for the **whole `@depth` book** (book-driven window — **"Độ sâu MBO" = 0** = full to the bottom, like ATAS) instead of a fixed ±20-tick band; the initial fill is throttled (`MBO_SUB_PER_TICK`, re-entry-guarded) to dodge the Rithmic rate-limit `OMException`, and crossed orders are pruned (synthetic `@mboraw` `Delete`). `@depth` is always full and now carries a per-level **order count** (`[price, size, count]` from `NumOrders`) so the ladder shows `×N` at every level. See **MBO.md** / **DOM.md**.
