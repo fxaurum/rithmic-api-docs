@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Trading Surface</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --blu:#2d78dc; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  h3{font-size:18px;color:#fff;margin-top:26px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  .st{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
+  .st.ok{color:var(--grn);border-color:#1f6f64;background:#10211e}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Trading Surface</h1>
+  <div class="v">Order entry · SL/TP · chart-trade · panels</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#what"><span class="vi">Nó là gì</span><span class="en">What it is</span></a>
+  <a href="#sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></a>
+  <a href="#arm"><span class="vi">Arm · SIM/LIVE · guard</span><span class="en">Arm · SIM/LIVE · guards</span></a>
+  <a href="#sltp"><span class="vi">SL/TP (ở gateway)</span><span class="en">SL/TP (gateway-managed)</span></a>
+  <a href="#chart"><span class="vi">Trade trên chart</span><span class="en">Trading on the chart</span></a>
+  <a href="#panels"><span class="vi">4 panel (thanh dưới)</span><span class="en">Panels (bottom bar)</span></a>
+  <a href="#survive"><span class="vi">N-tab / reload / restart</span><span class="en">Multi-tab / reload / restart</span></a>
+  <hr>
+  <a href="index.html" class="h"><span class="vi">🏠 Mục lục tài liệu</span><span class="en">🏠 All docs</span></a>
+  <a href="trading.md" class="h" target="_blank"><span class="vi">↓ trading.md (cho AI)</span><span class="en">↓ trading.md (for AI)</span></a>
+  <a href="api.html" class="h"><span class="vi">← WebSocket API</span><span class="en">← WebSocket API</span></a>
+  <a href="raw.html" class="h"><span class="vi">→ Raw bus</span><span class="en">→ Raw bus</span></a>
+</nav>
+<main>
+
+<h2 id="what" style="margin-top:0"><span class="vi">Trading Surface là gì</span><span class="en">What it is</span></h2>
+<p><span class="vi">Bề mặt vào lệnh <b>kiểu ATAS</b> trên web chart: panel dock để <b>arm account</b> + bắn lệnh market/limit/stop,
+<b>SL/TP quản ở server</b> (đơn hoặc nhiều mức, kèm breakeven + trailing), <b>trade thẳng trên chart</b> (click đặt limit/stop,
+kéo đặt SL/TP cho từng lệnh), <b>OCO</b>, và 4 panel phiên — <b>Accounts · Positions · Trades · Orders</b>.</span>
+<span class="en">An <b>ATAS-style order-entry surface</b> on the web chart: a dock to arm an account and fire market/limit/stop orders,
+<b>server-managed SL/TP</b> (single or multi-level, with breakeven + trailing), <b>click-to-trade on the chart</b> with per-order
+drag-to-set SL/TP, <b>OCO</b> pairing, and four session panels — <b>Accounts · Positions · Trades · Orders</b>.</span></p>
+<p><span class="vi">Ý tưởng cốt lõi: <b>bảo vệ nằm ở gateway, không ở trình duyệt.</b> SL/TP, OCO, breakeven, trailing đều reconcile ở
+server theo <code>account|symbol</code> → <b>N tab không đá nhau</b> và mọi thứ <b>sống sót F5 / tab mới / gateway restart</b>. Client chỉ
+<i>hiển thị</i> trạng thái và <i>gửi ý định</i>.</span>
+<span class="en">The core idea: <b>protection lives in the gateway, not the browser.</b> SL/TP, OCO, breakeven and trailing reconcile
+server-side per <code>account|symbol</code> → <b>N tabs never fight</b> and everything <b>survives F5 / new tab / gateway restart</b>. The
+client only <i>shows</i> state and <i>sends intents</i>.</span></p>
+<div class="note warn"><span class="vi"><b>⚠ Tiền thật.</b> Mỗi entry/close là lệnh live ra sàn. Panel buộc confirm trên account LIVE cho tới khi <b>arm</b>; mọi Close/Cancel cross-account hỏi lại. Test trên SIM trước.</span>
+<span class="en"><b>⚠ Real money.</b> Every entry/close is a live order. The panel forces a confirm on LIVE accounts until you <b>arm</b>; every cross-account Close/Cancel asks again. Test on SIM first.</span></div>
+
+<h2 id="sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></h2>
+<p><span class="vi">Luồng lệnh = <b>method + params → gateway → sàn</b>; kết quả về trên <b>report stream</b> (sub 1 lần). Panel đọc <b>ảnh cache ở gateway</b> qua RPC pull nên tab mới đúng ngay.</span>
+<span class="en">Order flow is <b>method + params → gateway → exchange</b>; results arrive on <b>report streams</b> (subscribe once). Panels read <b>gateway-cached snapshots</b> via pull RPCs so a fresh tab is instantly correct.</span></p>
+
+<h3><span class="vi">Subscribe 1 lần / phiên</span><span class="en">Subscribe once (per session)</span></h3>
+<table>
+<tr><th>Stream</th><th><span class="vi">Cho</span><span class="en">Gives</span></th></tr>
+<tr><td><code>*.*@onpnlupdate</code></td><td><span class="vi">vị thế + P&amp;L account (dòng theo mã <b>và</b> dòng tổng account)</span><span class="en">position + account P&amp;L (per-symbol <b>and</b> account-summary rows)</span></td></tr>
+<tr><td><code>@onstatusreport</code> · <code>@onmodifyreport</code> · <code>@onorderreplay</code> · <code>@onopenorderreplay</code></td><td><span class="vi">trạng thái lệnh (mới / chờ / giá sau khi kéo / ảnh replay)</span><span class="en">order state (new / working / price after a drag / replay image)</span></td></tr>
+<tr><td><code>@onfillreport</code></td><td><span class="vi">khớp (fill) — nuôi <b>Trades</b></span><span class="en">fills — drives <b>Trades</b></span></td></tr>
+<tr><td><code>@oncancelreport</code> · <code>@onrejectreport</code></td><td><span class="vi">huỷ / từ chối</span><span class="en">cancel / reject</span></td></tr>
+<tr><td><code>@onfailurereport</code> · <code>@onnotcancelledreport</code> · <code>@onnotmodifiedreport</code></td><td><span class="vi">thao tác thất bại (RMS / margin / giới hạn) → banner</span><span class="en">operation failed (RMS / margin / limit) → banner</span></td></tr>
+<tr><td><code>@ontraderoute</code> · <code>@ontraderoutelist</code></td><td><span class="vi">route sẵn sàng (cần trước khi đặt)</span><span class="en">trade routes ready (needed before placing)</span></td></tr>
+</table>
+
+<h3><span class="vi">Đặt / quản lệnh</span><span class="en">Place / manage orders</span></h3>
+<table>
+<tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th></tr>
+<tr><td><span class="vi">Entry market / limit / stop</span><span class="en">Market / limit / stop entry</span></td><td><code>placeOrder {account, exchange, symbol, side:"B"|"S", qty, type, price?, triggerPrice?, duration, tag, tradeRoute?}</code></td></tr>
+<tr><td><span class="vi"><b>Bracket</b> (entry + tier SL/TP)</span><span class="en"><b>Bracket</b> (entry + SL/TP tiers)</span></td><td><code>bracketOrder {…entry…, targets:[{qty,ticks}], stops:[{qty,ticks}]}</code> — <span class="vi">entry limit hoặc stop</span><span class="en">entry limit or stop</span></td></tr>
+<tr><td><span class="vi">Modify (kéo pill)</span><span class="en">Modify (drag a pill)</span></td><td><code>modifyOrder {account, orderNum, type, qty?, price?, triggerPrice?}</code></td></tr>
+<tr><td><span class="vi">Huỷ 1 lệnh</span><span class="en">Cancel one</span></td><td><code>cancelOrder {account, orderNum}</code></td></tr>
+<tr><td><span class="vi">Đóng vị thế</span><span class="en">Flatten a position</span></td><td><code>flatten {account, exchange, symbol}</code></td></tr>
+<tr><td><span class="vi">Policy SL/TP ở server</span><span class="en">Server SL/TP policy</span></td><td><code>setProtection {account, exchange, symbol, enabled, tpOn, slOn, tpOffset, slOffset, tick, duration, pointValue, beOn, beVal, beOff, trOn, trStop, trStep}</code></td></tr>
+</table>
+
+<h3><span class="vi">Pull ảnh (mở tab / F5 / reconnect)</span><span class="en">Pull snapshots (tab open / F5 / reconnect)</span></h3>
+<table>
+<tr><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Trả</span><span class="en">Returns</span></th></tr>
+<tr><td><code>getAccounts</code></td><td><span class="vi">danh sách account (id / fcm / ib / tên / RMS)</span><span class="en">account list (id / fcm / ib / name / RMS)</span></td></tr>
+<tr><td><code>subscribeOrders</code> · <code>subscribePnl</code></td><td><span class="vi">gắn lại plant order/PnL của account</span><span class="en">(re)attach the account's order/PnL plant</span></td></tr>
+<tr><td><code>replayOpenOrders</code> · <code>replayPnl</code></td><td><span class="vi">xin sàn gửi lại ảnh lệnh-chờ / vị thế</span><span class="en">ask the exchange to re-send the working-order / position image</span></td></tr>
+<tr><td><code>positions</code></td><td><span class="vi">vị thế cache (<code>account|symbol</code> → net/avg/open/closed) — <b>biết net ngay</b>, khỏi chờ ~60 s</span><span class="en">cached positions — <b>net known immediately</b>, no ~60 s wait</span></td></tr>
+<tr><td><code>openOrders</code></td><td><span class="vi">lệnh chờ cache — tab mới dựng lại pill/list không cần report live</span><span class="en">cached working orders — a new tab rebuilds pills/list</span></td></tr>
+<tr><td><code>accountInfo</code></td><td><span class="vi">tài chính account (balance/buying-power/margin/PnL) + detail tĩnh (RMS / auto-liquidation)</span><span class="en">account financials + static detail (RMS / auto-liquidation)</span></td></tr>
+<tr><td><code>orderHistory</code></td><td><span class="vi">lịch sử lệnh phiên (gồm Done / Cancelled)</span><span class="en">session order history incl. Done / Cancelled</span></td></tr>
+<tr><td><code>trades</code></td><td><span class="vi">fills phiên (executions)</span><span class="en">session fills (executions)</span></td></tr>
+<tr><td><code>tradeRoutes</code> · <code>productRms</code></td><td><span class="vi">routes + giới hạn RMS (guard entry theo trần thật)</span><span class="en">routes + RMS limits (guard entries against the real cap)</span></td></tr>
+</table>
+<div class="note"><span class="vi"><b>Vì sao có cache.</b> Sàn gửi ảnh lệnh/vị thế <b>1 lần / subscription</b>, gateway là subscriber duy nhất → tab nối <i>sau</i> không bao giờ nhận lại ảnh. Nên gateway <b>giữ ảnh</b> và trả qua <code>positions</code>/<code>openOrders</code>/<code>accountInfo</code>/<code>orderHistory</code>/<code>trades</code>. Lúc login gateway còn tự chạy <code>replayOpenOrders + replayPnl + replayAllOrders + replayExecutions</code> (~24 h) để panel có <b>cả phiên</b>.</span>
+<span class="en"><b>Why the caches exist.</b> The exchange sends each order/position image <b>once per subscription</b>, and the gateway is the single subscriber → a tab that connects <i>after</i> that never gets it. So the gateway <b>keeps the image</b> and serves it on those RPCs. On login it also self-runs <code>replayOpenOrders + replayPnl + replayAllOrders + replayExecutions</code> (~24 h) so the panels show the <b>full session</b>.</span></div>
+
+<h2 id="arm"><span class="vi">Arm · SIM/LIVE · guard</span><span class="en">Arm · SIM/LIVE · guards</span></h2>
+<ul>
+<li><span class="vi"><b>Arm-once.</b> Trên account LIVE, entry đầu tiên hỏi confirm; <b>Arm</b> (hoặc confirm 1 lần) tắt confirm cho account đó trong phiên. <b>Disarm</b> bật lại. SIM không hỏi.</span>
+<span class="en"><b>Arm-once.</b> On a LIVE account the first entry confirms; <b>Arm</b> (or confirming once) suppresses further confirms for that account this session. <b>Disarm</b> re-enables. SIM never confirms.</span></li>
+<li><span class="vi"><b>Badge SIM/LIVE.</b> Tự phân loại từ id account; bấm để đổi nếu sai.</span>
+<span class="en"><b>SIM/LIVE badge.</b> Auto-classified from the id; click to flip if wrong.</span></li>
+<li><span class="vi"><b>Guard RMS.</b> Trước khi gửi, client kiểm <b>BuyLimit / SellLimit / MaxOrderQty</b> (từ <code>productRms</code>, tôn trọng <code>*Flag</code> — flag false = không áp). Nếu account chỉ có giới hạn theo margin, lệnh quá cỡ bị sàn từ chối → <b>banner</b> ("Rejected at RMS — Available margin exhausted"), giống ATAS.</span>
+<span class="en"><b>RMS guard.</b> Before sending, the client checks <b>BuyLimit / SellLimit / MaxOrderQty</b> (from <code>productRms</code>, respecting the <code>*Flag</code> — false = not enforced). Margin-only accounts get an exchange reject shown as a <b>banner</b>, matching ATAS.</span></li>
+</ul>
+
+<h2 id="sltp"><span class="vi">SL/TP (quản ở gateway)</span><span class="en">SL/TP (gateway-managed)</span></h2>
+<p><span class="vi">Bật <b>SL/TP</b> trên panel → client gửi <code>setProtection</code>, <b>gateway</b> giữ vị thế được phủ. Nó reconcile theo <code>account|symbol</code> mỗi PnL update: đặt chân còn thiếu, đổi qty khi add/reduce (<b>giữ giá đã kéo</b>), huỷ khi flat. 2 chế độ trong <b>Edit</b>:</span>
+<span class="en">Toggle <b>SL/TP</b> → the client sends <code>setProtection</code> and the <b>gateway</b> keeps the position covered, reconciling per <code>account|symbol</code> on every PnL update: place missing legs, resize qty on add/reduce (<b>keep the dragged price</b>), cancel when flat. Two modes in <b>Edit</b>:</span></p>
+<table>
+<tr><th><span class="vi">Chế độ</span><span class="en">Mode</span></th><th><span class="vi">Hành vi</span><span class="en">Behaviour</span></th></tr>
+<tr><td><b>Simple</b></td><td><span class="vi">1 SL + 1 TP phủ cả net, tại <code>slOffset</code>/<code>tpOffset</code> từ giá vào TB. Kéo pill để dời (SL kéo vào vùng lãi = stop khoá-lãi/breakeven, <b>không</b> phải huỷ).</span><span class="en">One SL + one TP covering the net, at <code>slOffset</code>/<code>tpOffset</code> from the average entry. Drag to move (SL into profit = a locked-in / breakeven stop, <b>not</b> a cancel).</span></td></tr>
+<tr><td><span class="vi"><b>Multi-level · step (ATAS)</b></span><span class="en"><b>Multi-level · step (ATAS)</b></span></td><td><span class="vi">Định nghĩa N mức <code>{lot, sl, tp}</code>. Mỗi Buy/Sell <b>"hốt" mức kế</b> — lot net vào, SL/TP thành các đường bracket riêng. Hết mức → lặp mức cuối. Panel hiện chân thật + <b>▶ mức kế</b>.</span><span class="en">Define N levels <code>{lot, sl, tp}</code>. Each Buy/Sell <b>"takes" the next level</b> — its lot nets in, its SL/TP become their own bracket lines. After the last it repeats. The panel shows the live legs + the <b>▶ next level</b>.</span></td></tr>
+<tr><td><span class="vi"><b>Multi-level · scale-out (Rithmic)</b></span><span class="en"><b>Multi-level · scale-out (Rithmic)</b></span></td><td><span class="vi">1 click vào <b>Σ lot</b>; SL/TP xoè thành các tier từ 1 điểm entry.</span><span class="en">One click enters <b>Σ lot</b>; SL/TP fan out into tiers from that single entry.</span></td></tr>
+</table>
+<p><span class="vi"><b>Breakeven</b> (dời SL về entry ± offset khi lãi ≥ N) và <b>trailing</b> (dời SL <code>trStep</code> mỗi <code>trStop</code> lãi mới, không lùi) cũng chạy <b>ở gateway</b> từ P&amp;L live.</span>
+<span class="en"><b>Breakeven</b> (move SL to entry ± offset once profit ≥ N) and <b>trailing</b> (advance SL by <code>trStep</code> per <code>trStop</code> of new profit, never backward) also run <b>in the gateway</b> from the live P&amp;L.</span></p>
+<div class="note"><span class="vi"><b>Edit dialog.</b> Sửa mức = ghi <b>nháp</b> (nút <i>Disable</i> thành <b>Save</b> — lưu config, chưa kích hoạt); <b>Apply</b> chuyển panel sang mode đó nhưng <b>không bật công tắc tổng</b> — panel OFF vẫn OFF, chỉ hiện config (watch/live chỉ khi ON).</span>
+<span class="en"><b>Edit dialog.</b> Editing writes a <b>draft</b> (the <i>Disable</i> button becomes <b>Save</b> — saves without activating); <b>Apply</b> switches the panel to that mode but <b>does not flip the master toggle</b> — an OFF panel stays OFF and just shows the config (watch/live only when ON).</span></div>
+
+<h2 id="chart"><span class="vi">Trade trên chart</span><span class="en">Trading on the chart</span></h2>
+<p><span class="vi">Bật <b>Trading on chart</b> → crosshair thành đường giá, nhãn theo lệnh sẽ đặt nếu click:</span>
+<span class="en">Turn on <b>Trading on chart</b> → the crosshair becomes a price line labelled by what a click would place:</span></p>
+<table>
+<tr><th><span class="vi">Vị trí vs market</span><span class="en">Position vs market</span></th><th><span class="vi">Click trái (limit)</span><span class="en">Left-click (limit)</span></th><th><span class="vi">Click phải (stop)</span><span class="en">Right-click (stop)</span></th></tr>
+<tr><td><span class="vi">Trên market</span><span class="en">Above market</span></td><td class="s">SELL LIMIT</td><td class="b">BUY STOP</td></tr>
+<tr><td><span class="vi">Dưới market</span><span class="en">Below market</span></td><td class="b">BUY LIMIT</td><td class="s">SELL STOP</td></tr>
+</table>
+<ul>
+<li><span class="vi">Lệnh chờ vẽ <b>pill</b> (màu theo side: BUY xanh / SELL đỏ) có nút <b><code>+TP</code>/<code>+SL</code></b>. <b>Kéo <code>+TP</code>/<code>+SL</code></b> tới 1 giá → chân đó gắn cho <b>chính lệnh đó</b> (lệnh được đặt lại thành bracket) + tự thêm khi khớp — <b>không đụng config panel</b>. Đường <b>ghost</b> nét đứt xem trước mức; <b>✕</b> trên ghost gỡ đúng chân đó.</span>
+<span class="en">A resting order draws a <b>pill</b> (BUY green / SELL red) with <b><code>+TP</code>/<code>+SL</code></b> buttons. <b>Drag <code>+TP</code>/<code>+SL</code></b> onto a price → that leg attaches to <b>that order</b> (re-placed as a bracket) and auto-adds on fill — <b>without touching the panel config</b>. A <b>ghost</b> dashed line previews it; <b>✕</b> on the ghost removes just that leg.</span></li>
+<li><span class="vi"><b>OCO</b>: 2 lệnh chart kế tiếp được ghép; lệnh đầu <b>vàng</b> chờ; 1 chân <b>khớp hoặc ✕</b> → gateway huỷ chân kia. Toggle tự tắt sau khi ghép đủ cặp.</span>
+<span class="en"><b>OCO</b>: the next two chart orders are paired; the first shows <b>yellow</b> while waiting; when one <b>fills or is ✕'d</b>, the gateway cancels the other. The toggle auto-clears after a pair forms.</span></li>
+<li><span class="vi"><b>Độc lập vs vị thế.</b> Lệnh đặt tay giữ nhãn <code>SELL LMT</code>/<code>BUY STP</code> kể cả khi ngược chiều vị thế — <b>không</b> bị đổi thành TP/SL và <b>không</b> bị Close quét (chỉ ✕ của chính nó hoặc <b>Cancel All</b>). Khớp thì sàn net vào vị thế (netting).</span>
+<span class="en"><b>Independent vs position.</b> A hand-placed order keeps its <code>SELL LMT</code>/<code>BUY STP</code> label even opposite your position — <b>not</b> relabelled TP/SL and <b>not</b> swept by Close (only its own ✕ or <b>Cancel All</b>). On fill the exchange nets it into the position.</span></li>
+</ul>
+
+<h2 id="panels"><span class="vi">4 panel (thanh dưới)</span><span class="en">Panels (bottom bar)</span></h2>
+<table>
+<tr><th><span class="vi">Nút</span><span class="en">Button</span></th><th><span class="vi">Bảng</span><span class="en">Table</span></th></tr>
+<tr><td><b>Accounts</b></td><td><span class="vi">1 dòng / account — Balance · Available · Balance-power · Blocked margin · Closed/Open P&amp;L · Commission, + <b>ⓘ → "Full account data"</b> mỗi dòng (Account / Balance / Exposure / Risk-Management / Auto-Liquidation).</span><span class="en">one row per account — Balance · Available · Balance-power · Blocked margin · Closed/Open P&amp;L · Commission, + a per-row <b>ⓘ → "Full account data"</b> (Account / Balance / Exposure / Risk-Management / Auto-Liquidation).</span></td></tr>
+<tr><td><b>Positions</b></td><td><span class="vi">theo <code>account|symbol</code> — Size (FLAT / ±N) · Avg · P&amp;L · Closed P&amp;L · <b>SL/TP status + config</b> (<code>10T / 10T</code> hoặc <code>Multiple SL&amp;TP</code>) · <b>Close</b> (confirm).</span><span class="en">per <code>account|symbol</code> — Size (FLAT / ±N) · Avg · P&amp;L · Closed P&amp;L · <b>SL/TP status + config</b> (<code>10T / 10T</code> or <code>Multiple SL&amp;TP</code>) · <b>Close</b> (confirm).</span></td></tr>
+<tr><td><b>Trades</b></td><td><span class="vi">fills phiên — Account · Instrument · Direction · Volume · Price · <b>Time (local)</b>.</span><span class="en">session fills — Account · Instrument · Direction · Volume · Price · <b>Time (local)</b>.</span></td></tr>
+<tr><td><b>Orders</b></td><td><span class="vi">lệnh phiên — <b>State</b> (Done/Cancelled/Rejected/Working) · Direction (<code>Sell Limit</code>…) · Time · Price (<code>giá/trigger</code>) · Volume · <b>Comment</b> (SL/TP/OCO) · <b>Cancel</b> (chỉ Working).</span><span class="en">session orders — <b>State</b> (Done/Cancelled/Rejected/Working) · Direction · Time · Price (<code>price/trigger</code>) · Volume · <b>Comment</b> (SL/TP/OCO) · <b>Cancel</b> (Working only).</span></td></tr>
+</table>
+<p><span class="vi">Cả 4 gom <b>mọi account</b>, cập nhật <b>live</b> khi đang mở, và seed từ cache gateway lúc mở (đủ cả mã/account chưa từng mở chart). Giờ hiện theo <b>múi giờ local</b> của trình duyệt (quy đổi từ UTC của sàn).</span>
+<span class="en">All four aggregate <b>every account</b>, update <b>live</b> while open, and seed from the gateway caches on open (complete even for symbols/accounts you never charted). Times are the <b>browser's local timezone</b> (converted from the exchange's UTC).</span></p>
+
+<h2 id="survive"><span class="vi">N-tab / reload / restart</span><span class="en">Multi-tab / reload / restart</span></h2>
+<table>
+<tr><th><span class="vi">Sự kiện</span><span class="en">Event</span></th><th><span class="vi">Cái gì giữ đúng</span><span class="en">What keeps it correct</span></th></tr>
+<tr><td><span class="vi">N tab mở</span><span class="en">N tabs open</span></td><td><span class="vi">Mọi huỷ protection/OCO ở gateway (1 nơi). Id-per-tab trong tag lệnh chặn 2 tab tạo cùng nhóm OCO; sự kiện <code>storage</code> đồng bộ config / level / chân đã kéo giữa tab.</span><span class="en">All protection/OCO cancellation is gateway-side (one place). Per-tab ids in order tags stop two tabs forming the same OCO group; a <code>storage</code> event syncs config / level / dragged-leg state across tabs.</span></td></tr>
+<tr><td>F5 / <span class="vi">tab mới</span><span class="en">new tab</span></td><td><span class="vi"><code>positions</code> → net ngay; <code>openOrders</code> → dựng lại pill/list; <code>accountInfo</code>/<code>orderHistory</code>/<code>trades</code> → panel đầy — tất cả từ image cache.</span><span class="en"><code>positions</code> → net immediately; <code>openOrders</code> → pills/list rebuilt; <code>accountInfo</code>/<code>orderHistory</code>/<code>trades</code> → panels filled — all from the image cache.</span></td></tr>
+<tr><td><span class="vi">Gateway restart / reconnect</span><span class="en">Gateway restart / reconnect</span></td><td><span class="vi">Lúc login gateway re-image lệnh + PnL và <b>nhận nuôi</b> các chân bảo vệ còn sống (giữ giá, không đặt bộ trùng). Client re-subscribe mọi stream ở <code>onopen</code> + reseed.</span><span class="en">On login the gateway re-images orders + PnL and <b>adopts</b> the surviving protective legs (keeps their price, no duplicate set). The client re-subscribes every stream on <code>onopen</code> and reseeds.</span></td></tr>
+<tr><td><span class="vi">App đóng</span><span class="en">App closed</span></td><td><span class="vi">Chân bảo vệ là lệnh chờ riêng trên sàn, nhưng breakeven/trailing/OCO là logic gateway → app đóng thì các <i>dời</i> đó tạm dừng; mở lại gateway nhận nuôi + tiếp tục.</span><span class="en">Protective legs are separate resting orders, but breakeven/trailing/OCO are gateway logic → with the app closed those <i>managed</i> moves pause; on relaunch the gateway re-adopts and resumes.</span></td></tr>
+</table>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="api.html"><span class="vi">WebSocket API</span><span class="en">WebSocket API</span></a> ·
+<a class="h" href="raw.html">Raw bus</a> · <a class="h" href="recipes.html">Recipes</a> ·
+<a class="h" href="trading.md" target="_blank">trading.md</a></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

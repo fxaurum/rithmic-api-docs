@@ -447,7 +447,7 @@ Volume Profile **native**. `Prices[]` & `Volumes[]` **song song** (cùng index).
 ```json
 { "e":"OnStrategyList", "Products":["NQ"], "StrategyTypes":["Futures Calendar","Iron Condor","Options Straddle","Risk Reversal",…], "RpCode":0 }
 { "e":"OnTradeRouteList", "RpCode":0,
-  "TradeRoutes":[ {"Exchange":"CME","FcmId":"CarstenTech","IbId":"Optimus","TradeRoute":"simulator","Status":"UP","Default":"Y"} ] }
+  "TradeRoutes":[ {"Exchange":"CME","FcmId":"FCM1","IbId":"IB1","TradeRoute":"simulator","Status":"UP","Default":"Y"} ] }
 ```
 - `OnStrategyList` = các **loại** spread hỗ trợ (`StrategyType`). `OnStrategy` (strategyInfo) cần product + `StrategyType` + `Legs` cụ thể → thiếu thì `RpCode 7`.
 - `OnTradeRouteList` = **route đặt lệnh** (1/sàn). `FcmId`+`IbId`+`TradeRoute` định tuyến order; `Status` `UP`/`DOWN`; `Default` `Y`. `simulator` = tài khoản demo. **Cần cho order entry.**
@@ -457,7 +457,7 @@ Volume Profile **native**. `Prices[]` & `Volumes[]` **song song** (cùng index).
 > **STATE-WRAPPER** (đặc thù Rithmic): nhiều field tiền tệ là object `{Ignore, Clear, Use, State, Value}`. `State` = `Use` (dùng `Value`) · `Clear` (đã xoá → `Value:null`) · `Ignore` (không đổi). Đọc `Value` **chỉ khi** `State:"Use"`.
 ```json
 { "e":"OnPnlReplay", "RpCode":0,
-  "Account":{ "FcmId":"CarstenTech","IbId":"Optimus","AccountId":"sample@abc.com","AccountName":"Demo Account",
+  "Account":{ "FcmId":"FCM1","IbId":"IB1","AccountId":"sample@abc.com","AccountName":"Demo Account",
               "RmsInfo":{"Algorithm":"SMAC","Currency":"USD","Status":"active","LossLimit":"NaN","MaxOrderQty":0} },
   "PnlInfoList":[ { "Exchange":null,"Symbol":null,
                     "AccountBalance":{"State":"Use","Value":100070}, "CashOnHand":{"State":"Use","Value":100070},
