@@ -557,6 +557,47 @@ around the BBO for `ms`, then returns and unsubscribes. Run **after opening the 
 
 ---
 
+### `@bigTrade` / `@bigTrade<N>` — live big-trade bubbles (server-aggregated)
+
+> The gateway groups consecutive prints of the same **matching event** (aggressor order / `tu` timestamp) into a single
+> *bubble* — the same engine behind the `bigTrades` RPC — and pushes it live, so thin clients / EAs don't have to
+> aggregate `@trade` themselves. `@bigTrade<N>` pushes only bubbles of **≥ N contracts** (server-side filter);
+> `@bigTrade` (no `N`) pushes every bubble. Subscribe: `CME.ESU6@bigTrade50`.
+
+```json
+{ "stream":"cme.esu6@bigtrade50",
+  "data":{ "e":"bigtrade", "s":"ESU6", "side":"B", "q":74,
+           "p0":5500.25, "p":5500.75, "T":1718000000123, "r":1718000000140 } }
+```
+
+| Field       | Meaning |
+|-------------|---------|
+| `side`      | Aggressor side (`B`/`S`, `""` = unknown) |
+| `q`         | Bubble total size (contracts) — the value `N` is compared against |
+| `p0` / `p`  | First / last fill price of the bubble |
+| `T`         | Bubble start time (ms) |
+| `r`         | Gateway emit time (ms) — feed latency ≈ `r − T` |
+
+---
+
+### `heartbeat` — server keep-alive (auto-pushed, no subscribe)
+
+Pushed to **every** connected client about every **15 s**, with no subscription needed, so a client can tell a **quiet
+market** from a **dead socket** — a silent feed still gets heartbeats. Use it as a liveness signal instead of failing
+open after N seconds of silence.
+
+```json
+{ "stream":"heartbeat", "data":{ "t":1718000000000, "clients":3, "md":true } }
+```
+
+| Field     | Meaning |
+|-----------|---------|
+| `t`       | Server time (ms) — measure clock skew / latency |
+| `clients` | Connected client count |
+| `md`      | `true` = gateway is logged into Rithmic (live feed); `false` = cache-only (offline) |
+
+---
+
 ## Intervals
 
 Format: `<number><unit>`.
@@ -716,7 +757,12 @@ while (ws.State == WebSocketState.Open) {
 
 ## Changelog
 
-Current API version: **1.9.4**. Follows SemVer — breaking changes bump the MAJOR number.
+Current API version: **1.10.0**. Follows SemVer — breaking changes bump the MAJOR number.
+
+### 1.10.0 — 2026-07-06
+- **Trading Surface — order entry.** An ATAS-style order-entry panel plus trading directly on the chart (drag to place a LIMIT, drag-to-place **＋SL/＋TP**), **position-based** SL/TP with OCO enforced **at the gateway** (server-side protection — multiple tabs/DOMs don't fight when editing), multi-level brackets (ATAS-step / Rithmic-FOCCA), and reject / RMS-limit reporting. See **TRADING.md**.
+- **Multi-connection.** Manage **several Rithmic logins at once** (N sessions) in one app: a *Manage connections* window (add/edit/delete, per-connection auto-connect), **auto-reconnect** with 5s→60s backoff (survives transient network loss; re-connects after a forced logout when auto-connect is on), and **pick which account feeds the web chart's data**. UX: a "Reconnect connector?" modal when editing settings while connected, the Connect button locked while connecting, one error modal per attempt.
+- **New streams from client feedback.** `@bigTrade` / `@bigTrade<N>` pushes **server-aggregated big-trade bubbles** (the same engine as the `bigTrades` RPC) so thin clients / EAs don't aggregate `@trade` themselves; `@bigTrade<N>` pushes only bubbles ≥ N lots. `heartbeat` is auto-pushed ~15s (no subscribe) to tell a **quiet market** from a **dead socket**.
 
 ### 1.9.4 — 2026-07-01
 - **Market Structure overlay** (`MS` toggle) — settlement + projected-settlement price lines, limit up/down bands, a market-status badge (Open/Halt/Pause/Auction/Closed), futures open interest, live price-vs-settlement, and opening/closing **auction indicators** (IOP/ICP). All from R|API+ low-frequency raw pushes (`@OnSettlementPrice`, `@OnProjectedSettlementPrice`, `@OnHighPriceLimit`/`@OnLowPriceLimit`, `@OnMarketMode`, `@OnOpenInterest`, `@OnOpeningIndicator`/`@OnClosingIndicator`). See **MARKETSTRUCTURE.md**.

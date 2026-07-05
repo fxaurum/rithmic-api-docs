@@ -84,6 +84,8 @@
   <a href="#s-mbo">@mbo</a>
   <a href="#s-mbo-raw">@mboraw</a>
   <a href="#s-kline">@kline</a>
+  <a href="#s-bigtrade">@bigTrade</a>
+  <a href="#s-heartbeat">heartbeat</a>
   <div class="grp">Reference</div>
   <a href="#intervals"><span class="vi">Khung thời gian</span><span class="en">Intervals</span></a>
   <a href="#errors"><span class="vi">Lỗi</span><span class="en">Errors</span></a>
@@ -144,6 +146,8 @@ receives only those — no client-side filtering needed.</span></p>
 <tr><td><code>@depth</code></td><td><code>subscribe</code> → <code>OnLimitOrderBook</code> + <code>OnBidQuote</code>/<code>OnAskQuote</code></td><td>stream</td></tr>
 <tr><td><code>@mbo</code> / <code>@mboraw</code></td><td><code>subscribeDbo</code> → <code>OnDbo</code></td><td>stream</td></tr>
 <tr><td><code>@kline</code></td><td><code>subscribeBar</code> → <code>OnBar</code> <span style="color:var(--sub)">(+ <code>replayBars</code> + BarStore)</span></td><td>stream</td></tr>
+<tr><td><code>@bigTrade</code> / <code>@bigTrade&lt;N&gt;</code></td><td><span style="color:var(--sub)">gom <code>OnTradePrint</code> theo matching-event (như RPC <code>bigTrades</code>)</span></td><td>stream</td></tr>
+<tr><td><code>heartbeat</code></td><td><span style="color:var(--sub)">nhịp tim gateway, tự đẩy ~15s (không cần subscribe)</span></td><td>stream</td></tr>
 <tr><td><code>chainSub</code> / <code>chainUnsub</code></td><td><code>subscribeByUnderlying</code> / <code>unsubscribeByUnderlying</code></td><td>stream</td></tr>
 <tr><td><code>klines</code></td><td>BarStore <span style="color:var(--sub)">(← <code>replayBars</code> phân trang)</span></td><td>local</td></tr>
 <tr><td><code>aggTrades</code></td><td>TickStore <span style="color:var(--sub)">(← <code>replayTrades</code>)</span></td><td>local</td></tr>
@@ -516,6 +520,29 @@ receives only those — no client-side filtering needed.</span></p>
 <tr><td><code>o h l c</code></td><td><span class="vi">Mở, cao, thấp, đóng</span><span class="en">Open, high, low, close</span></td></tr>
 <tr><td><code>v</code></td><td><span class="vi">Khối lượng</span><span class="en">Volume</span></td></tr></table>
 
+<h3 id="s-bigtrade"><span class="tag strm">stream</span> <code>@bigTrade</code> / <code>@bigTrade&lt;N&gt;</code> — <span class="vi">bóng cụm lệnh lớn (gom server)</span><span class="en">live big-trade bubbles (server-aggregated)</span></h3>
+<p><span class="vi">Gateway gom các print cùng <b>matching event</b> (lệnh aggressor / mốc <code>tu</code>) thành 1 <i>bóng</i> — cùng engine với RPC <code>bigTrades</code> — rồi đẩy live, nên thin-client/EA <b>khỏi tự gom</b> từ <code>@trade</code>. <code>@bigTrade&lt;N&gt;</code> chỉ đẩy bóng <b>≥ N hợp đồng</b> (lọc phía server); <code>@bigTrade</code> (không <code>N</code>) đẩy mọi bóng. Sub: <code>CME.ESU6@bigTrade50</code>.</span>
+<span class="en">The gateway groups prints of the same <b>matching event</b> (aggressor order / <code>tu</code> timestamp) into a single <i>bubble</i> — the same engine behind the <code>bigTrades</code> RPC — and pushes it live, so thin clients / EAs <b>don't</b> aggregate <code>@trade</code> themselves. <code>@bigTrade&lt;N&gt;</code> pushes only bubbles of <b>≥ N contracts</b> (server-side filter); <code>@bigTrade</code> (no <code>N</code>) pushes every bubble. Subscribe: <code>CME.ESU6@bigTrade50</code>.</span></p>
+<pre><code>{ "stream":"cme.esu6@bigtrade50",
+  "data":{ "e":"bigtrade", "s":"ESU6", "side":"B", "q":74,
+           "p0":5500.25, "p":5500.75, "T":1718000000123, "r":1718000000140 } }</code></pre>
+<button class="run" data-stream="@bigTrade50">Execute</button><pre class="out"></pre>
+<table><tr><th>Field</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>side</code></td><td><span class="vi">Bên chủ động (<code>B</code>/<code>S</code>, <code>""</code> = chưa rõ)</span><span class="en">Aggressor side (<code>B</code>/<code>S</code>, <code>""</code> = unknown)</span></td></tr>
+<tr><td><code>q</code></td><td><span class="vi">Tổng size bóng (hợp đồng) — so với <code>N</code></span><span class="en">Bubble total size (contracts) — compared against <code>N</code></span></td></tr>
+<tr><td><code>p0</code> / <code>p</code></td><td><span class="vi">Giá khớp đầu / cuối của bóng</span><span class="en">First / last fill price of the bubble</span></td></tr>
+<tr><td><code>T</code></td><td><span class="vi">Mốc bắt đầu bóng (ms)</span><span class="en">Bubble start time (ms)</span></td></tr>
+<tr><td><code>r</code></td><td><span class="vi">Mốc gateway đóng bóng (ms) — độ trễ feed ≈ <code>r − T</code></span><span class="en">Gateway emit time (ms) — feed latency ≈ <code>r − T</code></span></td></tr></table>
+
+<h3 id="s-heartbeat"><span class="tag strm">stream</span> <code>heartbeat</code> — <span class="vi">nhịp tim server (tự đẩy)</span><span class="en">server keep-alive (auto-pushed)</span></h3>
+<p><span class="vi">Đẩy tới <b>mọi</b> client mỗi ~<b>15 giây</b>, KHÔNG cần subscribe, để client phân biệt <b>chợ im</b> với <b>socket chết</b> — feed im vẫn có nhịp tim. Dùng làm tín hiệu còn-sống thay vì fail-open sau N giây im lặng.</span>
+<span class="en">Pushed to <b>every</b> client about every <b>15 s</b>, no subscription needed, so a client can tell a <b>quiet market</b> from a <b>dead socket</b> — a silent feed still gets heartbeats. Use it as a liveness signal instead of failing open after N seconds of silence.</span></p>
+<pre><code>{ "stream":"heartbeat", "data":{ "t":1718000000000, "clients":3, "md":true } }</code></pre>
+<table><tr><th>Field</th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>t</code></td><td><span class="vi">Giờ server (ms) — đo lệch đồng hồ / độ trễ</span><span class="en">Server time (ms) — measure clock skew / latency</span></td></tr>
+<tr><td><code>clients</code></td><td><span class="vi">Số client đang nối</span><span class="en">Connected client count</span></td></tr>
+<tr><td><code>md</code></td><td><span class="vi"><code>true</code> = gateway đã nối Rithmic (feed live); <code>false</code> = chỉ cache (offline)</span><span class="en"><code>true</code> = gateway logged into Rithmic (live feed); <code>false</code> = cache-only (offline)</span></td></tr></table>
+
 <h2 id="intervals"><span class="vi">Khung thời gian</span><span class="en">Intervals</span></h2>
 <p><span class="vi">Định dạng: <code>&lt;số&gt;&lt;đơn vị&gt;</code>. Đơn vị:</span><span class="en">Format: <code>&lt;number&gt;&lt;unit&gt;</code>. Units:</span></p>
 <table>
@@ -645,8 +672,18 @@ while (ws.State == WebSocketState.Open) {
 }</code></pre>
 
 <h2 id="changelog"><span class="vi">Lịch sử phiên bản</span><span class="en">Changelog</span></h2>
-<p><span class="vi">Phiên bản API hiện tại: <b>1.9.4</b>. Theo <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — thay đổi phá vỡ tương thích sẽ tăng số MAJOR.</span>
-<span class="en">Current API version: <b>1.9.4</b>. Follows <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — breaking changes bump the MAJOR number.</span></p>
+<p><span class="vi">Phiên bản API hiện tại: <b>1.10.0</b>. Theo <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — thay đổi phá vỡ tương thích sẽ tăng số MAJOR.</span>
+<span class="en">Current API version: <b>1.10.0</b>. Follows <a class="h" href="https://semver.org/" target="_blank">SemVer</a> — breaking changes bump the MAJOR number.</span></p>
+
+<h3>1.10.0 — 2026-07-06</h3>
+<ul>
+<li><span class="vi"><b>Trading Surface — vào lệnh.</b> Panel đặt lệnh kiểu ATAS + vào lệnh ngay trên chart (kéo đặt LIMIT, nút <b>＋SL/＋TP</b> kéo-thả), SL/TP theo <b>vị thế</b> với OCO thực thi <b>ở gateway</b> (server-side protection — nhiều tab/DOM không đá nhau khi sửa), bracket đa mức (kiểu ATAS-step / Rithmic-FOCCA), báo reject / hạn mức RMS. Xem <a class="h" href="trading.html">Trading</a>.</span>
+<span class="en"><b>Trading Surface — order entry.</b> An ATAS-style order-entry panel plus trading directly on the chart (drag to place a LIMIT, drag-to-place <b>＋SL/＋TP</b>), <b>position-based</b> SL/TP with OCO enforced <b>at the gateway</b> (server-side protection — multiple tabs/DOMs don't fight when editing), multi-level brackets (ATAS-step / Rithmic-FOCCA), reject / RMS-limit reporting. See <a class="h" href="trading.html">Trading</a>.</span></li>
+<li><span class="vi"><b>Đa kết nối (multi-connection).</b> Quản lý <b>nhiều login Rithmic cùng lúc</b> (N session) trong 1 app: cửa sổ <i>Manage connections</i> (thêm/sửa/xoá, auto-connect từng cái), <b>tự reconnect</b> backoff 5s→60s (không bỏ cuộc khi mất mạng tạm; bị đá ra vẫn nối lại nếu bật auto-connect), và <b>chọn account làm nguồn data web chart</b>. UX: modal “Reconnect connector?” khi sửa settings lúc đang nối, nút Connect khoá lúc đang connecting, gộp 1 modal lỗi / mỗi attempt.</span>
+<span class="en"><b>Multi-connection.</b> Manage <b>several Rithmic logins at once</b> (N sessions) in one app: a <i>Manage connections</i> window (add/edit/delete, per-connection auto-connect), <b>auto-reconnect</b> with 5s→60s backoff (survives transient network loss; re-connects after a forced logout when auto-connect is on), and <b>pick which account feeds the web chart's data</b>. UX: a “Reconnect connector?” modal when editing settings while connected, the Connect button locked while connecting, one error modal per attempt.</span></li>
+<li><span class="vi"><b>Stream mới theo góp ý client.</b> <code>@bigTrade</code> / <code>@bigTrade&lt;N&gt;</code> — đẩy <b>bóng cụm lệnh lớn</b> gom server-side (cùng engine RPC <code>bigTrades</code>) nên thin-client/EA khỏi tự gom từ <code>@trade</code>; <code>@bigTrade&lt;N&gt;</code> chỉ đẩy bóng ≥ N lot. <code>heartbeat</code> — nhịp tim tự đẩy ~15s (không cần subscribe) để phân biệt <b>chợ im</b> với <b>socket chết</b>. Xem <a class="h" href="#s-bigtrade">@bigTrade</a> / <a class="h" href="#s-heartbeat">heartbeat</a>.</span>
+<span class="en"><b>New streams from client feedback.</b> <code>@bigTrade</code> / <code>@bigTrade&lt;N&gt;</code> pushes <b>server-aggregated big-trade bubbles</b> (the same engine as the <code>bigTrades</code> RPC) so thin clients / EAs don't aggregate <code>@trade</code> themselves; <code>@bigTrade&lt;N&gt;</code> pushes only bubbles ≥ N lots. <code>heartbeat</code> is auto-pushed ~15s (no subscribe) to tell a <b>quiet market</b> from a <b>dead socket</b>. See <a class="h" href="#s-bigtrade">@bigTrade</a> / <a class="h" href="#s-heartbeat">heartbeat</a>.</span></li>
+</ul>
 
 <h3>1.9.4 — 2026-07-01</h3>
 <ul>
