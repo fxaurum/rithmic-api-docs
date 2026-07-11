@@ -757,7 +757,10 @@ while (ws.State == WebSocketState.Open) {
 
 ## Changelog
 
-Current API version: **1.10.0**. Follows SemVer — breaking changes bump the MAJOR number.
+Current API version: **1.11.0**. Follows SemVer — breaking changes bump the MAJOR number.
+
+### 1.11.0 — 2026-07-11
+- **Copy Trade (CopyEngine).** Mirror a **leader** account's fills onto one or more **followers** — **across FCMs/IBs** — from the multi-connection app, modelled on R Trader Pro's Trade Copier but run **in the gateway** (Rithmic's own copier is same-FCM only). Control RPCs: `copyConfig`, `copyEngine {on}` (kill-switch), `copyMirror {on}`, `copyUpsert {leader, follower, mul?, roundUp?, enabled?, sizeMode?, mktAfter?, copySltp?, fastFill?}`, `copyRemovePair`, `copyRemoveCluster`, `copyClusterEnable {leader, enabled}`, `copyDisableAll`, `copyLog`. Features: Qty Multiplier + Fractional Qty Rounding, **%-equity** sizing, **Copy SL/TP** (follower's own multi-tier bracket), **Fast fill** (pre-fire app-originated market orders), **order-mirror** of working limit/stop orders + **Convert-to-Market**, a 20 s **reconcile** drift-corrector, and an **activity log**. Off by default; new pairs Disabled; loop-guarded + `ReportId`-deduped. ⚠ Real-money; test on SIM. See **COPY.md**.
 
 ### 1.10.0 — 2026-07-06
 - **Trading Surface — order entry.** An ATAS-style order-entry panel plus trading directly on the chart (drag to place a LIMIT, drag-to-place **＋SL/＋TP**), **position-based** SL/TP with OCO enforced **at the gateway** (server-side protection — multiple tabs/DOMs don't fight when editing), multi-level brackets (ATAS-step / Rithmic-FOCCA), and reject / RMS-limit reporting. See **TRADING.md**.

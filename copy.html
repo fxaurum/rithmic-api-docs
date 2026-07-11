@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fxaurum Rithmic — Copy Trade</title>
+<style>
+  :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
+         --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --blu:#2d78dc; --code:#0b0f14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body.lang-en .vi{display:none} body.lang-vi .en{display:none}
+  .wrap{display:grid;grid-template-columns:250px 1fr;max-width:1180px;margin:0 auto}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px;border-right:1px solid var(--bd);background:var(--panel)}
+  nav h1{font-size:15px;color:#fff;margin:0 0 4px}
+  nav .v{color:var(--sub);font-size:12px;margin-bottom:14px}
+  nav a{display:block;color:var(--sub);text-decoration:none;padding:4px 8px;border-radius:6px;font-size:13.5px}
+  nav a:hover{background:var(--panel2);color:var(--txt)}
+  .langsw{display:flex;margin-bottom:16px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;width:fit-content}
+  .langsw button{background:transparent;color:var(--sub);border:0;padding:5px 14px;cursor:pointer;font:inherit;font-size:13px}
+  .langsw button.on{background:var(--acc);color:#fff}
+  main{padding:32px 40px;min-width:0}
+  h2{font-size:24px;color:#fff;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-top:40px}
+  h2:first-child{margin-top:0}
+  h3{font-size:18px;color:#fff;margin-top:26px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-family:Consolas,Menlo,monospace;font-size:13.5px;color:#e6edf3}
+  pre{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;overflow:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--bd);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#fff}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;color:var(--sub)}
+  .note.warn{border-left-color:var(--yel)}
+  .b{color:var(--grn);font-weight:600}.s{color:var(--red);font-weight:600}
+  a.h{color:var(--acc);text-decoration:none}
+  hr{border:0;border-top:1px solid var(--bd);margin:30px 0}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
+  .pill.m{color:#4a93ff;border-color:#2f5aa0;background:#12203c}
+  .pill.f{color:var(--grn);border-color:#1f6f64;background:#10211e}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body class="lang-vi">
+<div class="wrap">
+<nav>
+  <h1>Copy Trade</h1>
+  <div class="v">CopyEngine · cross-FCM mirror</div>
+  <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
+  <a href="#what"><span class="vi">Nó là gì</span><span class="en">What it is</span></a>
+  <a href="#why"><span class="vi">Vì sao ở gateway</span><span class="en">Why in the gateway</span></a>
+  <a href="#pairs"><span class="vi">Cặp &amp; cụm</span><span class="en">Pairs &amp; clusters</span></a>
+  <a href="#sizing"><span class="vi">Sizing / làm tròn</span><span class="en">Sizing / rounding</span></a>
+  <a href="#modes"><span class="vi">2 chế độ copy</span><span class="en">Two copy modes</span></a>
+  <a href="#fast"><span class="vi">Fast fill</span><span class="en">Fast fill</span></a>
+  <a href="#pending"><span class="vi">Mirror lệnh chờ</span><span class="en">Order-mirror</span></a>
+  <a href="#reconcile"><span class="vi">Reconcile drift</span><span class="en">Reconcile drift</span></a>
+  <a href="#safety"><span class="vi">An toàn</span><span class="en">Safety</span></a>
+  <a href="#sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></a>
+  <hr>
+  <a href="index.html" class="h"><span class="vi">🏠 Mục lục tài liệu</span><span class="en">🏠 All docs</span></a>
+  <a href="copy.md" class="h" target="_blank"><span class="vi">↓ copy.md (cho AI)</span><span class="en">↓ copy.md (for AI)</span></a>
+  <a href="trading.html" class="h"><span class="vi">← Trading Surface</span><span class="en">← Trading Surface</span></a>
+  <a href="api.html" class="h"><span class="vi">→ WebSocket API</span><span class="en">→ WebSocket API</span></a>
+</nav>
+<main>
+
+<h2 id="what" style="margin-top:0"><span class="vi">Copy Trade là gì</span><span class="en">What it is</span></h2>
+<p><span class="vi">Sao chép lệnh của <b>một account leader</b> sang <b>một hay nhiều follower</b> — <b>xuyên FCM/IB</b> — từ cùng một app.
+Mô hình theo <b>Trade Copier của R Trader Pro</b> (Copy From → Copy To, Qty Multiplier, Fractional Qty Rounding, Convert-to-Market)
+nhưng chạy <b>ở gateway</b> nên copy được cả khi leader và follower ở <b>hai nhà thanh toán khác nhau</b> — điều copier gốc của Rithmic không làm được.</span>
+<span class="en">Mirror the fills of <b>one leader</b> account onto <b>one or more followers</b> — <b>across FCMs/IBs</b> — from a single app.
+Modelled on <b>R Trader Pro's Trade Copier</b> (Copy From → Copy To, Qty Multiplier, Fractional Qty Rounding, Convert-to-Market)
+but run <b>in the gateway</b> so it also works when leader and follower sit on <b>different clearing firms</b>, which Rithmic's own copier cannot do.</span></p>
+<div class="note warn"><span class="vi"><b>⚠ Tiền thật.</b> Mỗi fill được mirror là một lệnh live trên account follower. Engine <b>mặc định TẮT</b>, mỗi cặp tạo ra ở trạng thái <b>Disabled</b> — không có gì copy tới khi bật cả engine lẫn cặp. <b>Test trên SIM trước.</b></span>
+<span class="en"><b>⚠ Real money.</b> Every mirrored fill is a live order on the follower. The engine ships <b>off by default</b> and each pair is created <b>Disabled</b> — nothing copies until both the engine and the pair are on. <b>Test on SIM first.</b></span></div>
+
+<h2 id="why"><span class="vi">Vì sao ở gateway (không phải server Rithmic)</span><span class="en">Why in the gateway (not Rithmic's server)</span></h2>
+<p><span class="vi">Trade Copier của R Trader Pro là <b>server-side</b> (gửi <code>omd_set_order_copy_*</code> lên Omne, Rithmic tự mirror) nhưng <b>chỉ trong 1 login (cùng FCM/IB)</b> — không copy từ FCM A sang FCM B.
+Vì app đa-kết-nối đăng nhập <b>nhiều account cùng lúc</b>, gateway nghe fill của leader ở một session rồi tự đặt lệnh trên session của follower (<code>FeedFor(follower).placeOrder</code>). Futures mã toàn cục (<code>ESU6</code> giống nhau ở mọi FCM) nên không cần map mã. Config lưu ở <code>%LOCALAPPDATA%\FxaurumRithmic\copytrade.json</code>.</span>
+<span class="en">R Trader Pro's copier is <b>server-side</b> (sends <code>omd_set_order_copy_*</code> to Omne; Rithmic mirrors) but <b>only within one login (same FCM/IB)</b> — it can't copy from FCM A to FCM B.
+Since the multi-connection app logs into <b>several accounts at once</b>, the gateway watches the leader's fills on one session and places the mirror on the follower's session (<code>FeedFor(follower).placeOrder</code>). Futures symbols are globally unique (<code>ESU6</code> at every FCM) so no symbol mapping. Config persists to <code>%LOCALAPPDATA%\FxaurumRithmic\copytrade.json</code>.</span></p>
+
+<h2 id="pairs"><span class="vi">Cặp &amp; cụm</span><span class="en">Pairs &amp; clusters</span></h2>
+<p><span class="vi">Một <b>cặp</b> = một liên kết <code>leader → follower</code> với thiết lập riêng. Mọi cặp cùng leader gộp thành một <b>cụm</b> (nhóm gập lại được; leader có badge <span class="pill m">Master</span>, mỗi follower có badge <span class="pill f">Follower</span>). Một leader tỏa ra nhiều follower; một follower cũng có thể là leader của cụm khác (cho phép chuỗi — loop-guard chặn chạy loạn).</span>
+<span class="en">A <b>pair</b> is one <code>leader → follower</code> link with its own settings. All pairs sharing a leader form a <b>cluster</b> (collapsible; the leader shows a <span class="pill m">Master</span> badge, each follower a <span class="pill f">Follower</span> badge). A leader may fan out to many followers; a follower can also be a leader elsewhere (chains allowed — the loop-guard stops runaways).</span></p>
+
+<h2 id="sizing"><span class="vi">Sizing — hệ số, %-equity, làm tròn</span><span class="en">Sizing — multiplier, %-equity, rounding</span></h2>
+<table>
+<tr><th><span class="vi">Chế độ</span><span class="en">Mode</span></th><th><span class="vi">Công thức</span><span class="en">Formula</span></th></tr>
+<tr><td><b>× (fixed)</b></td><td><code>followerQty = round(leaderQty × mul)</code> — <span class="vi">số nguyên: 2 = gấp đôi, 0.5 = một nửa</span><span class="en">whole number: 2 = double, 0.5 = half</span></td></tr>
+<tr><td><b>%eq</b></td><td><code>effMul = mul × (balFollower / balLeader)</code> — <span class="vi">tự co giãn theo balance; thiếu balance → về fixed <code>mul</code></span><span class="en">auto-scales to account size; missing balance → falls back to fixed <code>mul</code></span></td></tr>
+</table>
+<p><span class="vi"><b>Làm tròn.</b> <i>Round up</i> / <i>Round down</i> quyết định lot lẻ (vd <code>1 × 0.5 = 0.5</code>) thành lot nguyên. Round down có thể ra <code>0</code> (bỏ qua); round up luôn ≥ 1.</span>
+<span class="en"><b>Rounding.</b> <i>Round up</i> / <i>Round down</i> turns a fractional result (e.g. <code>1 × 0.5 = 0.5</code>) into an integer lot. Round down can yield <code>0</code> (skipped); round up is always ≥ 1.</span></p>
+
+<h2 id="modes"><span class="vi">Hai chế độ copy (theo toggle Copy SL/TP)</span><span class="en">Two copy modes (by the Copy SL/TP toggle)</span></h2>
+<h3><span class="vi">Market-only (Copy SL/TP tắt) — mặc định</span><span class="en">Market-only (Copy SL/TP off) — default</span></h3>
+<p><span class="vi">Mọi fill của leader (mở/thêm/giảm/đóng) mirror thành lệnh <b>market</b> trên follower — follower bám leader từng fill; leader đóng thì fill đóng mirror thẳng qua đóng follower. Không đặt SL/TP; bảo vệ của follower <b>chính là</b> việc thoát của leader. <b>Reconcile</b> canh lệch nếu lỡ fill.</span>
+<span class="en">Every leader fill (open/add/reduce/close) mirrors as a <b>market</b> order — the follower tracks fill-for-fill; a leader close mirrors straight through and closes the follower. No SL/TP is placed; the follower's protection <b>is</b> the leader's exit. <b>Reconcile</b> guards against a missed fill.</span></p>
+<h3><span class="vi">Bracket riêng của follower (Copy SL/TP bật), multi-tier</span><span class="en">Follower's own bracket (Copy SL/TP on), multi-tier</span></h3>
+<p><span class="vi">Fill <b>mở</b> của leader → follower vào kèm <b>bracket FOCCA riêng</b>, <b>số tick SL/TP copy từ bracket của leader</b>, rồi follower thoát bằng bracket đó (độc lập leader). Chỉ chạy khi leader đặt SL/TP <b>qua app này</b> (một <code>bracketOrder</code>); leader ngoài (ATAS) không có bracket để copy → cặp đó thành market-only.</span>
+<span class="en">An <b>opening</b> leader fill → the follower enters with its <b>own FOCCA bracket</b>, the SL/TP <b>tick distances copied from the leader's bracket</b>, then exits on that bracket (independent of the leader). Only when the leader placed SL/TP <b>through this app</b> (a <code>bracketOrder</code>); an external (ATAS) leader has no bracket to copy → market-only.</span></p>
+<ul>
+<li><span class="vi"><b>Multi-tier.</b> Bracket leader nhiều mức TP/SL (scale-out) → copy <b>hết</b> các mức; qty follower chia theo <b>tỉ lệ qty mức của leader</b>, mức cuối gánh phần dư (tổng khớp qty vào). Ví dụ: leader vào 3 lot TP <code>2@10t + 1@20t</code>; follower <code>× 2</code> vào 6 lot TP <code>4@10t + 2@20t</code>.</span>
+<span class="en"><b>Multi-tier.</b> A multi-tier leader bracket (scale-out) copies <b>all</b> tiers; follower qty is split <b>proportionally to the leader's tier quantities</b>, the last tier taking the remainder (sums to the entry). E.g. leader 3 lots TP <code>2@10t + 1@20t</code>; follower <code>× 2</code> → 6 lots TP <code>4@10t + 2@20t</code>.</span></li>
+<li><span class="vi"><b>Debounce 400 ms.</b> Gom fill mở → <b>một</b> bracket (entry khớp nhiều phần không tạo nhiều bracket). Fill đóng của leader bị <b>suppress</b> (bracket follower tự thoát).</span>
+<span class="en"><b>400 ms debounce.</b> Opening fills accumulate into <b>one</b> bracket (a multi-piece entry doesn't spawn several). Closing leader fills are <b>suppressed</b> (the follower's bracket handles the exit).</span></li>
+</ul>
+
+<h2 id="fast"><span class="vi">Fast fill (pre-fire) — theo từng follower</span><span class="en">Fast fill (pre-fire) — per follower</span></h2>
+<p><span class="vi">Bình thường follower phản ứng theo <b>fill</b> của leader (một round-trip). <b>Fast fill</b> bỏ chờ đó cho lệnh do app gửi: khi leader đặt <b>MARKET qua app</b>, follower bắn market <b>ngay, song song</b> (dùng qty lệnh, không đợi fill). Tag lệnh leader được đánh dấu để fill về sau <b>không mirror lại</b> (né double). Chỉ áp cho lệnh <b>market từ app</b> và cặp <b>market-only</b> (Copy SL/TP tắt). Lệnh leader từ nền tảng ngoài → tự về mirror-theo-fill.</span>
+<span class="en">Normally the follower reacts to the leader's <b>fill</b> (one round-trip). <b>Fast fill</b> removes that wait for app-sent orders: when the leader places a <b>MARKET order through the app</b>, the follower fires market <b>immediately, in parallel</b> (using the order qty, not the fill). The leader order's tag is marked so its later fill is <b>not mirrored again</b> (no double). Applies only to <b>app-originated market</b> orders on <b>market-only</b> pairs (Copy SL/TP off). An externally-placed leader order falls back to mirror-on-fill.</span></p>
+<div class="note warn"><span class="vi"><b>Rủi ro:</b> nếu lệnh market của leader bị <b>reject</b> sau khi follower đã pre-fire, follower lệch tạm thời — <b>reconcile</b> gỡ phần dư trong ~20 s. Tag hết hạn sau 30 s.</span>
+<span class="en"><b>Risk:</b> if the leader's market order is <b>rejected</b> after the follower pre-fired, the follower is briefly out of sync — <b>reconcile</b> unwinds the excess within ~20 s. Tag markers expire after 30 s.</span></div>
+
+<h2 id="pending"><span class="vi">Mirror lệnh chờ + Convert-to-Market (opt-in)</span><span class="en">Order-mirror + Convert-to-Market (opt-in)</span></h2>
+<p><span class="vi">Mặc định chỉ fill mới copy. Bật <b>Mirror lệnh chờ</b> (toggle thanh công cụ) để mirror cả <b>lệnh chờ limit/stop</b> của leader trên cặp market-only: leader đặt limit/stop → follower có lệnh chờ copy (cùng giá/trigger, size × effMul); leader <b>sửa</b> → follower sửa; leader <b>huỷ</b> → follower huỷ.</span>
+<span class="en">By default only fills copy. Turn on <b>Mirror pending orders</b> (toolbar) to also mirror the leader's <b>working limit/stop</b> orders on market-only pairs: leader places → follower gets a copied working order (same price/trigger, size × effMul); leader <b>modifies</b> → follower modifies; leader <b>cancels</b> → follower cancels.</span></p>
+<p><span class="vi"><b>Convert (giây)</b> theo từng follower: khi limit của leader <b>khớp</b> mà limit copy của follower <b>chưa</b> khớp sau <i>N</i> giây → huỷ và bắn <b>market</b> để không lỡ sóng. Trống = never · <code>0</code> = ngay · <code>N</code> = sau N giây (đây là "Convert to Market" của R Trader Pro).</span>
+<span class="en"><b>Convert (seconds)</b>, per follower: when the leader's limit <b>fills</b> but the follower's copy has <b>not</b> filled within <i>N</i> s → cancel and re-send as <b>market</b> so it doesn't miss the move. Blank = never · <code>0</code> = immediately · <code>N</code> = after N s (R Trader Pro's "Convert to Market").</span></p>
+
+<h2 id="reconcile"><span class="vi">Reconcile drift</span><span class="en">Reconcile drift</span></h2>
+<p><span class="vi">Timer 20 s (khi engine bật) soi mọi cặp <b>market-only</b>: so net follower với <code>round(netLeader × effMul)</code> từ <b>PnL cache</b> (ảnh vị thế chuẩn). Lệch ≥ 1 lot (lỡ fill / rớt mạng / làm tròn / fast-fill reject) → đặt <b>market</b> bù + ghi log <code>reconcile</code>. Guard 12 s bỏ mã vừa mirror (né đua). Cặp Copy-SL/TP loại trừ (follower chạy bracket riêng — lệch là chủ ý).</span>
+<span class="en">A 20 s timer (engine on) checks every <b>market-only</b> pair: follower net vs <code>round(leaderNet × effMul)</code> from the <b>PnL cache</b> (the authoritative image). Off by ≥ 1 lot (missed fill / blip / rounding / fast-fill reject) → a <b>market</b> correction + a <code>reconcile</code> log. A 12 s guard skips a just-mirrored symbol. Copy-SL/TP pairs are excluded (their follower runs its own bracket — a divergence is intended).</span></p>
+
+<h2 id="safety"><span class="vi">Mô hình an toàn</span><span class="en">Safety model</span></h2>
+<table>
+<tr><th><span class="vi">Chốt chặn</span><span class="en">Guard</span></th><th><span class="vi">Tác dụng</span><span class="en">Effect</span></th></tr>
+<tr><td><span class="vi">Engine mặc định tắt</span><span class="en">Engine off by default</span></td><td><code>engineOn = false</code> <span class="vi">tới khi bật công tắc Copy Engine</span><span class="en">until you flip the Copy Engine switch</span></td></tr>
+<tr><td><span class="vi">Cặp mới Disabled</span><span class="en">New pair Disabled</span></td><td><span class="vi">cặp vừa thêm không làm gì tới khi enable</span><span class="en">a freshly-added pair does nothing until enabled</span></td></tr>
+<tr><td><span class="vi">Loop guard</span><span class="en">Loop guard</span></td><td><span class="vi">mọi lệnh engine đặt gắn tag <code>cpy…</code>; engine bỏ qua fill có tag đó → follower tự khớp không kích lại copy (an toàn cả chuỗi leader→follower→leader)</span><span class="en">every engine order is tagged <code>cpy…</code>; fills with that tag are ignored → a follower's own fill can't re-trigger a copy (safe even in chains)</span></td></tr>
+<tr><td><span class="vi">Dedup fill</span><span class="en">Fill dedup</span></td><td><span class="vi">fill leader khử trùng theo <code>ReportId</code></span><span class="en">leader fills de-duplicated by <code>ReportId</code></span></td></tr>
+<tr><td><span class="vi">Disable all</span><span class="en">Disable all</span></td><td><span class="vi">một nút tắt mọi cặp mà không xoá config</span><span class="en">one action disables every pair without deleting config</span></td></tr>
+</table>
+
+<h2 id="sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></h2>
+<p><span class="vi">Toàn bộ điều khiển copy là vài RPC trên cùng gateway <code>ws://127.0.0.1:9001/</code>. Mỗi lệnh <b>trả về full config</b> (UI render lại từ một reply); engine tự làm việc từ report stream của leader — bạn <b>không</b> phải subscribe gì đặc biệt.</span>
+<span class="en">All copy control is a few RPCs on the same <code>ws://127.0.0.1:9001/</code> gateway. Each <b>returns the full config</b> (the UI re-renders from one reply); the engine works by itself from the leader's report streams — you <b>don't</b> subscribe to anything special.</span></p>
+<table>
+<tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th></tr>
+<tr><td><span class="vi">Đọc config</span><span class="en">Read config</span></td><td><code>copyConfig {}</code></td></tr>
+<tr><td><span class="vi">Công tắc engine</span><span class="en">Kill-switch</span></td><td><code>copyEngine {on}</code></td></tr>
+<tr><td><span class="vi">Bật mirror lệnh chờ</span><span class="en">Enable order-mirror</span></td><td><code>copyMirror {on}</code></td></tr>
+<tr><td><span class="vi">Thêm / sửa cặp</span><span class="en">Add / update pair</span></td><td><code>copyUpsert {leader, follower, mul?, roundUp?, enabled?, sizeMode?, mktAfter?, copySltp?, fastFill?}</code></td></tr>
+<tr><td><span class="vi">Xoá 1 cặp</span><span class="en">Remove one pair</span></td><td><code>copyRemovePair {leader, follower}</code></td></tr>
+<tr><td><span class="vi">Xoá cả cụm</span><span class="en">Remove a cluster</span></td><td><code>copyRemoveCluster {leader}</code></td></tr>
+<tr><td><span class="vi">Bật/tắt cả cụm</span><span class="en">Enable/disable a cluster</span></td><td><code>copyClusterEnable {leader, enabled}</code></td></tr>
+<tr><td><span class="vi">Tắt mọi cặp</span><span class="en">Disable every pair</span></td><td><code>copyDisableAll {}</code></td></tr>
+<tr><td><span class="vi">Đọc nhật ký hoạt động</span><span class="en">Read activity log</span></td><td><code>copyLog {}</code></td></tr>
+</table>
+
+<h3><span class="vi">Config reply</span><span class="en">Config reply</span></h3>
+<pre><code>{
+  "engineOn": false,
+  "mirrorPending": false,
+  "pairs": [{
+    "leader": "&lt;leaderAccountId&gt;", "leaderName": "Prop A",
+    "follower": "&lt;followerAccountId&gt;", "followerName": "Prop B",
+    "mul": 2.0, "roundUp": false, "enabled": false,
+    "sizeMode": 0, "mktAfter": -1,
+    "copySltp": false, "fastFill": false, "exitMaster": true
+  }]
+}</code></pre>
+<table>
+<tr><th>Field</th><th><span class="vi">Nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><code>mul</code></td><td><span class="vi">hệ số nhân qty (double)</span><span class="en">quantity multiplier (double)</span></td></tr>
+<tr><td><code>roundUp</code></td><td><span class="vi"><code>true</code> = làm tròn lên · <code>false</code> = xuống</span><span class="en"><code>true</code> = round up · <code>false</code> = down</span></td></tr>
+<tr><td><code>enabled</code></td><td><span class="vi">bật/tắt cặp (cần engine bật nữa)</span><span class="en">per-pair on/off (needs the engine on too)</span></td></tr>
+<tr><td><code>sizeMode</code></td><td><span class="vi"><code>0</code> = fixed <code>mul</code> · <code>1</code> = %-equity</span><span class="en"><code>0</code> = fixed <code>mul</code> · <code>1</code> = %-equity</span></td></tr>
+<tr><td><code>mktAfter</code></td><td><span class="vi">convert-to-market giây: <code>-1</code> never · <code>0</code> ngay · <code>N</code> sau N s (chỉ order-mirror)</span><span class="en">convert-to-market seconds: <code>-1</code> never · <code>0</code> now · <code>N</code> after N s (order-mirror only)</span></td></tr>
+<tr><td><code>copySltp</code></td><td><span class="vi"><code>true</code> = follower có bracket riêng · <code>false</code> = market-only</span><span class="en"><code>true</code> = follower runs its own bracket · <code>false</code> = market-only</span></td></tr>
+<tr><td><code>fastFill</code></td><td><span class="vi"><code>true</code> = pre-fire lệnh market từ app</span><span class="en"><code>true</code> = pre-fire app-originated market orders</span></td></tr>
+<tr><td><code>exitMaster</code></td><td><span class="vi">field cũ, giữ để tương thích config; <b>không dùng</b></span><span class="en">legacy field kept for config compatibility; <b>unused</b></span></td></tr>
+</table>
+
+<h3><span class="vi">Nhật ký hoạt động</span><span class="en">Activity log</span></h3>
+<pre><code>copyLog {}  →  { "log": [
+  { "t": 1720000000000, "type": "mirror", "leader": "…", "follower": "…",
+    "sym": "ESU6", "side": "B", "qty": 2, "note": "x2" }
+] }</code></pre>
+<p><span class="vi"><code>type</code> ∈ <code>mirror</code> · <code>fastfill</code> · <code>bracket</code> · <code>reconcile</code> · <code>error</code>; <code>t</code> = Unix ms; mới nhất trước.</span>
+<span class="en"><code>type</code> ∈ <code>mirror</code> · <code>fastfill</code> · <code>bracket</code> · <code>reconcile</code> · <code>error</code>; <code>t</code> = Unix ms; newest first.</span></p>
+
+<hr>
+<p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
+<a class="h" href="trading.html"><span class="vi">Trading Surface</span><span class="en">Trading Surface</span></a> ·
+<a class="h" href="api.html"><span class="vi">WebSocket API</span><span class="en">WebSocket API</span></a> ·
+<a class="h" href="copy.md" target="_blank">copy.md</a></p>
+
+</main>
+</div>
+<script>
+  function setLang(l){ document.body.className='lang-'+l; try{localStorage.setItem('rlang',l)}catch(e){}
+    document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on', b.dataset.l===l)); }
+  document.querySelectorAll('.langsw button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  setLang((function(){try{return localStorage.getItem('rlang')}catch(e){return null}})() || 'vi');
+</script>
+</body>
+</html>

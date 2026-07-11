@@ -54,6 +54,7 @@
   <a href="#survive"><span class="vi">N-tab / reload / restart</span><span class="en">Multi-tab / reload / restart</span></a>
   <hr>
   <a href="index.html" class="h"><span class="vi">🏠 Mục lục tài liệu</span><span class="en">🏠 All docs</span></a>
+  <a href="copy.html" class="h"><span class="vi">→ Copy Trade</span><span class="en">→ Copy Trade</span></a>
   <a href="trading.md" class="h" target="_blank"><span class="vi">↓ trading.md (cho AI)</span><span class="en">↓ trading.md (for AI)</span></a>
   <a href="api.html" class="h"><span class="vi">← WebSocket API</span><span class="en">← WebSocket API</span></a>
   <a href="raw.html" class="h"><span class="vi">→ Raw bus</span><span class="en">→ Raw bus</span></a>
@@ -118,8 +119,21 @@ client only <i>shows</i> state and <i>sends intents</i>.</span></p>
 <div class="note"><span class="vi"><b>Vì sao có cache.</b> Sàn gửi ảnh lệnh/vị thế <b>1 lần / subscription</b>, gateway là subscriber duy nhất → tab nối <i>sau</i> không bao giờ nhận lại ảnh. Nên gateway <b>giữ ảnh</b> và trả qua <code>positions</code>/<code>openOrders</code>/<code>accountInfo</code>/<code>orderHistory</code>/<code>trades</code>. Lúc login gateway còn tự chạy <code>replayOpenOrders + replayPnl + replayAllOrders + replayExecutions</code> (~24 h) để panel có <b>cả phiên</b>.</span>
 <span class="en"><b>Why the caches exist.</b> The exchange sends each order/position image <b>once per subscription</b>, and the gateway is the single subscriber → a tab that connects <i>after</i> that never gets it. So the gateway <b>keeps the image</b> and serves it on those RPCs. On login it also self-runs <code>replayOpenOrders + replayPnl + replayAllOrders + replayExecutions</code> (~24 h) so the panels show the <b>full session</b>.</span></div>
 
+<h3><span class="vi">Nhiều kết nối &amp; route theo account</span><span class="en">Multiple connections &amp; account routing</span></h3>
+<p><span class="vi">App có thể đăng nhập <b>nhiều account Rithmic cùng lúc</b> (khác FCM/IB). Mọi lệnh gọi ở trên mang theo <code>account</code> (accountId, hoặc <code>{fcmId,ibId,accountId}</code>) và gateway <b>route tới session sở hữu account đó</b> — order/PnL/pull đều theo account, không theo một login "primary". <code>getAccounts</code> gộp account của <b>mọi</b> session đang nối (dropdown liệt kê hết). Market-data vẫn từ login <b>active</b>; đổi bằng <code>setDataSource</code>.</span>
+<span class="en">The app can be logged into <b>several Rithmic accounts at once</b> (different FCMs/IBs). Every call above carries an <code>account</code> (an accountId, or <code>{fcmId,ibId,accountId}</code>) and the gateway <b>routes it to the session that owns that account</b> — orders/PnL/pulls follow the account, not one "primary" login. <code>getAccounts</code> merges the accounts of <b>every</b> connected session (the dropdown lists them all). Market data still comes from the one <b>active</b> login; switch it with <code>setDataSource</code>.</span></p>
+<table>
+<tr><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Trả</span><span class="en">Returns</span></th></tr>
+<tr><td><code>sessions</code></td><td><span class="vi">mỗi login 1 dòng — <code>{id, name, status, active, accounts:[accountId], rtt, md}</code>. <code>name</code> = tên connection (hiện thay cho id); <code>status</code> ∈ connected/connecting/reconnecting/disconnected/failed; <code>active</code> = login đang feed data chart; <code>accounts</code> = account của login đó; <code>rtt</code>/<code>md</code> = độ trễ ping / market-data (ms).</span><span class="en">one row per login — <code>{id, name, status, active, accounts:[accountId], rtt, md}</code>. <code>name</code> = connection display name (shown instead of the id); <code>status</code> ∈ connected/connecting/reconnecting/disconnected/failed; <code>active</code> marks the login feeding the chart; <code>accounts</code> = that login's account ids; <code>rtt</code>/<code>md</code> = ping / market-data latency (ms).</span></td></tr>
+<tr><td><code>setDataSource {id}</code></td><td><span class="vi">đổi login feed data cho chart (ws tự nối lại)</span><span class="en">switch which login feeds the chart's data (the ws reconnects)</span></td></tr>
+</table>
+<div class="note"><span class="vi">Client poll <code>sessions</code> để (1) hiện <b>tên connection</b> trong dropdown + 4 panel thay cho id, (2) <b>tự refresh</b> dropdown khi có session mới nối, (3) <b>khoá panel</b> khi account đang chọn có login chưa <code>connected</code> (mờ + chặn nhập + ghi chú "account offline"; tự mở lại khi nối lại).</span>
+<span class="en">The client polls <code>sessions</code> to (1) show <b>connection names</b> in the dropdown + the four panels instead of ids, (2) <b>auto-refresh</b> the dropdown when a new session connects, and (3) <b>lock the panel</b> when the selected account's login isn't <code>connected</code> (greyed + input blocked with an "account offline" note; unlocks on reconnect).</span></div>
+
 <h2 id="arm"><span class="vi">Arm · SIM/LIVE · guard</span><span class="en">Arm · SIM/LIVE · guards</span></h2>
 <ul>
+<li><span class="vi"><b>Dropdown account.</b> Panel giao dịch account chọn ở dropdown — liệt kê <b>mọi account trên tất cả login đang nối</b> (theo tên connection). Tự refresh khi login nối/rớt; account đang chọn có login chưa nối thì panel bị <b>khoá</b> tới khi nối lại.</span>
+<span class="en"><b>Account dropdown.</b> The panel trades the account picked in its dropdown, which lists <b>every account across all connected logins</b> (by connection name). It refreshes as logins connect/drop; if the picked account's login isn't connected the panel is <b>locked</b> until it reconnects.</span></li>
 <li><span class="vi"><b>Arm-once.</b> Trên account LIVE, entry đầu tiên hỏi confirm; <b>Arm</b> (hoặc confirm 1 lần) tắt confirm cho account đó trong phiên. <b>Disarm</b> bật lại. SIM không hỏi.</span>
 <span class="en"><b>Arm-once.</b> On a LIVE account the first entry confirms; <b>Arm</b> (or confirming once) suppresses further confirms for that account this session. <b>Disarm</b> re-enables. SIM never confirms.</span></li>
 <li><span class="vi"><b>Badge SIM/LIVE.</b> Tự phân loại từ id account; bấm để đổi nếu sai.</span>
@@ -167,8 +181,8 @@ client only <i>shows</i> state and <i>sends intents</i>.</span></p>
 <tr><td><b>Trades</b></td><td><span class="vi">fills phiên — Account · Instrument · Direction · Volume · Price · <b>Time (local)</b>.</span><span class="en">session fills — Account · Instrument · Direction · Volume · Price · <b>Time (local)</b>.</span></td></tr>
 <tr><td><b>Orders</b></td><td><span class="vi">lệnh phiên — <b>State</b> (Done/Cancelled/Rejected/Working) · Direction (<code>Sell Limit</code>…) · Time · Price (<code>giá/trigger</code>) · Volume · <b>Comment</b> (SL/TP/OCO) · <b>Cancel</b> (chỉ Working).</span><span class="en">session orders — <b>State</b> (Done/Cancelled/Rejected/Working) · Direction · Time · Price (<code>price/trigger</code>) · Volume · <b>Comment</b> (SL/TP/OCO) · <b>Cancel</b> (Working only).</span></td></tr>
 </table>
-<p><span class="vi">Cả 4 gom <b>mọi account</b>, cập nhật <b>live</b> khi đang mở, và seed từ cache gateway lúc mở (đủ cả mã/account chưa từng mở chart). Giờ hiện theo <b>múi giờ local</b> của trình duyệt (quy đổi từ UTC của sàn).</span>
-<span class="en">All four aggregate <b>every account</b>, update <b>live</b> while open, and seed from the gateway caches on open (complete even for symbols/accounts you never charted). Times are the <b>browser's local timezone</b> (converted from the exchange's UTC).</span></p>
+<p><span class="vi">Cả 4 gom <b>mọi account trên mọi kết nối</b> (nhãn theo <b>tên connection</b>, không phải id), cập nhật <b>live</b> khi đang mở, và seed từ cache gateway lúc mở (đủ cả mã/account chưa từng mở chart). <b>Trades</b> và <b>Orders</b> thêm <b>bộ lọc theo account</b> và nút <b>Tìm</b> độc lập (lịch sử theo ngày — fan-out đúng các account bộ lọc chọn) bên cạnh xem <b>Phiên</b> live. Giờ hiện theo <b>múi giờ local</b> của trình duyệt (quy đổi từ UTC của sàn).</span>
+<span class="en">All four aggregate <b>every account across every connection</b> (labelled by <b>connection name</b>, not the id), update <b>live</b> while open, and seed from the gateway caches on open (complete even for symbols/accounts you never charted). <b>Trades</b> and <b>Orders</b> add a <b>per-account filter</b> and an independent <b>date search</b> (historical, fanning out only to the filtered accounts) alongside the live <b>session</b> view. Times are the <b>browser's local timezone</b> (converted from the exchange's UTC).</span></p>
 
 <h2 id="survive"><span class="vi">N-tab / reload / restart</span><span class="en">Multi-tab / reload / restart</span></h2>
 <table>
@@ -182,7 +196,8 @@ client only <i>shows</i> state and <i>sends intents</i>.</span></p>
 <hr>
 <p style="color:var(--sub)"><span class="vi">Xem thêm: </span><span class="en">See also: </span>
 <a class="h" href="api.html"><span class="vi">WebSocket API</span><span class="en">WebSocket API</span></a> ·
-<a class="h" href="raw.html">Raw bus</a> · <a class="h" href="recipes.html">Recipes</a> ·
+<a class="h" href="raw.html">Raw bus</a> · <a class="h" href="copy.html"><span class="vi">Copy Trade</span><span class="en">Copy Trade</span></a> ·
+<a class="h" href="recipes.html">Recipes</a> ·
 <a class="h" href="trading.md" target="_blank">trading.md</a></p>
 
 </main>

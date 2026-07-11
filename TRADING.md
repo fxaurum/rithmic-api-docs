@@ -8,7 +8,7 @@ The defining idea: **protection lives in the gateway, not the browser.** SL/TP, 
 server-side per `account|symbol`, so **N browser tabs never fight each other** and everything **survives F5 / new tab / gateway
 restart**. The client only *shows* state and *sends intents*.
 
-> Companion docs: **API.md** (the raw order/PnL RPCs + report streams) · **RAW.md** (the `@on*report` bus) · **RECIPES.md**.
+> Companion docs: **API.md** (the raw order/PnL RPCs + report streams) · **RAW.md** (the `@on*report` bus) · **RECIPES.md** · **COPY.md** (mirror one account's trades onto others — reuses these same order/bracket calls).
 
 > ⚠️ **Real money.** Every entry/close is a live order to the exchange. The panel forces a confirm on LIVE accounts until you
 > *arm* (arm-once), and every cross-account Close/Cancel asks again. Test on a SIM account first.
@@ -61,10 +61,30 @@ Order flow is **method + params → gateway → exchange**; results come back on
 > on `positions` / `openOrders` / `accountInfo` / `orderHistory` / `trades`. On login the gateway also self-runs
 > `replayOpenOrders` + `replayPnl` + `replayAllOrders` + `replayExecutions` (last ~24 h) so the panels show the **full session**.
 
+### Multiple connections & account routing
+
+The app can be logged into **several Rithmic accounts at once** (different FCMs/IBs). Every call above carries an `account` (an
+`accountId`, or `{fcmId, ibId, accountId}`) and the gateway **routes it to the session that owns that account** — orders, PnL and
+pull snapshots all follow the account, not one "primary" login. `getAccounts` returns the accounts of **every** connected session
+merged together, so the panel's account dropdown lists them all. (Market-data streams still come from the one **active** login;
+switch it with `setDataSource`.)
+
+| Call | Returns |
+|---|---|
+| `sessions` | one row per login — `{id, name, status, active, accounts:[accountId], rtt, md}`. `name` = the connection's display name (shown instead of the raw account id); `status` ∈ `connected` / `connecting` / `reconnecting` / `disconnected` / `failed`; `active` marks the login currently feeding the chart's data; `accounts` maps each login to its account ids; `rtt` / `md` are the ping / market-data latencies (ms). |
+| `setDataSource {id}` | switch which login feeds the chart's market data (the client's ws reconnects). |
+
+The client polls `sessions` to (1) show **connection names** in the account dropdown and the four panels instead of account ids,
+(2) **auto-refresh** the dropdown when a new session connects, and (3) **lock the whole panel** when the selected account's login
+isn't `connected` (greyed out + input blocked with an "account offline" note; it unlocks automatically on reconnect).
+
 ---
 
 ## 2. Arming, SIM/LIVE, guards
 
+- **Account dropdown.** The panel trades the account picked in its dropdown, which lists **every account across all connected
+  logins** (by connection name). It refreshes as logins connect/drop; if the picked account's login is not connected the panel is
+  **locked** until it reconnects.
 - **Arm-once.** On a LIVE account the first entry pops a confirm; **Arm** (or confirming once) suppresses further confirms for
   that account this session. **Disarm** re-enables confirms. SIM accounts don't confirm.
 - **SIM/LIVE badge.** Auto-classified from the account id; click to flip if wrong.
@@ -124,9 +144,11 @@ Turn on **Trading on chart** → the crosshair becomes a price line labelled by 
 | **Trades** | session fills — Account · Instrument · Direction · Volume · Price · **Time (local)**. |
 | **Orders** | session orders — **State** (Done / Cancelled / Rejected / Working) · Direction (`Sell Limit`…) · Time · Price (`price/trigger`) · Volume · **Comment** (SL / TP / OCO) · **Cancel** (Working only). |
 
-All four aggregate **every account**, update **live** while open, and seed from the gateway caches on open (so they're complete
-even for symbols/accounts you never charted). Times are shown in the **browser's local timezone** (converted from the exchange's
-UTC timestamp).
+All four aggregate **every account across every connection** (labelled by **connection name**, not the raw id), update **live**
+while open, and seed from the gateway caches on open (so they're complete even for symbols/accounts you never charted). **Trades**
+and **Orders** add a **per-account filter** and an independent date **search** (historical fills/orders for a chosen day — it fans
+out only to the accounts the filter selects) alongside the live **session** view. Times are shown in the **browser's local
+timezone** (converted from the exchange's UTC timestamp).
 
 ---
 
@@ -143,6 +165,14 @@ UTC timestamp).
 
 ## 7. Changelog
 
+- **2026-07-11** — Cross-referenced **COPY.md** — the CopyEngine mirrors one account's trades onto others using these same
+  order/bracket calls.
+- **2026-07-10** — **Multi-account routing.** The app now runs **several Rithmic logins at once**: every order / PnL / pull RPC
+  routes by `account` to the owning session, `getAccounts` merges all logins, and a new `sessions` RPC exposes each login's
+  connection name + status + accounts (+ `setDataSource` to pick the market-data source). The panel's **account dropdown** lists
+  all connected accounts (auto-refreshing as logins connect/drop); the four panels show **connection names** instead of ids and
+  let **Trades / Orders filter by account** with an independent date search; and the panel **locks** whenever its selected
+  account's login isn't connected.
 - **2026-07-03** — Bottom-bar panels: **Accounts** (+ Full-account-data ⓘ), **Positions** (Close), **Trades**, **Orders**
   (Cancel), with full-session history via `replayExecutions` / `replayAllOrders` on login; `accountInfo` / `positions` /
   `openOrders` / `orderHistory` / `trades` pull RPCs backed by gateway image caches. Clean order Comment (SL/TP/OCO).
