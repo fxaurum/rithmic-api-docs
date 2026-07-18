@@ -1,7 +1,7 @@
 # Fxaurum Rithmic API — Docs
 
 Tài liệu (chỉ-đọc) cho **Fxaurum Rithmic API** — WebSocket gateway + các chỉ báo orderflow
-(footprint, volume profile, DOM, heatmap, MBO, big trades, options/GEX, continuous contract, storage).
+(footprint, volume profile, DOM, heatmap, MBO, big trades, sweeps/stops/icebergs, options/GEX, continuous contract, storage).
 
 ## Xem online (GitHub Pages)
 
