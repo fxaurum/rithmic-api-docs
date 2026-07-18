@@ -85,6 +85,7 @@
   <a href="#s-mbo-raw">@mboraw</a>
   <a href="#s-kline">@kline</a>
   <a href="#s-bigtrade">@bigTrade</a>
+  <a href="#s-flow">@sweeps/@stops/@iceberg</a>
   <a href="#s-heartbeat">heartbeat</a>
   <div class="grp">Reference</div>
   <a href="#intervals"><span class="vi">Khung thời gian</span><span class="en">Intervals</span></a>
@@ -147,6 +148,7 @@ receives only those — no client-side filtering needed.</span></p>
 <tr><td><code>@mbo</code> / <code>@mboraw</code></td><td><code>subscribeDbo</code> → <code>OnDbo</code></td><td>stream</td></tr>
 <tr><td><code>@kline</code></td><td><code>subscribeBar</code> → <code>OnBar</code> <span style="color:var(--sub)">(+ <code>replayBars</code> + BarStore)</span></td><td>stream</td></tr>
 <tr><td><code>@bigTrade</code> / <code>@bigTrade&lt;N&gt;</code></td><td><span style="color:var(--sub)">gom <code>OnTradePrint</code> theo matching-event (như RPC <code>bigTrades</code>)</span></td><td>stream</td></tr>
+<tr><td><code>@sweeps</code> / <code>@stops</code> / <code>@iceberg</code></td><td><span style="color:var(--sub)">record orderflow gateway tính sẵn, đẩy live (như RPC <code>flowRecs</code>)</span></td><td>stream</td></tr>
 <tr><td><code>heartbeat</code></td><td><span style="color:var(--sub)">nhịp tim gateway, tự đẩy ~15s (không cần subscribe)</span></td><td>stream</td></tr>
 <tr><td><code>chainSub</code> / <code>chainUnsub</code></td><td><code>subscribeByUnderlying</code> / <code>unsubscribeByUnderlying</code></td><td>stream</td></tr>
 <tr><td><code>klines</code></td><td>BarStore <span style="color:var(--sub)">(← <code>replayBars</code> phân trang)</span></td><td>local</td></tr>
@@ -252,10 +254,22 @@ receives only those — no client-side filtering needed.</span></p>
 <pre><code>{ "method":"bigTrades", "id":8,
   "params":{ "exchange":"CME", "symbol":"ESU6", "startTime":1718000000000, "endTime":1718003600000, "min":50, "merge":0 } }
 → { "id":8, "status":200, "result":[
-  [1718000001120, "B", 271, 7612.75, 7613.00],   // [timeMs, side, vol, firstPrice, lastPrice] — vol >= min
-  [1718000002360, "S", 84,  7611.50, 7611.50]    // firstPrice==lastPrice -> bóng tròn; khác nhau -> dải quét
+  [1718000001120, "B", 271, 7612.75, 7613.00, 7612.75, 7613.00, 250, 7612.75, 7613.00, 2, 7613.00, 7613.00],   // [timeMs, side, vol, firstPrice, lastPrice, minPrice, maxPrice, a0Vol, a0Min, a0Max, stopCnt, sMin, sMax] — vol >= min
+  [1718000002360, "S", 84,  7611.50, 7611.50, 7611.25, 7611.50, 78,  7611.50, 7611.50, 1, 7611.25, 7611.25]    // pMin/pMax = biên độ CẢ event; a0* = riêng AGGRESSOR ĐẦU (max order-id); stopCnt/sMin/sMax = số lệnh STOP bị elect + biên độ fill của chúng (dựng Stops history)
 ]}</code></pre>
 <button class="run" data-method="bigTrades">Execute</button><pre class="out"></pre>
+
+<h3 id="flowrecs"><span class="tag req">request</span> flowRecs — <span class="vi">record orderflow gateway tự ghi lúc live</span><span class="en">orderflow records the gateway recorded live</span></h3>
+<p><span class="vi">Gateway chạy <b>FlowRecorder</b> (học kiến trúc ATAS IndicatorData, tự làm): gom @trade theo matching event ĐÚNG THỨ TỰ STREAM → sweep/stop-cascade ghi file bền <code>FlowDb\EXCH.SYM\yyyyMMdd.sweeps|.stops</code>. Attribution aggressor CHUẨN (hơn dựng lại từ kho tick vốn đoán max-order-id). <code>cov</code> = các khoảng recorder CÓ CHẠY — client chỉ tin/thay trong đó. Kèm <b>IceRecorder</b>: port engine iceberg client sang C# chạy trên chính stream DBO + trade(po) của gateway → record y hệt chart live, ghi <code>yyyyMMdd.ice.jsonl</code> (dòng CUỐI mỗi <code>oid</code> thắng); chỉ thấy data khi <b>MBO đang subscribe</b> — <code>icecov</code> = các khoảng đó; client merge theo <code>oid</code> giữ bản tươi hơn.</span></p>
+<pre><code>{ "method":"flowRecs", "id":12,
+  "params":{ "exchange":"CME", "symbol":"ESU6", "startTime":1718000000000, "endTime":1718003600000 } }
+→ { "id":12, "status":200, "result":{
+  "sw":[[timeMs,"B|S",vol,minP,maxP,trades,stopsVol,stopsCount], ...],
+  "cs":[[timeMs,"B|S",trigVol,trigP,stopVol,stopCount,minP,maxP], ...],
+  "cov":[[fromMs,toMs], ...],
+  "ice":[{ "oid","side":"B|S","price","multiPrice","firstMs","lastMs","maxVis","filled","hidden",
+           "refreshCnt","detCnt","closed","conf":"absolute|medium","events":[…],"dets":[[ms,vol],…] }, ...],
+  "icecov":[[fromMs,toMs], ...] } }</code></pre>
 
 <h3 id="volumeprofile"><span class="tag req">request</span> volumeProfile — <span class="vi">volume-at-price phiên hiện tại (native)</span><span class="en">current-session volume-at-price (native)</span></h3>
 <p><span class="vi"><code>getVolumeAtPrice</code> của Rithmic cho <b>riêng phiên live</b> — khỏi cần data local. Xem <a class="h" href="volumeprofile.html">Volume Profile</a>.</span>
@@ -533,6 +547,20 @@ receives only those — no client-side filtering needed.</span></p>
 <tr><td><code>p0</code> / <code>p</code></td><td><span class="vi">Giá khớp đầu / cuối của bóng</span><span class="en">First / last fill price of the bubble</span></td></tr>
 <tr><td><code>T</code></td><td><span class="vi">Mốc bắt đầu bóng (ms)</span><span class="en">Bubble start time (ms)</span></td></tr>
 <tr><td><code>r</code></td><td><span class="vi">Mốc gateway đóng bóng (ms) — độ trễ feed ≈ <code>r − T</code></span><span class="en">Gateway emit time (ms) — feed latency ≈ <code>r − T</code></span></td></tr></table>
+
+<h3 id="s-flow"><span class="tag strm">stream</span> <code>@sweeps</code> / <code>@stops</code> / <code>@iceberg</code> — <span class="vi">order-flow tracker (gateway tính sẵn)</span><span class="en">order-flow trackers (server-computed)</span></h3>
+<p><span class="vi">Gateway ĐÃ tính Sweeps/Stops/Icebergs phía server (cùng engine <code>FlowRecorder</code>/<code>IceRecorder</code> sau RPC <code>flowRecs</code>, để ghi file) — 3 stream này đẩy mỗi record <b>live</b> lúc đóng, nên thin-client/EA có sẵn event orderflow <b>khỏi tự chạy engine MBO</b> (giống <code>@bigTrade</code>). Data = schema <code>flowRecs</code>. <code>@iceberg</code> tự bật thêm feed depth-by-order; <code>@sweeps</code>/<code>@stops</code> chỉ cần trade. Xem <a class="h" href="orderflow.html">ORDERFLOW</a>.</span>
+<span class="en">The gateway already computes Sweeps/Stops/Icebergs server-side (the same <code>FlowRecorder</code>/<code>IceRecorder</code> engines behind the <code>flowRecs</code> RPC) — these streams push each record <b>live</b> as it closes, so thin clients/EAs get order-flow events <b>without running the MBO engine</b> (like <code>@bigTrade</code>). Data matches the <code>flowRecs</code> schema. <code>@iceberg</code> also activates the depth-by-order feed; <code>@sweeps</code>/<code>@stops</code> only need trades.</span></p>
+<pre><code>{ "stream":"cme.esu6@sweeps",  "data":{ "e":"sweeps","s":"ESU6","side":"B","vol":106,"minP":5500.00,"maxP":5500.50,"trades":3,"stopsVol":0,"stopsCount":0,"ms":1718000000123 } }
+{ "stream":"cme.esu6@stops",   "data":{ "e":"stops","s":"ESU6","side":"S","trigVol":40,"trigP":5499.75,"stopVol":180,"stopCount":6,"minP":5499.00,"maxP":5499.75,"ms":1718000000200 } }
+{ "stream":"cme.esu6@iceberg", "data":{ "oid":"…","side":"S","price":5501.00,"hidden":270,"filled":540,"aggFilled":0,"refreshCnt":9,"detCnt":31,"conf":"absolute","closed":false } }</code></pre>
+<button class="run" data-stream="@sweeps">Execute</button><pre class="out"></pre>
+<table><tr><th>Stream</th><th><span class="vi">Đẩy gì</span><span class="en">Emits</span></th><th><span class="vi">Feed nền (tự bật)</span><span class="en">Underlying feed</span></th></tr>
+<tr><td><code>@sweeps</code></td><td><span class="vi">1 record sweep-run khi đóng (<code>FlowRecorder</code>)</span><span class="en">one sweep-run record on close (<code>FlowRecorder</code>)</span></td><td><code>@trade</code></td></tr>
+<tr><td><code>@stops</code></td><td><span class="vi">1 record stop-cascade khi đóng</span><span class="en">one stop-cascade record on close</span></td><td><code>@trade</code></td></tr>
+<tr><td><code>@iceberg</code></td><td><span class="vi">record iceberg MỖI lần cập nhật (theo <code>oid</code>, giữ mới nhất)</span><span class="en">the iceberg record on every update (by <code>oid</code>, keep-freshest)</span></td><td><span class="vi">MBO / depth-by-order</span><span class="en">MBO / depth-by-order</span></td></tr></table>
+<div class="note"><span class="vi"><b>Vì sao <code>@iceberg</code> hơn tự dựng:</b> đây là bản <b>authoritative 1-luồng</b> của gateway (event theo thứ tự tới THẬT) → tránh client tự trộn 2 feed (<code>@trade</code>+<code>@mboraw</code>) rồi đoán thứ tự ở mức µs làm lệch <code>hidden</code>. Cùng schema <code>flowRecs.ice</code>.</span>
+<span class="en"><b>Why <code>@iceberg</code> beats rolling your own:</b> it is the gateway's <b>authoritative single-stream</b> computation (events in true arrival order) → avoids the client-side 2-feed µs re-ordering that makes <code>hidden</code> drift. Same schema as <code>flowRecs.ice</code>.</span></div>
 
 <h3 id="s-heartbeat"><span class="tag strm">stream</span> <code>heartbeat</code> — <span class="vi">nhịp tim server (tự đẩy)</span><span class="en">server keep-alive (auto-pushed)</span></h3>
 <p><span class="vi">Đẩy tới <b>mọi</b> client mỗi ~<b>15 giây</b>, KHÔNG cần subscribe, để client phân biệt <b>chợ im</b> với <b>socket chết</b> — feed im vẫn có nhịp tim. Dùng làm tín hiệu còn-sống thay vì fail-open sau N giây im lặng.</span>

@@ -170,15 +170,48 @@ millions of raw ticks. See BIGTRADES.md.
 | `min`                  | int      | Return only cumulative trades with `vol ≥ min`. Default 1. |
 | `merge`                | int (ms) | **Optional, default `0`.** `0` = group strictly by **matching event** (`tu` → `o` → 50 ms, precise — one aggressor sweep = one bubble). `> 0` = ATAS-style **cumulative window**: merge *all* same-side aggressive prints within `merge` ms regardless of `tu`/`o` → fewer, **larger** bubbles (closer to how ATAS's "Cumulative Trades" looks). `merge > 0` bypasses the per-session bubble cache (computed fresh each call). |
 
-**Response** — array of `[timeMs, side, vol, firstPrice, lastPrice]` (one per cumulative trade with `vol ≥ min`).
-`firstPrice`/`lastPrice` differ when the order swept several levels (draw a range box; equal = a bubble).
+**Response** — array of `[timeMs, side, vol, firstPrice, lastPrice, minPrice, maxPrice, a0Vol, a0Min, a0Max,
+stopCnt, sMin, sMax]` (one per matching event with `vol ≥ min`). `minPrice`/`maxPrice` = the **whole event's**
+price extent (`firstPrice`/`lastPrice` are the first/last fill only — an order that sweeps 7540 → 7540.5 and
+finishes back at 7540 reports `firstPrice == lastPrice`). `a0Vol`/`a0Min`/`a0Max` = the **first aggressor** of
+the event (the order with the largest exchange order id — resting stop/limit orders carry older, smaller ids):
+`a0Vol` = its own filled volume, `a0Min`/`a0Max` = its own fill extent. `stopCnt` = number of **other** orders
+in the event (elected stops), `sMin`/`sMax` = the stops' own fill extent (0/0 when none) — enough to rebuild
+stop-cascade history. ATAS-style sweep detection must use the `a0*` fields (stop fills do not extend a sweep's
+range).
 
 ```json
 { "id":8, "status":200, "result":[
-  [1718000001120, "B", 271, 7612.75, 7613.00],
-  [1718000002360, "S", 84,  7611.50, 7611.50]
+  [1718000001120, "B", 271, 7612.75, 7613.00, 7612.75, 7613.00, 250, 7612.75, 7613.00, 2, 7613.00, 7613.00],
+  [1718000002360, "S", 84,  7611.50, 7611.50, 7611.25, 7611.50, 78,  7611.50, 7611.50, 1, 7611.25, 7611.25]
 ]}
 ```
+
+### `flowRecs` — orderflow records the gateway itself recorded live
+
+The gateway runs a stream-order sweep/stop-cascade recorder (`FlowRecorder`, modeled on how ATAS persists its
+IndicatorData but fully self-contained) and appends records to
+`%LOCALAPPDATA%\FxaurumRithmic\FlowDb\<EXCH>.<SYM>\<yyyyMMdd>.sweeps|.stops`. Because they are built from the
+**live stream in arrival order**, the first-aggressor attribution is exact — better than any reconstruction
+from the tick store (which has to guess by max order id). `cov` = time ranges the recorder was actually
+running; clients must only trust/replace within those ranges.
+
+```json
+{ "method":"flowRecs", "params":{ "exchange":"CME", "symbol":"ESU6", "startTime":1718000000000, "endTime":1718003600000 }, "id": 12 }
+→ { "id":12, "status":200, "result":{
+  "sw": [[timeMs,"B|S",vol,minP,maxP,trades,stopsVol,stopsCount], ...],
+  "cs": [[timeMs,"B|S",trigVol,trigP,stopVol,stopCount,minP,maxP], ...],
+  "cov": [[fromMs,toMs], ...],
+  "ice": [{ "oid","side":"B|S","price","multiPrice","firstMs","lastMs","maxVis","filled","hidden",
+            "refreshCnt","detCnt","closed","conf":"absolute|medium","events":[...],"dets":[[ms,vol],...] }, ...],
+  "icecov": [[fromMs,toMs], ...] } }
+```
+
+`ice` comes from a second recorder (`IceRecorder`) — a C# port of the client iceberg engine running on the
+gateway's own DBO + trade stream (`po` = passive order id), so its records are identical to what a live chart
+computes, but persist to `FlowDb\<EXCH>.<SYM>\<yyyyMMdd>.ice.jsonl` (last line per `oid` wins). It only sees
+data while **MBO is subscribed** (any client watching the heatmap-MBO / Icebergs tracker); `icecov` marks those
+ranges. Clients merge `ice` by `oid`, keeping the fresher record (larger `lastMs`; ties: `closed` wins).
 
 ### `volumeProfile` — current-session volume-at-price (native)
 
@@ -577,6 +610,32 @@ around the BBO for `ms`, then returns and unsubscribes. Run **after opening the 
 | `p0` / `p`  | First / last fill price of the bubble |
 | `T`         | Bubble start time (ms) |
 | `r`         | Gateway emit time (ms) — feed latency ≈ `r − T` |
+
+---
+
+### `@sweeps` / `@stops` / `@iceberg` — live order-flow trackers (server-computed)
+
+> The gateway already computes Sweeps / Stops / Icebergs server-side (the same `FlowRecorder` / `IceRecorder` engines
+> behind the `flowRecs` RPC, used to record them) — these streams push each record **live** as it closes, so thin clients
+> / EAs get ready-made order-flow events **without running the MBO engine themselves** (same idea as `@bigTrade`). Data
+> matches the `flowRecs` schema. `@iceberg` also activates the depth-by-order feed; `@sweeps`/`@stops` only need trades.
+> See **ORDERFLOW.md**.
+
+```json
+{ "stream":"cme.esu6@sweeps",  "data":{ "e":"sweeps","s":"ESU6","side":"B","vol":106,"minP":5500.00,"maxP":5500.50,"trades":3,"stopsVol":0,"stopsCount":0,"ms":1718000000123 } }
+{ "stream":"cme.esu6@stops",   "data":{ "e":"stops","s":"ESU6","side":"S","trigVol":40,"trigP":5499.75,"stopVol":180,"stopCount":6,"minP":5499.00,"maxP":5499.75,"ms":1718000000200 } }
+{ "stream":"cme.esu6@iceberg", "data":{ "oid":"…","side":"S","price":5501.00,"hidden":270,"filled":540,"aggFilled":0,"refreshCnt":9,"detCnt":31,"conf":"absolute","closed":false,"segs":[…] } }
+```
+
+| Stream     | Emits                                                        | Underlying feed (auto) |
+|------------|-------------------------------------------------------------|------------------------|
+| `@sweeps`  | one sweep-run record when it closes (`FlowRecorder`)        | `@trade`               |
+| `@stops`   | one stop-cascade record when it closes                      | `@trade`               |
+| `@iceberg` | the iceberg record on every update (keyed by `oid`, keep-freshest) | MBO / depth-by-order |
+
+> **Why `@iceberg` beats rolling your own:** it is the gateway's **authoritative single-stream** computation (events in
+> true arrival order), so it avoids the client-side 2-feed (`@trade` + `@mboraw`) µs re-ordering that makes the `hidden`
+> count drift. Same record schema as `flowRecs.ice`.
 
 ---
 
