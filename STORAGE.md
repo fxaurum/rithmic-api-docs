@@ -19,11 +19,15 @@ All under `%LOCALAPPDATA%\FxaurumRithmic\` (Windows).
 | **Bar store** | `BarDb\<EXCH.SYM>\<iv>.bars` + per-interval `<iv>.coverage` | klines / tick-derived candles per interval | interval (session-tagged coverage) |
 | **Symbol cache** | `TickDb\symbols.json` | instrument search + `instrumentInfo` (tick size, decimals, expiry) | — (whole list, prunes expired) |
 
-### TickStore record format (v2)
-- `.tick` — a **32-byte header** (magic `FXTK`, version `2`, recSize `29`) then fixed **29-byte** records: `time` (int64 ms, 8) ·
-  `price` (double, 8) · `qty` (int32, 4) · `side` (byte, 1 — `B`/`S`/`0`) · **`tu`** (int64, 8). `tu` = exchange match time in
-  **microseconds** (`SourceSsboe*1e6 + SourceUsecs`); it is stored **in-record**. Group cumulative trades like ATAS by identical
-  `tu`. **Live-write dedup** drops only the immediately-repeated
+### TickStore record format (v3)
+- `.tick` — a **32-byte header** (magic `FXTK`, version `3`, recSize `37`) then fixed **37-byte** records: `time` (int64 ms, 8) ·
+  `price` (double, 8) · `qty` (int32, 4) · `side` (byte, 1 — `B`/`S`/`0`) · **`tu`** (int64, 8) · **`o`** (int64, 8 — the
+  **aggressor's exchange order id**, `0` = unknown). `tu` = exchange match time in
+  **microseconds** (`SourceSsboe*1e6 + SourceUsecs`). Group cumulative trades like ATAS by identical
+  `tu`; within an event, `o` separates the **first aggressor** from elected stops (bigTrades `a0*` columns).
+  **v2 files (29-byte records, no `o`)** stay readable and are appended in their own format; a `Merge` (recanon replay patch)
+  always rewrites to v3, and a session file still in v2 triggers a **one-time full-session replay** so `o` gets filled.
+  **Live-write dedup** drops only the immediately-repeated
   record matching on **all of `(ms, price, qty, side, tu)`** — that suppresses Rithmic's Image-snapshot resend on (re)subscribe
   **without** dropping two genuine trades at the same ms/price/qty/side (they differ in `tu`), so session volume isn't undercounted.
 - `tick.coverage` — one small **text** index per symbol: lines `<tag> <fullUpToMs>

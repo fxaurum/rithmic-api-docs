@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Fxaurum Rithmic — Sweeps · Stops · Icebergs (MBO order-flow)</title>
+<title>Fxaurum Rithmic — Order-flow trackers (Sweeps · Stops · Icebergs · Absorption · Liquidity)</title>
 <style>
   :root{ --bg:#0e1116; --panel:#161b22; --panel2:#1b222c; --bd:#283041; --txt:#c9d1d9; --sub:#8b949e;
          --acc:#2f81f7; --grn:#26a69a; --red:#ef5350; --yel:#e3b341; --cyan:#30cdd2; --code:#0b0f14; }
@@ -61,15 +61,19 @@
 <body class="lang-vi">
 <div class="wrap">
 <nav>
-  <h1>Sweeps · Stops · Icebergs</h1>
-  <div class="v">MBO order-flow trackers</div>
+  <h1>Order-flow trackers</h1>
+  <div class="v">Sweeps · Stops · Icebergs · Absorption · Liquidity</div>
   <div class="langsw"><button data-l="vi">Tiếng Việt</button><button data-l="en">English</button></div>
-  <a href="#what"><span class="vi">Ba tracker là gì</span><span class="en">What they are</span></a>
+  <a href="#what"><span class="vi">Năm tracker là gì</span><span class="en">What they are</span></a>
   <a href="#lens"><span class="vi">Lăng kính: chủ động / bị động / bắt buộc</span><span class="en">The lens: aggressor / passive / forced</span></a>
   <a href="#sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></a>
   <a href="#sweeps"><span class="vi">① Sweeps</span><span class="en">① Sweeps</span></a>
   <a href="#stops"><span class="vi">② Stops</span><span class="en">② Stops</span></a>
   <a href="#icebergs"><span class="vi">③ Icebergs</span><span class="en">③ Icebergs</span></a>
+  <a href="#absorption"><span class="vi">④ Absorption</span><span class="en">④ Absorption</span></a>
+  <a href="#liquidity"><span class="vi">⑤ Liquidity</span><span class="en">⑤ Liquidity</span></a>
+  <a href="#advanced"><span class="vi">Nâng cao (tuỳ chọn)</span><span class="en">Advanced options</span></a>
+  <a href="#render"><span class="vi">Vẽ &amp; tương tác</span><span class="en">Rendering &amp; interaction</span></a>
   <a href="#activity"><span class="vi">Sub-pane Activity</span><span class="en">Activity sub-pane</span></a>
   <a href="#meaning"><span class="vi">Ý nghĩa giao dịch</span><span class="en">Trading meaning</span></a>
   <hr>
@@ -81,21 +85,24 @@
 </nav>
 <main>
 
-<h2 id="what" style="margin-top:0"><span class="vi">Ba tracker là gì</span><span class="en">What they are</span></h2>
-<p><span class="vi">Ba chỉ báo dòng lệnh (order-flow) trong tab <b>Volume &amp; OrderFlow</b>, port từ bộ <b>ATAS MBO Indicators</b>
-(<i>Sweeps / Stops / Icebergs Tracker</i>). Cả ba đọc cùng một cuộc chơi — <b>lệnh chủ động gặp lệnh bị động</b> — nhưng soi
-ba khía cạnh khác nhau. Mua = <span class="b">xanh</span>, bán = <span class="s">đỏ</span> (Stops dùng
-<span class="cy">lục lam</span>/<span style="color:#ff529c;font-weight:600">hồng</span> để tách khỏi Sweeps).</span>
-<span class="en">Three order-flow indicators in the <b>Volume &amp; OrderFlow</b> tab, ported from the <b>ATAS MBO Indicators</b>
-pack (<i>Sweeps / Stops / Icebergs Tracker</i>). All three read the same game — <b>aggressive orders meeting passive
-liquidity</b> — from three different angles. Buy = <span class="b">green</span>, sell = <span class="s">red</span> (Stops use
-<span class="cy">cyan</span>/<span style="color:#ff529c;font-weight:600">pink</span> to stay distinct from Sweeps).</span></p>
+<h2 id="what" style="margin-top:0"><span class="vi">Năm tracker là gì</span><span class="en">What they are</span></h2>
+<p><span class="vi"><b>Năm</b> chỉ báo dòng lệnh (order-flow) trong tab <b>Volume &amp; OrderFlow</b>. Ba cái đầu port từ bộ <b>ATAS MBO Indicators</b>
+(<i>Sweeps / Stops / Icebergs</i>); <b>Absorption</b> và <b>Liquidity</b> là mới, mô phỏng engine <b>Bookmap</b> (absorption / SIT / liquidity).
+Cả năm đọc cùng một cuộc chơi — <b>lệnh chủ động gặp lệnh bị động</b> — nhưng soi năm khía cạnh khác nhau. Mua = <span class="b">xanh</span>,
+bán = <span class="s">đỏ</span> (Stops dùng <span class="cy">lục lam</span>/<span style="color:#ff529c;font-weight:600">hồng</span>; Liquidity dùng vàng/xám).</span>
+<span class="en"><b>Five</b> order-flow indicators in the <b>Volume &amp; OrderFlow</b> tab. The first three are ported from the <b>ATAS MBO Indicators</b>
+pack (<i>Sweeps / Stops / Icebergs</i>); <b>Absorption</b> and <b>Liquidity</b> are new, modelled on the <b>Bookmap</b> absorption / SIT /
+liquidity engines. All five read the same game — <b>aggressive orders meeting passive liquidity</b> — from five different angles.
+Buy = <span class="b">green</span>, sell = <span class="s">red</span> (Stops cyan/pink; Liquidity amber/grey).</span></p>
 
 <div class="demo">
   <div style="text-align:center"><span class="pill buy">↗ Σ1293</span><div class="cap"><span class="vi">Sweep MUA (run)</span><span class="en">BUY sweep (run)</span></div></div>
   <div style="text-align:center"><span class="pill sell">↘ Σ7994</span><div class="cap"><span class="vi">Sweep BÁN</span><span class="en">SELL sweep</span></div></div>
   <div style="text-align:center"><span class="pill stops">↘ Σ366</span><div class="cap"><span class="vi">Stop run (long bị flush)</span><span class="en">Stop run (longs flushed)</span></div></div>
   <div style="text-align:center"><span class="icecir buy">11</span><div class="cap"><span class="vi">Iceberg MUA (11 lô ẩn)</span><span class="en">BUY iceberg (11 hidden)</span></div></div>
+  <div style="text-align:center"><span class="pill buy">▲ 340</span><div class="cap"><span class="vi">Absorption support</span><span class="en">Absorption support</span></div></div>
+  <div style="text-align:center"><span class="pill" style="background:rgba(242,193,78,.20);border-color:#f2c14e">▲ 480</span><div class="cap"><span class="vi">Liquidity executed</span><span class="en">Liquidity executed</span></div></div>
+  <div style="text-align:center"><span class="pill" style="background:rgba(136,146,164,.18);border-color:#8892a4">▼ 250✕</span><div class="cap"><span class="vi">Liquidity pulled (spoof)</span><span class="en">Liquidity pulled (spoof)</span></div></div>
 </div>
 
 <h2 id="lens"><span class="vi">Lăng kính phải nắm trước: ai CHỦ ĐỘNG, ai BỊ ĐỘNG</span><span class="en">The lens to grasp first: who is aggressive, who is passive</span></h2>
@@ -115,44 +122,59 @@ trackers are three angles on that same game:</span></p>
     <td><span class="vi">stop của phe <b>SHORT</b> nổ → tiếp lửa lên (squeeze)</span><span class="en"><b>SHORT</b> stops fire (buy-to-cover) → fuels up (squeeze)</span></td>
     <td><span class="vi">stop của phe <b>LONG</b> nổ → tiếp lửa xuống</span><span class="en"><b>LONG</b> stops fire (sell) → fuels down</span></td>
     <td><span class="who ret">retail bị săn</span></td></tr>
-<tr><td><b>③ Icebergs</b></td><td><span class="vi"><b>passive</b> (bị động, hấp thụ)</span><span class="en"><b>passive</b> (absorbing)</span></td>
+<tr><td><b>③ Icebergs</b></td><td><span class="vi"><b>passive ẨN</b> (bị động, hấp thụ)</span><span class="en"><b>passive HIDDEN</b> (absorbing)</span></td>
     <td><span class="vi">MUA ẩn ở bid → <b>sàn/hỗ trợ</b>, gom</span><span class="en">hidden BUY at bid → <b>floor/support</b>, accumulation</span></td>
     <td><span class="vi">BÁN ẩn ở ask → <b>trần/kháng cự</b>, xả</span><span class="en">hidden SELL at ask → <b>ceiling/resistance</b>, distribution</span></td>
     <td><span class="who inst">gần như luôn tổ chức</span></td></tr>
+<tr><td><b>④ Absorption</b></td><td><span class="vi"><b>kết cục</b> (aggression bị nuốt tại 1 giá)</span><span class="en"><b>outcome</b> (aggression eaten at 1 price)</span></td>
+    <td><span class="vi">phe MUA hấp thụ (bid giữ) → <b>hỗ trợ</b></span><span class="en">buyers absorb (bid holds) → <b>support</b></span></td>
+    <td><span class="vi">phe BÁN hấp thụ (ask giữ) → <b>kháng cự</b></span><span class="en">sellers absorb (ask holds) → <b>resistance</b></span></td>
+    <td><span class="vi">bất kỳ (không cần MBO)</span><span class="en">any (no MBO needed)</span></td></tr>
+<tr><td><b>⑤ Liquidity</b></td><td><span class="vi"><b>passive HIỆN</b> (tường lệnh + kết cục)</span><span class="en"><b>passive VISIBLE</b> (wall + fate)</span></td>
+    <td><span class="vi">tường bid: <b>EXECUTED</b> = mạnh / <b>PULLED</b> = spoof</span><span class="en">bid wall: <b>EXECUTED</b> = strong / <b>PULLED</b> = spoof</span></td>
+    <td><span class="vi">tường ask: EXECUTED / PULLED</span><span class="en">ask wall: EXECUTED / PULLED</span></td>
+    <td><span class="who inst">tổ chức (thủ / spoof)</span></td></tr>
 </table>
-<div class="note key"><span class="vi"><b>Sweep = chủ động vồ thanh khoản. Iceberg = bị động cấp thanh khoản. Stop = bị flush.</b>
-Nắm một câu này là đọc được cả ba. Chi tiết "ai là retail / tổ chức" và cách ghép chúng lại ở mục
+<div class="note key"><span class="vi"><b>Sweep = vồ thanh khoản (thủng). Absorption = bị nuốt (giữ giá) — hai kết cục NGƯỢC của cùng lực.</b>
+<b>Iceberg</b> (ẩn) &amp; <b>Liquidity</b> (tường hiện) = hai <b>cơ chế</b> gây absorption. <b>Stop</b> = bị flush. Iceberg đang bị ăn thường CŨNG
+bật Absorption; nhưng Absorption chạy cả khi không có MBO (rẻ, rộng hơn). Chi tiết "ai là retail / tổ chức" + hợp lưu ở
 <a class="h" href="#meaning">Ý nghĩa giao dịch</a>.</span>
-<span class="en"><b>Sweep = aggressively takes liquidity. Iceberg = passively provides it. Stop = gets flushed.</b>
-Hold that one line and all three read cleanly. The retail/institutional nuance and how to combine them are in
-<a class="h" href="#meaning">Trading meaning</a>.</span></div>
+<span class="en"><b>Sweep = takes liquidity (breaks). Absorption = gets eaten (price holds) — opposite outcomes of the same force.</b>
+<b>Iceberg</b> (hidden) &amp; <b>Liquidity</b> (visible wall) are the two <b>mechanisms</b> that cause absorption. <b>Stop</b> = gets flushed.
+An actively-hit iceberg usually also fires Absorption; but Absorption works even without MBO (cheaper, broader). The
+retail/institutional nuance + confluence are in <a class="h" href="#meaning">Trading meaning</a>.</span></div>
 
 <h2 id="sockets"><span class="vi">Cần gọi socket nào</span><span class="en">Which sockets to call</span></h2>
-<p><span class="vi">Sweeps &amp; Stops chỉ cần dòng lệnh khớp có bên chủ động; Icebergs bắt buộc thêm <b>MBO (depth-by-order)</b> vì phần ẩn
-chỉ lộ ở sổ lệnh từng lệnh. Lịch sử lấy từ <b>bản gateway tự ghi</b> (attribution chuẩn theo thứ tự stream), không kéo triệu tick về client.</span>
-<span class="en">Sweeps &amp; Stops need only aggressor-tagged trades; Icebergs additionally require <b>MBO (depth-by-order)</b> because the
-hidden part only shows in the per-order book. History comes from the <b>gateway's own recording</b> (stream-order attribution),
-never by pulling millions of ticks to the client.</span></p>
+<p><span class="vi">Sweeps / Stops / <b>Absorption</b> chỉ cần dòng lệnh khớp có bên chủ động (<code>@trade</code>); Icebergs / <b>Liquidity</b> bắt buộc thêm
+<b>MBO (depth-by-order)</b> vì phần ẩn / tường hiện chỉ lộ ở sổ lệnh từng lệnh. Lịch sử lấy từ <b>bản gateway tự ghi</b> (attribution chuẩn theo
+thứ tự stream), không kéo triệu tick về client.</span>
+<span class="en">Sweeps / Stops / <b>Absorption</b> need only aggressor-tagged trades (<code>@trade</code>); Icebergs / <b>Liquidity</b> additionally require
+<b>MBO (depth-by-order)</b> because the hidden fill / visible resting wall only shows in the per-order book. History comes from the
+<b>gateway's own recording</b> (stream-order attribution), never by pulling millions of ticks to the client.</span></p>
 <table>
 <tr><th><span class="vi">Mục tiêu</span><span class="en">Goal</span></th><th><span class="vi">Gọi</span><span class="en">Call</span></th><th><span class="vi">Cho tracker</span><span class="en">For</span></th><th><span class="vi">Vì sao</span><span class="en">Why</span></th></tr>
-<tr><td><b><span class="vi">Khớp live + bên chủ động</span><span class="en">Live fills + aggressor</span></b></td><td><a class="h" href="api.html#s-trade"><code>@trade</code></a> (stream)</td><td>①②③</td>
-    <td><span class="vi">Từng print kèm <code>side</code>, <code>o</code> (id lệnh chủ động), <code>tu</code> (mốc khớp µs). Nuôi MatchEngine tách aggressor.</span><span class="en">Each print carries <code>side</code>, <code>o</code> (aggressor id), <code>tu</code> (µs match time). Feeds the MatchEngine that separates the aggressor.</span></td></tr>
-<tr><td><b><span class="vi">MBO per-order (phần ẩn)</span><span class="en">Per-order MBO (hidden qty)</span></b></td><td><a class="h" href="mbo.html"><code>@mboraw</code></a> (stream, DBO)</td><td>③</td>
-    <td><span class="vi">New/Change/Delete từng lệnh quanh BBO → biết vis hiển thị đổi thế nào để suy ra khối lượng khớp VÔ HÌNH.</span><span class="en">Per-order New/Change/Delete around the BBO → shows how the visible size changes, so we can infer the INVISIBLE filled quantity.</span></td></tr>
-<tr><td><b><span class="vi">Lịch sử (chuẩn, thứ tự stream)</span><span class="en">History (authoritative)</span></b></td><td><code>flowRecs</code> (request)</td><td>①②③</td>
-    <td><span class="vi">Record gateway tự ghi lúc live: sweeps + cascades + iceberg (theo <code>oid</code>) + coverage. Client <code>mergeSeed</code> lấp vùng chart đóng.</span><span class="en">Records the gateway wrote live: sweeps + cascades + icebergs (by <code>oid</code>) + coverage. Client <code>mergeSeed</code>s to fill gaps while the chart was closed.</span></td></tr>
-<tr><td><span class="vi">Lịch sử xấp xỉ (tuỳ chọn)</span><span class="en">Approx history (optional)</span></td><td><code>flowHistory</code>/<code>bigTrades</code></td><td>①②</td>
-    <td><span class="vi">Khi gateway CHƯA ghi vùng đó: dựng lại cụm theo max-order-id. Kém chuẩn hơn <code>flowRecs</code> nên chỉ lấp NGOÀI coverage.</span><span class="en">Where the gateway hadn't recorded: reconstructs clusters by max-order-id. Less exact than <code>flowRecs</code>, so it only fills OUTSIDE coverage.</span></td></tr>
-<tr><td><span class="vi">Nền nến (tuỳ chọn)</span><span class="en">Candle backdrop (optional)</span></td><td><code>klines</code> + <code>@kline_&lt;iv&gt;</code></td><td>①②③</td>
+<tr><td><b><span class="vi">Record tracker LIVE (khuyên dùng)</span><span class="en">Live tracker records (recommended)</span></b></td><td><a class="h" href="api.html#s-flow"><code>@sweeps</code>/<code>@stops</code>/<code>@iceberg</code>/<code>@absorption</code>/<code>@liquidity</code></a> (stream)</td><td>①②③④⑤</td>
+    <td><span class="vi">Gateway chạy engine, <b>đẩy mỗi record khi chốt</b> — chỉ cần sub (như <code>@bigTrade</code>). <b>1 stream nuôi nhiều chart / nhiều indicator</b> (mỗi cái lọc + gom client-side). Platform tiêu thụ cả 5 tracker qua đây.</span><span class="en">The gateway runs the engine and <b>pushes each record on close</b> — just subscribe (like <code>@bigTrade</code>). <b>One stream feeds many charts / indicators</b> (each filters + groups client-side). The platform consumes all five this way.</span></td></tr>
+<tr><td><b><span class="vi">Khớp THÔ + bên chủ động (nuôi engine)</span><span class="en">Raw fills + aggressor (engine feed)</span></b></td><td><a class="h" href="api.html#s-trade"><code>@trade</code></a> (stream)</td><td>①②③④⑤</td>
+    <td><span class="vi">Trade thô mà engine gateway dựng từ đó. Từng print kèm <code>side</code>, <code>o</code> (id chủ động), <code>po</code> (id bị động), <code>tu</code> (mốc khớp µs).</span><span class="en">The raw trades the gateway's engine is built from. Each print carries <code>side</code>, <code>o</code> (aggressor id), <code>po</code> (passive id), <code>tu</code> (µs match time).</span></td></tr>
+<tr><td><b><span class="vi">MBO per-order</span><span class="en">Per-order MBO</span></b></td><td><a class="h" href="mbo.html"><code>@mboraw</code></a> (stream, DBO)</td><td>③⑤</td>
+    <td><span class="vi">New/Change/Delete từng lệnh quanh BBO → suy ra khối lượng khớp VÔ HÌNH (iceberg) và size tường HIỆN + kết cục (liquidity).</span><span class="en">Per-order New/Change/Delete around the BBO → infers the INVISIBLE filled qty (iceberg) and the VISIBLE resting wall + its fate (liquidity).</span></td></tr>
+<tr><td><b><span class="vi">Lịch sử (chuẩn, thứ tự stream)</span><span class="en">History (authoritative)</span></b></td><td><code>flowRecs</code> (request)</td><td>①②③④⑤</td>
+    <td><span class="vi">Record gateway tự ghi lúc live: <code>sw</code> · <code>cs</code> · <code>ice</code> · <b><code>ab</code> (absorption)</b> · <b><code>lq</code> (liquidity)</b> + coverage từng mảng. Client seed lấp vùng chart đóng.</span><span class="en">Records the gateway wrote live: <code>sw</code> · <code>cs</code> · <code>ice</code> · <b><code>ab</code> (absorption)</b> · <b><code>lq</code> (liquidity)</b> + per-array coverage. Client seeds to fill gaps while the chart was closed.</span></td></tr>
+<tr><td><span class="vi">Lịch sử xấp xỉ (tuỳ chọn)</span><span class="en">Approx history (optional)</span></td><td><code>flowHistory</code>/<code>bigTrades</code>/<code>aggTrades</code></td><td>①②④</td>
+    <td><span class="vi">Khi gateway CHƯA ghi: dựng lại từ kho tick. Absorption còn tự backfill từ <code>aggTrades</code> (nến đóng trước khi mở chart, ~90 ngày).</span><span class="en">Where the gateway hadn't recorded: reconstructs from the tick store. Absorption also self-backfills from <code>aggTrades</code> (closed candles before chart-open, ~90 days).</span></td></tr>
+<tr><td><span class="vi">Nền nến (tuỳ chọn)</span><span class="en">Candle backdrop (optional)</span></td><td><code>klines</code> + <code>@kline_&lt;iv&gt;</code></td><td>①②③④⑤</td>
     <td><span class="vi">Map mark theo THỜI GIAN lên chart. Không bắt buộc để tính tracker.</span><span class="en">Maps marks onto the chart by TIME. Not required to compute the trackers.</span></td></tr>
 </table>
-<div class="note key"><span class="vi"><b>Stream server-tính (mới):</b> gateway đẩy record LIVE qua <code>@sweeps</code>/<code>@stops</code>/<code>@iceberg</code> — thin-client/EA khỏi tự dựng engine (như <code>@bigTrade</code>). <code>@iceberg</code> = bản <b>authoritative 1-luồng</b> của gateway (thứ tự tới thật) → tránh drift µs khi client tự trộn 2 luồng @trade+@mboraw. Cùng schema <code>flowRecs</code>. Xem <a class="h" href="api.html">API</a>.</span>
-<span class="en"><b>Server-computed streams (new):</b> the gateway pushes records LIVE via <code>@sweeps</code>/<code>@stops</code>/<code>@iceberg</code> — thin clients/EAs skip running the engine (like <code>@bigTrade</code>). <code>@iceberg</code> is the gateway's <b>authoritative single-stream</b> computation (true arrival order) → avoids the µs drift of client-side 2-feed (@trade+@mboraw) re-ordering. Same <code>flowRecs</code> schema. See <a class="h" href="api.html">API</a>.</span></div>
-<div class="note warn"><span class="vi"><b>Icebergs là LIVE-only để bắt mới.</b> MBO không replay được (Rithmic không cấp lịch sử depth-by-order), nên phần ẩn
-chỉ tính được khi app đang mở. Lịch sử iceberg = do gateway <b>đã ghi</b> lúc trước (<code>flowRecs.ice</code>) — mở app càng nhiều, kho iceberg càng dày.</span>
-<span class="en"><b>Icebergs are LIVE-only for fresh detection.</b> MBO can't be replayed (Rithmic gives no depth-by-order history), so the
-hidden part is only computable while the app is open. Iceberg history = whatever the gateway <b>already recorded</b> (<code>flowRecs.ice</code>) —
-the more the app runs, the fuller the iceberg store.</span></div>
+<div class="note key"><span class="vi"><b>Stream server-tính:</b> gateway đẩy record LIVE qua <code>@sweeps</code>/<code>@stops</code>/<code>@iceberg</code>/<b><code>@absorption</code></b>/<b><code>@liquidity</code></b> — thin-client/EA khỏi tự dựng engine (như <code>@bigTrade</code>). Cả 5 tracker giờ có stream LIVE (row = schema <code>flowRecs.sw/cs/ice/ab/lq</code>). <code>@absorption</code> chỉ cần feed trade; <code>@liquidity</code> tự bật MBO (như <code>@iceberg</code>). Xem <a class="h" href="api.html">API</a>.</span>
+<span class="en"><b>Server-computed streams:</b> the gateway pushes records LIVE via <code>@sweeps</code>/<code>@stops</code>/<code>@iceberg</code>/<b><code>@absorption</code></b>/<b><code>@liquidity</code></b> — thin clients/EAs skip running the engine (like <code>@bigTrade</code>). All five trackers now have a LIVE stream (row = <code>flowRecs.sw/cs/ice/ab/lq</code> schema). <code>@absorption</code> needs only the trade feed; <code>@liquidity</code> turns MBO on itself (like <code>@iceberg</code>). See <a class="h" href="api.html">API</a>.</span></div>
+<div class="note warn"><span class="vi"><b>MBO là LIVE-only.</b> Rithmic không cấp lịch sử depth-by-order, nên <b>Icebergs</b> (ẩn) và <b>Liquidity</b> (tường) chỉ TÍNH được khi MBO đang
+chạy; lịch sử = do gateway <b>đã ghi</b> (<code>flowRecs.ice</code>/<code>.lq</code>) — app chạy MBO càng nhiều, kho càng dày. Ngược lại Sweeps / Stops /
+<b>Absorption</b> dựa <code>@trade</code> nên history <b>robust</b>: gateway ghi liên tục (như sweep), Absorption còn backfill từ tick replay (<code>aggTrades</code>, ~90 ngày).</span>
+<span class="en"><b>MBO is LIVE-only.</b> Rithmic gives no depth-by-order history, so <b>Icebergs</b> (hidden) and <b>Liquidity</b> (walls) are only computable while
+MBO runs; their history = whatever the gateway <b>already recorded</b> (<code>flowRecs.ice</code>/<code>.lq</code>) — the more the app runs with MBO, the fuller the store.
+By contrast Sweeps / Stops / <b>Absorption</b> are <code>@trade</code>-based, so their history is <b>robust</b>: the gateway records them continuously (like sweeps),
+and Absorption also back-fills from replayable trades (<code>aggTrades</code>, ~90 days).</span></div>
 
 <h2 id="sweeps"><span class="vi">① Sweeps Tracker (quét thanh khoản)</span><span class="en">① Sweeps Tracker</span></h2>
 <p><span class="vi">Một <b>lệnh chủ động lớn quét qua nhiều mức giá</b> trong một chớp. Engine gộp các record cùng chiều sát nhau thành một
@@ -230,11 +252,93 @@ axis still draws a vertical tick to the edge.</span></p>
 <tr><td>Window Close Timeout</td><td>100&nbsp;ms</td><td><span class="vi">Im lặng bao lâu thì chốt iceberg đang mở (= ATAS <code>WindowCloseTimeoutMs</code>, ẩn)</span><span class="en">Quiet gap before closing an open iceberg (= ATAS <code>WindowCloseTimeoutMs</code>, hidden field)</span></td></tr>
 </table>
 
+<h2 id="absorption"><span class="vi">④ Absorption Tracker (hấp thụ tại 1 mức — S/R)</span><span class="en">④ Absorption Tracker (held at a price — S/R)</span></h2>
+<p><span class="vi"><b>Ngược lại sweep.</b> Aggression <b>dồn 1 giá mà giá KHÔNG thủng</b> → phe passive đang HẤP THỤ (thành vùng S/R mạnh). Tính từ <code>@trade</code>
+(KHÔNG cần MBO): <code>AbsorptionEngine</code> cộng Σvol aggressive theo <code>(matching-event, giá)</code>; <code>buildAbsorption</code> gom record cùng giá trong
+<code>abWinMs</code>; vùng fire khi <code>Σvol ≥ abMinVol</code>. Không cần biết cơ chế — bên passive có thể là iceberg (ẩn), tường Liquidity (hiện), hay nhiều limit
+lẻ; Absorption bắt hết, chạy cả khi thiếu quyền MBO.</span>
+<span class="en"><b>The opposite of a sweep.</b> Aggression <b>piles at one price and the price holds</b> → the passive side is absorbing (a strong S/R zone forms).
+Computed from <code>@trade</code> only (no MBO): <code>AbsorptionEngine</code> sums aggressive volume per <code>(matching-event, price)</code>; <code>buildAbsorption</code>
+groups same-price records inside <code>abWinMs</code>; a zone fires when <code>Σvol ≥ abMinVol</code>. Mechanism-agnostic — the passive side may be an iceberg (hidden),
+a Liquidity wall (visible), or many small limits; Absorption catches all of them, even without MBO entitlement.</span></p>
+<ul>
+<li><span class="vi"><b class="b">Support</b> (▲) — bên bán phang bid nhưng <b>bid hấp thụ</b> (phe mua giữ sàn).</span><span class="en"><b class="b">Support</b> (▲) — sellers hit the bid but the <b>bid absorbs</b> (buyers hold the floor).</span></li>
+<li><span class="vi"><b class="s">Resistance</b> (▼) — bên mua vồ ask nhưng <b>ask hấp thụ</b> (phe bán giữ trần).</span><span class="en"><b class="s">Resistance</b> (▼) — buyers lift the ask but the <b>ask absorbs</b> (sellers hold the ceiling).</span></li>
+</ul>
+<div class="note key"><span class="vi"><b>Băng giá (vùng nhiều mức):</b> mặc định gom 1 tick chính xác; đặt <code>abBandTicks &gt; 0</code> để gộp giá gần nhau (≤ N tick) thành <b>MỘT vùng</b> —
+aggression trải 3 tick liền kề mà mỗi cái dưới ngưỡng, gộp lại thành 1 vùng qua ngưỡng. Mark khi đó vẽ <b>ô chữ nhật phủ cả dải giá</b> (<code>minP..maxP</code>),
+chấm leader nối vào <b>cạnh ô</b> phía nhãn.</span>
+<span class="en"><b>Price band (multi-level zone):</b> by default it groups one exact tick; set <code>abBandTicks &gt; 0</code> to merge nearby prices (≤ N ticks) into
+<b>one zone</b> — aggression over 3 adjacent ticks that each miss the threshold together form one zone that passes. The mark then draws a <b>rectangle covering the whole
+price band</b> (<code>minP..maxP</code>), the leader dot attaching to the <b>band edge</b> facing the label.</span></div>
+<table>
+<tr><th><span class="vi">Cài đặt</span><span class="en">Setting</span></th><th><span class="vi">Mặc định</span><span class="en">Default</span></th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><span class="vi">Min Volume</span><span class="en">Min Volume</span> (<code>abMinVol</code>)</td><td>150</td><td><span class="vi">Σvol cùng-giá trong cửa sổ</span><span class="en">Σ same-price volume in the window</span></td></tr>
+<tr><td><span class="vi">Window</span><span class="en">Window</span> (<code>abWinMs</code>)</td><td>300&nbsp;ms</td><td><span class="vi">cửa sổ gom cùng giá</span><span class="en">grouping window (same price)</span></td></tr>
+<tr><td><span class="vi">Gom băng giá (tick)</span><span class="en">Band ticks</span> (<code>abBandTicks</code>)</td><td>0</td><td><span class="vi">gộp giá ≤ N tick thành 1 vùng (0 = 1 tick chính xác)</span><span class="en">merge prices ≤ N ticks into one zone (0 = one exact tick)</span></td></tr>
+</table>
+<p style="color:var(--sub)"><span class="vi">Live từ lúc mở chart + <b>persist</b> (mở lại khôi phục) + <b>gateway ghi</b> (<code>AbsorptionRecorder</code> → <code>flowRecs.ab</code>) + backfill <code>aggTrades</code> cho nến đóng trước khi mở.</span>
+<span class="en">Live from chart-open + <b>persisted</b> (reopen restores) + <b>gateway-recorded</b> (<code>AbsorptionRecorder</code> → <code>flowRecs.ab</code>) + <code>aggTrades</code> back-fill for pre-open closed candles.</span></p>
+
+<h2 id="liquidity"><span class="vi">⑤ Liquidity Tracker (tường lệnh visible + kết cục)</span><span class="en">⑤ Liquidity Tracker (visible walls + fate)</span></h2>
+<p><span class="vi">Theo dõi <b>lệnh RESTING VISIBLE LỚN (tường)</b> trong sổ + <b>kết cục</b>. Khác Iceberg (ẩn), Heatmap (vẽ mọi liquidity dạng gradient) và Absorption (hiện tượng qua
+<code>@trade</code>): đây flag <b>tường hiện rời rạc</b> theo vòng đời. Nuôi bằng <code>@mboraw</code> (+ <code>@trade</code>): <code>LiquidityEngine</code> cộng size resting theo giá; vượt
+<code>lqMinSize</code> → theo dõi 1 tường; trade ăn vào → cộng <b>executed</b>; size rời sổ không có trade = <b>cancelled</b>.</span>
+<span class="en">Tracks <b>large VISIBLE resting orders (walls)</b> in the book + their <b>outcome</b>. Unlike Iceberg (hidden), Heatmap (all liquidity as a gradient) and Absorption
+(a <code>@trade</code> phenomenon): this flags <b>discrete visible walls</b> by lifecycle. Fed by <code>@mboraw</code> (+ <code>@trade</code>): <code>LiquidityEngine</code>
+aggregates resting size per price; crossing <code>lqMinSize</code> tracks a wall; a trade into it credits <b>executed</b>; size removed without a trade is <b>cancelled</b>.</span></p>
+<p><span class="vi"><b>Vòng đời:</b> <b>PLACED</b> (size ≥ ngưỡng) → <b>HELD</b> (trụ ≥ <code>lqHoldMs</code>) → <b class="b">EXECUTED</b> (bị trade ăn = mức MẠNH thật) hoặc <b class="s">PULLED</b>
+(rút trước khi khớp = <b>spoof / flip</b>). <code>cancelled = peak − current − executed</code>; <code>executed ≥ cancelled</code> ⇒ executed, ngược lại ⇒ pulled.</span>
+<span class="en"><b>Lifecycle:</b> <b>PLACED</b> (size ≥ threshold) → <b>HELD</b> (rests ≥ <code>lqHoldMs</code>) → <b class="b">EXECUTED</b> (traded into = a real strong level) or <b class="s">PULLED</b>
+(removed before filling = <b>spoof / flip</b>). <code>cancelled = peak − current − executed</code>; <code>executed ≥ cancelled</code> ⇒ executed, else ⇒ pulled.</span></p>
+<table>
+<tr><th><span class="vi">Cài đặt</span><span class="en">Setting</span></th><th><span class="vi">Mặc định</span><span class="en">Default</span></th><th><span class="vi">Ý nghĩa</span><span class="en">Meaning</span></th></tr>
+<tr><td><span class="vi">Min Size</span><span class="en">Min Size</span> (<code>lqMinSize</code>)</td><td>200</td><td><span class="vi">size resting tại 1 giá để flag tường</span><span class="en">resting size at a price to flag a wall</span></td></tr>
+<tr><td><span class="vi">Min Hold</span><span class="en">Min Hold</span> (<code>lqHoldMs</code>)</td><td>1500&nbsp;ms</td><td><span class="vi">trụ bao lâu để tính HELD</span><span class="en">rest time to count as HELD</span></td></tr>
+<tr><td><span class="vi">Hiện EXECUTED / PULLED</span><span class="en">Show EXECUTED / PULLED</span> (<code>lqShowExec</code>/<code>lqShowPulled</code>)</td><td>on / on</td><td><span class="vi">lọc theo kết cục</span><span class="en">filter by outcome</span></td></tr>
+</table>
+<div class="note"><span class="vi">Bản client là <b>xấp xỉ</b> (<code>cancelled</code> = phần dư). Bản CHÍNH XÁC dùng <b>passive-order id</b> của sàn tại gateway (chạm ⇒ executed, rời-sổ-không-chạm ⇒ cancelled) — đang làm. Persist + gateway ghi (<code>LiquidityRecorder</code> → <code>flowRecs.lq</code>); MBO live-only nên history phủ khoảng gateway chạy MBO.</span>
+<span class="en">The client engine is an <b>approximation</b> (<code>cancelled</code> = residual). The <b>exact</b> version uses the exchange <b>passive-order id</b> at the gateway (touched ⇒ executed, untouched-leave ⇒ cancelled) — in progress. Persisted + gateway-recorded (<code>LiquidityRecorder</code> → <code>flowRecs.lq</code>); MBO being live-only, history covers spans the gateway ran MBO.</span></div>
+
+<h2 id="advanced"><span class="vi">Nâng cao (tuỳ chọn — opt-in)</span><span class="en">Advanced options (opt-in)</span></h2>
+<p><span class="vi">Mỗi tracker có nhóm <b>Nâng cao</b> trong Cài đặt. <b>Tắt</b> = giữ hành vi cổ điển (parity ATAS/Bookmap); <b>Bật</b> = kích hoạt nâng cấp xuyên tracker (mặc định luôn = cổ điển):</span>
+<span class="en">Each tracker's settings has a <b>Nâng cao (Advanced)</b> group. <b>Off</b> keeps the classic (ATAS/Bookmap-parity) behaviour; <b>on</b> enables cross-tracker upgrades (opt-in, so defaults never change):</span></p>
+<table>
+<tr><th><span class="vi">Nâng cấp</span><span class="en">Upgrade</span></th><th><span class="vi">Tracker</span><span class="en">Trackers</span></th><th><span class="vi">Làm gì</span><span class="en">What it does</span></th></tr>
+<tr><td><b>SD auto-threshold</b> (<code>ofAutoThr</code>+<code>ofSdMult</code>)</td><td><span class="vi">tất cả</span><span class="en">all</span></td><td><span class="vi">ngưỡng = <code>mean + N·SD</code> vol record gần đây thay Min Volume cố định — tự co giãn theo biến động (Bookmap N=10)</span><span class="en">threshold = <code>mean + N·SD</code> of recent record volumes instead of a fixed Min Volume — auto-scales with volatility (Bookmap N=10)</span></td></tr>
+<tr><td><b>Cửa sổ thích ứng</b> (<code>ofAdaptWin</code>)</td><td>sweeps / stops</td><td><span class="vi">cửa sổ = <code>3× median gap tick</code> (kẹp 10–1000 ms) thay 100 ms cố định</span><span class="en">window = <code>3× median tick gap</code> (clamped 10–1000 ms) instead of a fixed 100 ms</span></td></tr>
+<tr><td><b>TBPL</b> (<code>ofTBPL</code>)</td><td>stops</td><td><span class="vi">chỉ giữ cascade PHÁ MỨC trước (quét thủng đỉnh/đáy gần)</span><span class="en">keep only cascades that Took/Broke a Prior Level (swept through the recent high/low)</span></td></tr>
+<tr><td><b>Vận tốc</b> (<code>ofVel</code>/<code>ofVelMin</code>)</td><td>sweeps</td><td><span class="vi">lô/giây của run; lọc sweep "gấp" + hiện trên card</span><span class="en">lots/second of the run; filter urgent sweeps + show on card</span></td></tr>
+<tr><td><b>Tin cậy</b> (<code>ofStopConf</code>)</td><td>stops</td><td><span class="vi">điểm 0–100 (nhiều stop + trải nhiều tick = cao)</span><span class="en">0–100 score (more stops over more ticks = higher)</span></td></tr>
+<tr><td><b>Chỉ Absolute</b> (<code>icAbsOnly</code>)</td><td>icebergs</td><td><span class="vi">chỉ hiện <code>conf=absolute</code> (bỏ medium)</span><span class="en">show only <code>conf=absolute</code> (drop medium)</span></td></tr>
+</table>
+<div class="note"><span class="vi">Sweeps/Stops "Nâng cao" còn <b>nhận record qua stream gateway</b> (<code>@sweeps</code>/<code>@stops</code>/<code>@iceberg</code>); Icebergs dùng thứ tự 1-luồng authoritative của gateway (hết drift µs khi client tự trộn 2 luồng). Sweeps thêm <b>Min Levels Swept</b> (đếm mức giá distinct — Bookmap).</span>
+<span class="en">Sweeps/Stops Advanced additionally <b>receive records via the gateway stream</b> (<code>@sweeps</code>/<code>@stops</code>/<code>@iceberg</code>); Icebergs use the gateway's single-stream authoritative order (fixes the µs-tie-break drift of client 2-feed merging). Sweeps add <b>Min Levels Swept</b> (distinct price levels — Bookmap).</span></div>
+
+<h2 id="render"><span class="vi">Vẽ &amp; tương tác</span><span class="en">Rendering &amp; interaction</span></h2>
+<ul>
+<li><span class="vi"><b>Nhãn PILL</b> — mọi tracker gắn nhãn dạng pill nền tối (viền màu theo side + số trắng + icon riêng: sweep chấm, stop vạch, iceberg tảng băng, absorption tường-mũi-tên, liquidity gạch xếp), lệch ra ngoài nến + <b>leader nét đứt + chấm</b> tới mức giá (hoặc cạnh băng).</span>
+<span class="en"><b>Pill labels</b> — every tracker labels its marks with a dark rounded pill (side-coloured border + white number + a per-tracker icon: sweep dots, stop bars, iceberg glyph, absorption wall-and-arrow, liquidity bricks), offset off the candle with a dashed <b>leader line + dot</b> to the price level (or band edge).</span></li>
+<li><span class="vi"><b>Gộp cụm Σ×N</b> — zoom out, mark cùng side sát nhau gộp 1 pill <code>Σvol ×N</code> (Liquidity tách <b>thật vs spoof</b> riêng). Hover pill/cụm → mark của nó sáng, phần khác mờ.</span>
+<span class="en"><b>Cluster Σ×N</b> — zoom out and nearby same-side marks merge into one <code>Σvol ×N</code> pill (Liquidity keeps <b>real vs spoof</b> clusters separate). Hover a pill/cluster → its marks light up, the rest dim.</span></li>
+<li><span class="vi"><b>Highlight Style / Size / Thickness</b> — filled / outline / dashline… + độ dày, trên mọi tracker.</span>
+<span class="en"><b>Highlight Style / Size / Thickness</b> — filled / outline / dashline… + bar thickness, on every tracker.</span></li>
+<li><span class="vi"><b>Thêm nhiều instance</b> — mỗi tracker add được NHIỀU lần (như Volume Profile): 1 engine, nhiều view lọc/màu khác nhau (vd 2 Absorption: 1 vùng lớn + 1 chi tiết). Gỡ từng cái ở legend ✕.</span>
+<span class="en"><b>Multiple instances</b> — each tracker can be added many times (like Volume Profile): one engine, several filtered/coloured views (e.g. two Absorptions, one big-zone + one fine). Remove each via the legend ✕.</span></li>
+</ul>
+
 <h2 id="activity"><span class="vi">Sub-pane "Activity Accumulation"</span><span class="en">The "Activity Accumulation" sub-pane</span></h2>
-<p><span class="vi">Cả ba tracker có một ô con (sub-pane) vẽ <b>tích luỹ hoạt động</b> theo thời gian: đường mua, đường bán, và Delta.
-5 chế độ (khớp công thức ATAS <code>ActivityAccumulationCalculator</code>):</span>
-<span class="en">All three trackers have a sub-pane charting <b>accumulated activity</b> over time: a buy line, a sell line, and Delta.
-5 modes (matching ATAS's <code>ActivityAccumulationCalculator</code>):</span></p>
+<p><span class="vi">Cả <b>năm</b> tracker có một ô con (sub-pane) vẽ <b>tích luỹ hoạt động</b> theo thời gian: 2 đường + Delta. Hai đường theo từng tracker:</span>
+<span class="en">All <b>five</b> trackers have a sub-pane charting <b>accumulated activity</b> over time: two lines + Delta. The two lines per tracker:</span></p>
+<table>
+<tr><th>Tracker</th><th><span class="vi">Đường A</span><span class="en">Line A</span></th><th><span class="vi">Đường B</span><span class="en">Line B</span></th><th>Delta</th></tr>
+<tr><td>Sweeps / Stops</td><td><span class="b">Buy</span></td><td><span class="s">Sell</span></td><td>Buy − Sell</td></tr>
+<tr><td>Icebergs</td><td>Bid</td><td>Ask</td><td>Bid − Ask</td></tr>
+<tr><td><b>Absorption</b></td><td><span class="b">Support</span></td><td><span class="s">Resistance</span></td><td>Supp − Res</td></tr>
+<tr><td><b>Liquidity</b></td><td><span class="b">Real</span> <span class="vi">(executed+active)</span><span class="en">(executed+active)</span></td><td><span class="s">Spoof</span> (pulled)</td><td><span class="vi">Thật − giả</span><span class="en">Real − Spoof</span></td></tr>
+</table>
+<p><span class="vi">5 chế độ tích luỹ (khớp công thức ATAS <code>ActivityAccumulationCalculator</code>):</span>
+<span class="en">5 accumulation modes (matching ATAS's <code>ActivityAccumulationCalculator</code>):</span></p>
 <table>
 <tr><th>Mode</th><th><span class="vi">Cộng dồn thế nào</span><span class="en">How it accumulates</span></th></tr>
 <tr><td><code>sum</code></td><td><span class="vi">cộng dồn mãi (tổng tích luỹ)</span><span class="en">runs forever (cumulative total)</span></td></tr>
@@ -271,6 +375,10 @@ but the <b>hunt</b> for them is often engineered by larger players ("stop hunt /
         <span class="en">aggression meets absorption — e.g. relentless sell sweeps but price WON'T drop because a buy iceberg absorbs → <b>absorption → likely reversal up</b> (the "golden" setup)</span></td></tr>
 <tr><td><span class="vi"><b>Sweep + stop cascade cùng chiều, không iceberg cản</b></span><span class="en"><b>Sweep + same-side stop cascade, no iceberg</b></span></td>
     <td><span class="vi">động lượng thật → <b>breakout có lực</b>, theo trend</span><span class="en">genuine momentum → <b>powered breakout</b>, follow the trend</span></td></tr>
+<tr><td><span class="vi"><b>Vùng Absorption rồi GIỮ</b></span><span class="en"><b>Absorption zone that then holds</b></span></td>
+    <td><span class="vi">S/R mạnh; ghép Liquidity (tường thật/executed?) + Sweeps (sau đó có thủng?)</span><span class="en">strong S/R; combine with Liquidity (is the wall real/executed?) + Sweeps (did it later break?)</span></td></tr>
+<tr><td><span class="vi"><b>Liquidity EXECUTED</b> tại mức / <b>PULLED (spoof)</b> trước khi giá tới</span><span class="en"><b>Liquidity EXECUTED</b> at a level / <b>PULLED (spoof)</b> before price arrives</span></td>
+    <td><span class="vi">executed = mức được thủ thật; pulled = bẫy → đừng tin tường</span><span class="en">executed = a genuinely defended level; pulled = a trap → don't trust the wall</span></td></tr>
 <tr><td><span class="vi"><b>Iceberg giữ vững / bị phá</b></span><span class="en"><b>Iceberg holds / breaks</b></span></td>
     <td><span class="vi">giữ được = S/R mạnh; bị phá = mức gãy, đi tiếp</span><span class="en">holds = strong S/R; breaks = level gone, continuation</span></td></tr>
 <tr><td><span class="vi"><b>Stop hunt</b> (spike thủng mức rồi thu lại)</span><span class="en"><b>Stop hunt</b> (spike through a level then retract)</span></td>
